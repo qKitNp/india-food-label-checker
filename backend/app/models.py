@@ -1,7 +1,7 @@
 import hashlib
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field
 
 Region = Literal["IN", "EU", "US"]
 Source = Literal["label", "off", "curated", "web"]
@@ -41,6 +41,7 @@ class Product(BaseModel):
     evidence: Evidence | None = None
     image_file_id: str | None = Field(default=None, description="Pack photo in Appwrite Storage")
 
+    @computed_field  # included in API responses so clients can link to products without a barcode
     @property
     def key(self) -> str:
         """Store key: the barcode, or a hash of brand + name for products found without one."""

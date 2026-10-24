@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, model_validator
 
-from app import agent, llm, verdict
+from app import additive_codes, agent, llm, verdict
 from app.catalog import Embedder
 from app.config import get_settings
 from app.jobs import IdentifyResponse, Job, JobStore
@@ -142,7 +142,9 @@ async def confirm_product(product: Product, svc: ProductsDep) -> Verdict:
     """Save a user-confirmed product (from a label scan) as verified."""
     if not product.barcode:
         raise HTTPException(400, "A barcode is needed to save a product")
-    product = product.model_copy(update={"verified": True, "source": "label"})
+    # The user may have corrected the ingredients, so derive additive codes from the confirmed text.
+    additives = additive_codes.find_in_text(product.ingredients_text or "")
+    product = product.model_copy(update={"verified": True, "source": "label", "additives": additives})
     await svc.save(product)
     return verdict.build(product, await svc.store.get_counterpart(product.key, "EU"))
 
