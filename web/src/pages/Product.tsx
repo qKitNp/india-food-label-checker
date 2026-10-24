@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { api, ApiError, type AdditiveFinding, type ClaimFinding, type Nutrition, type Region, type Verdict } from '../api'
 import { remember } from '../history'
-import { Button, Card, Chip, Cover, ErrorNote, Page, SectionTitle, Spinner, buttonClass, productTitle } from '../ui'
+import { Button, Card, Chip, Cover, ErrorNote, Page, SectionTitle, Spinner, buttonClass, productTitle, shortBrand } from '../ui'
 
 const UNRELIABLE = "This product's online data looks unreliable"
 
@@ -41,7 +41,7 @@ export default function ProductPage() {
     remember({
       key: p.key,
       title: productTitle(p),
-      brand: p.brand ?? '',
+      brand: shortBrand(p.brand),
       flagged: verdict.claims.filter((c) => c.passes === false).length + verdict.additives.filter((a) => a.flagged).length,
     })
   }, [verdict])
@@ -66,9 +66,9 @@ function VerdictView({ verdict, onUpdate }: { verdict: Verdict; onUpdate: (v: Ve
   return (
     <Page>
       <header className="rise flex items-end gap-4">
-        <Cover seed={p.brand || productTitle(p)} label={p.brand || 'Product'} className="h-28 w-22 shrink-0 shadow-card" />
+        <Cover seed={shortBrand(p.brand) || productTitle(p)} label={shortBrand(p.brand) || 'Product'} className="h-28 w-22 shrink-0 shadow-card" />
         <div className="min-w-0 pb-1">
-          {p.brand && <p className="text-sm text-muted">{p.brand}</p>}
+          {p.brand && <p className="text-sm text-muted">{shortBrand(p.brand)}</p>}
           <h1 className="font-serif text-[1.6rem] leading-tight font-medium tracking-tight">{productTitle(p)}</h1>
           <div className="mt-2 flex flex-wrap gap-1.5">
             <SourceChip verdict={verdict} />
@@ -102,7 +102,7 @@ function VerdictView({ verdict, onUpdate }: { verdict: Verdict; onUpdate: (v: Ve
       )}
 
       {!unreliable && verdict.claims.length > 0 && <Claims claims={verdict.claims} liquid={!!p.is_liquid} />}
-      {!unreliable && verdict.additives.length > 0 && <Additives additives={verdict.additives} />}
+      {!unreliable && p.additives.length > 0 && <Additives additives={verdict.additives} all={p.additives} />}
       <NutritionCard nutrition={p.nutrition} liquid={!!p.is_liquid} />
       <Ingredients verdict={verdict} />
       <Compare verdict={verdict} onUpdate={onUpdate} />
@@ -164,11 +164,18 @@ function Stat({ label, value, unit, muted }: { label: string; value: string; uni
 
 const FLAGS: Record<Region, string> = { IN: '🇮🇳', EU: '🇪🇺', US: '🇺🇸' }
 
-function Additives({ additives }: { additives: AdditiveFinding[] }) {
+function Additives({ additives, all }: { additives: AdditiveFinding[]; all: string[] }) {
   const sorted = [...additives].sort((a, b) => Number(b.flagged) - Number(a.flagged))
+  const reviewed = new Set(additives.map((a) => a.code))
+  const unreviewed = all.filter((code) => !reviewed.has(code))
   return (
     <Card className="rise mt-4">
-      <SectionTitle hint={`${additives.filter((a) => a.flagged).length} flagged`}>Additives</SectionTitle>
+      <SectionTitle hint={`${all.length} found · ${additives.filter((a) => a.flagged).length} flagged`}>Additives</SectionTitle>
+      {unreviewed.length > 0 && (
+        <p className={`text-sm leading-relaxed text-muted ${sorted.length ? 'mb-3' : ''}`}>
+          Not reviewed yet: <span className="font-medium text-ink-2">{unreviewed.join(', ')}</span>
+        </p>
+      )}
       <ul className="divide-y divide-line">
         {sorted.map((a) => (
           <li key={a.code} className="py-3 first:pt-0 last:pb-0">

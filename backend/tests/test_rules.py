@@ -31,6 +31,12 @@ class TestAdditiveCodes:
         text = "Water, acidity regulator (338), colour (150d), sweetener INS 951, E211, (338)"
         assert additive_codes.find_in_text(text) == ["E338", "E150d", "E951", "E211"]
 
+    def test_find_codes_with_ins_sub_numbers(self):
+        # Real Maggi Masala label text
+        text = ("Thickeners (508 & 412). Acidity regulators (501(i) & 500(i)) and Humectant (451(i)). "
+                "Acidity regulator (330), Flavour enhancer (635), Colour (150d)")
+        assert additive_codes.find_in_text(text) == ["E508", "E412", "E501", "E500", "E451", "E330", "E635", "E150d"]
+
     def test_find_grouped_codes(self):
         text = ("Edible Oil (Palmolein), Flavour Enhancers (627, 631), Colours (INS 110 & INS 102), "
                 "Caffeine (8.7 mg/100 g), Preservative (211 and 202)")

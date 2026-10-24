@@ -1,6 +1,6 @@
 from urllib.parse import urlparse
 
-from app import sanity
+from app import additive_codes, sanity
 from app.models import Counterpart, Product, Verdict
 from app.rules import additives, claims
 
@@ -12,6 +12,10 @@ def suspect(v: Verdict) -> bool:
 
 
 def build(product: Product, counterpart: Counterpart | None = None) -> Verdict:
+    # Re-derive codes from the ingredients so records saved by an older parser stay complete.
+    found = additive_codes.find_in_text(product.ingredients_text or "")
+    if missing := [c for c in found if c not in product.additives]:
+        product = product.model_copy(update={"additives": [*product.additives, *missing]})
     contradictions = sanity.check(product)
     claim_findings = claims.evaluate(product)
     additive_findings = additives.evaluate(product)

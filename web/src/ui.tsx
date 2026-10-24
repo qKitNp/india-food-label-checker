@@ -130,9 +130,12 @@ export function Cover({ seed, label, className = '' }: { seed: string; label: st
   )
 }
 
+/** The brand is shown separately above the title, so the title is just the product name. */
 export function productTitle(p: { brand: string | null; name: string | null }) {
-  const brand = p.brand ?? ''
-  const name = p.name ?? ''
-  if (brand && name.toLowerCase().startsWith(brand.toLowerCase())) return name
-  return [brand, name].filter(Boolean).join(' ') || 'Unnamed product'
+  return p.name || p.brand || 'Unnamed product'
+}
+
+/** "Kurkure (PepsiCo)" -> "Kurkure": the agent sometimes adds the parent company. */
+export function shortBrand(brand: string | null) {
+  return (brand ?? '').replace(/\s*\(.*?\)\s*/g, ' ').trim()
 }
