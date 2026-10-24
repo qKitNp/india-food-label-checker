@@ -1,9 +1,0 @@
-# HTTPS via an automatic Let's Encrypt certificate. sslip.io resolves the hostname to the
-# IP inside it, so no domain is needed. Change the hostname if the VM's IP changes.
-217-18-55-36.sslip.io {
-	encode gzip
-	request_body {
-		max_size 20MB
-	}
-	reverse_proxy 127.0.0.1:8000
-}
