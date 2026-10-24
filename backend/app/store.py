@@ -1,0 +1,137 @@
+"""Product and counterpart cache in Appwrite TablesDB, with an in-memory fallback for
+local development when Appwrite isn't configured.
+
+Uses the TablesDB REST API over a persistent httpx connection rather than the Python
+SDK, which opens a new TLS connection per call (too slow for the voice path)."""
+
+import json
+import re
+from collections.abc import AsyncIterator
+from typing import Protocol
+
+import httpx
+import numpy as np
+
+from app import catalog
+from app.config import Settings
+from app.models import Counterpart, Product, Region
+
+
+def row_id(key: str) -> str:
+    """Appwrite row IDs: max 36 chars of a-z, A-Z, 0-9, '.', '-', '_'."""
+    return re.sub(r"[^a-zA-Z0-9._-]", "_", key)[:36]
+
+
+class Store(Protocol):
+    async def get_product(self, key: str) -> Product | None: ...
+    async def save_product(self, product: Product, embedding: np.ndarray | None = None) -> None: ...
+    def embeddings(self) -> AsyncIterator[tuple[str, str, np.ndarray]]: ...
+    async def get_counterpart(self, barcode: str, region: Region) -> Counterpart | None: ...
+    async def save_counterpart(self, barcode: str, counterpart: Counterpart) -> None: ...
+
+
+class MemoryStore:
+    def __init__(self) -> None:
+        self.products: dict[str, Product] = {}
+        self.vectors: dict[str, np.ndarray] = {}
+        self.counterparts: dict[str, Counterpart] = {}
+
+    async def get_product(self, key):
+        return self.products.get(key)
+
+    async def save_product(self, product, embedding=None):
+        self.products[product.key] = product
+        if embedding is not None:
+            self.vectors[product.key] = embedding
+
+    async def embeddings(self):
+        for key, vector in self.vectors.items():
+            yield key, self.products[key].embed_text, vector
+
+    async def get_counterpart(self, barcode, region):
+        return self.counterparts.get(f"{barcode}.{region}")
+
+    async def save_counterpart(self, barcode, counterpart):
+        self.counterparts[f"{barcode}.{counterpart.region}"] = counterpart
+
+
+class AppwriteStore:
+    def __init__(self, settings: Settings) -> None:
+        self.http = httpx.AsyncClient(
+            base_url=f"{settings.appwrite_endpoint.rstrip('/')}/tablesdb/{settings.appwrite_database_id}/tables/",
+            headers={
+                "X-Appwrite-Project": settings.appwrite_project_id,
+                "X-Appwrite-Key": settings.appwrite_api_key,
+            },
+            timeout=10,
+        )
+        self.products = settings.appwrite_products_table
+        self.counterparts = settings.appwrite_counterparts_table
+
+    async def _get(self, table: str, key: str) -> str | None:
+        r = await self.http.get(f"{table}/rows/{row_id(key)}")
+        if r.status_code == 404:
+            return None
+        r.raise_for_status()
+        return r.json()["payload"]
+
+    async def _put(self, table: str, key: str, data: dict) -> None:
+        r = await self.http.put(f"{table}/rows/{row_id(key)}", json={"data": data})
+        r.raise_for_status()
+
+    async def delete(self, table: str, key: str) -> None:
+        r = await self.http.delete(f"{table}/rows/{row_id(key)}")
+        if r.status_code != 404:
+            r.raise_for_status()
+
+    async def aclose(self) -> None:
+        await self.http.aclose()
+
+    async def get_product(self, key):
+        payload = await self._get(self.products, key)
+        return Product.model_validate_json(payload) if payload else None
+
+    async def save_product(self, product, embedding=None):
+        data = {
+            "barcode": product.barcode or "", "name": product.name, "brand": product.brand,
+            "source": product.source, "verified": product.verified,
+            "payload": product.model_dump_json(),
+        }
+        if embedding is not None:
+            data |= {"embedding": catalog.encode(embedding), "embed_text": product.embed_text[:512]}
+        await self._put(self.products, product.key, data)
+
+    async def embeddings(self):
+        """All stored product vectors, paged with a cursor."""
+        cursor = None
+        while True:
+            queries = [
+                {"method": "select", "values": ["$id", "embed_text", "embedding"]},
+                {"method": "isNotNull", "attribute": "embedding"},
+                {"method": "limit", "values": [100]},
+            ]
+            if cursor:
+                queries.append({"method": "cursorAfter", "values": [cursor]})
+            r = await self.http.get(f"{self.products}/rows",
+                                    params={"queries[]": [json.dumps(q) for q in queries]})
+            r.raise_for_status()
+            rows = r.json()["rows"]
+            for row in rows:
+                yield row["$id"], row.get("embed_text") or "", catalog.decode(row["embedding"])
+            if len(rows) < 100:
+                return
+            cursor = rows[-1]["$id"]
+
+    async def get_counterpart(self, barcode, region):
+        payload = await self._get(self.counterparts, f"{barcode}.{region}")
+        return Counterpart.model_validate_json(payload) if payload else None
+
+    async def save_counterpart(self, barcode, counterpart):
+        await self._put(self.counterparts, f"{barcode}.{counterpart.region}", {
+            "barcode": barcode, "region": counterpart.region, "source_url": counterpart.source_url,
+            "payload": counterpart.model_dump_json(),
+        })
+
+
+def make_store(settings: Settings) -> Store:
+    return AppwriteStore(settings) if settings.appwrite_project_id else MemoryStore()
