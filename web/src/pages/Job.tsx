@@ -113,13 +113,11 @@ export default function JobPage() {
   )
 }
 
-function shuffle<T>(items: T[]): T[] {
-  const out = [...items]
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[out[i], out[j]] = [out[j], out[i]]
-  }
-  return out
+/** A random index other than `current`, so the same tip never shows twice in a row. */
+function randomOther(length: number, current: number): number {
+  if (length < 2) return 0
+  const next = Math.floor(Math.random() * (length - 1))
+  return next >= current ? next + 1 : next
 }
 
 function domain(url: string) {
@@ -136,12 +134,18 @@ function Tips() {
   const [index, setIndex] = useState(0)
 
   useEffect(() => {
-    api.tips().then((t) => setTips(shuffle(t)), () => setTips([]))
+    api.tips().then(
+      (t) => {
+        setTips(t)
+        setIndex(Math.floor(Math.random() * t.length))
+      },
+      () => setTips([]),
+    )
   }, [])
 
   useEffect(() => {
     if (tips.length < 2) return
-    const timer = window.setInterval(() => setIndex((i) => (i + 1) % tips.length), TIP_MS)
+    const timer = window.setInterval(() => setIndex((i) => randomOther(tips.length, i)), TIP_MS)
     return () => window.clearInterval(timer)
   }, [tips.length])
 
@@ -154,7 +158,7 @@ function Tips() {
       <p className="text-xs font-medium tracking-wide text-accent-deep uppercase">Label tip</p>
       <button
         type="button"
-        onClick={() => setIndex((i) => (i + 1) % tips.length)}
+        onClick={() => setIndex((i) => randomOther(tips.length, i))}
         className="mt-2 block w-full text-left"
         aria-label="Next tip"
       >
@@ -163,10 +167,9 @@ function Tips() {
           <p className="mt-2 text-[15px] leading-relaxed text-muted">{tip.text}</p>
         </div>
       </button>
-      <div className="mt-3 flex items-center justify-between gap-3 text-xs text-faint">
-        <a href={tip.source_url} target="_blank" rel="noreferrer" className="truncate underline">Source: {domain(tip.source_url)}</a>
-        <span className="shrink-0">{index + 1} / {tips.length}</span>
-      </div>
+      <a href={tip.source_url} target="_blank" rel="noreferrer" className="mt-3 block truncate text-xs text-faint underline">
+        Source: {domain(tip.source_url)}
+      </a>
     </Card>
   )
 }
