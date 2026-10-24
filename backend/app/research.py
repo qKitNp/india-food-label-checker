@@ -63,6 +63,12 @@ PAGE ({url}):
 FACT_PROMPT = """Write one short sentence for a general reader about this food regulation,
 using ONLY what the quote supports. Mention the substance and {region}. Under 30 words.
 No hedging words like "reportedly", no advice, no exclamation marks.
+If the status is "restricted", the substance IS allowed: say it is allowed with limits, then
+give the limit (e.g. "allowed, but not in meat products" or "allowed up to 10 g per kg").
+Never use "banned", "prohibited" or "not allowed" for a restricted substance.
+A quote often covers just one food category (e.g. from an amending regulation), so don't say
+"only" or imply that category is the only use unless the quote says so explicitly; say
+"for example, ..." or "in X, ..." instead.
 
 Substance: {name} ({codes})
 Status in {region}: {status}{since}

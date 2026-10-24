@@ -170,3 +170,18 @@ def test_normalise_sub_numbers_without_brackets():
     # Real 4-digit codes and letter suffixes are kept.
     assert additive_codes.normalise("1400") == "E1400" and additive_codes.normalise("150d") == "E150d"
     assert additive_codes.normalise("472e") == "E472e"
+
+
+def test_summary_says_none_banned_and_counts_limits(monkeypatch):
+    table = [
+        {"id": "sodium-carbonates", "name": "Sodium carbonates", "codes": ["E500"], "synonyms": [], "category": "x",
+         "regions": {"EU": {"status": "restricted", "quote": "q", "source_url": "u"}}},
+        {"id": "citric-acid", "name": "Citric acid", "codes": ["E330"], "synonyms": [], "category": "x",
+         "regions": {"US": {"status": "allowed", "quote": "q", "source_url": "u"}}},
+    ]
+    monkeypatch.setattr(substances, "table", lambda: table)
+    v = verdict.build(product(additives=["E500", "E330"], ingredients_text="Wheat flour, salt",
+                              nutrition=Nutrition(energy_kcal=400)))
+    assert "None of its additives are banned in India, the EU or the US." in v.headline
+    assert "1 has limits on which foods it can be used in. See Additives below." in v.headline
+    assert not any("EU benchmarks" in h for h in v.headline)

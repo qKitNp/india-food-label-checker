@@ -25,7 +25,7 @@
     "reason": "The page permits titanium dioxide for coloring foods generally only up to 1 percent by weight and not for foods with standards of identity unless added color is authorized.",
     "quote": "The color additive titanium dioxide may be safely used for coloring foods generally, subject to the following restrictions: (1) The quantity of titanium dioxide does not exceed 1 percent by weight of the food. (2) It may not be used to color foods for which standards of identity have been promulgated under section 401 of the act unless added color is authorized by such standards.",
     "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-73/subpart-A/section-73.575",
-    "fact": "United States rules permit titanium dioxide for coloring foods generally up to 1 percent by weight, but not foods with standards of identity unless added color is authorized."
+    "fact": "In the United States, titanium dioxide is allowed for coloring foods up to 1 percent by weight, but not foods with standards of identity unless added color is authorized."
    },
    "IN": {
     "status": "unknown"
@@ -52,7 +52,7 @@
     "reason": "Potassium bromate is permitted in standardized breads, rolls, and buns only as an optional ingredient within a set maximum quantity relative to the flour used.",
     "quote": "(i) Potassium bromate, calcium bromate, potassium iodate, calcium iodate, calcium peroxide, or any combination of 2 or more of these if the total quantity, including the potassium bromate in any bromated flour used, is not more than 0.0075 part for each 100 parts by weight of flour used.",
     "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-136",
-    "fact": "United States rules cap potassium bromate at 0.0075 part per 100 parts by weight of flour used."
+    "fact": "In the United States, potassium bromate is allowed at a total quantity of no more than 0.0075 part per 100 parts by weight of flour used."
    },
    "IN": {
     "status": "banned",
@@ -121,7 +121,7 @@
     "reason": "The page permits azodicarbonamide only for specified uses in cereal flour and bread baking, within stated maximum amounts.",
     "quote": "The food additive azodicarbonamide may be safely used in food in accordance with the following prescribed conditions: (a) It is used or intended for use: (1) As an aging and bleaching ingredient in cereal flour in an amount not to exceed 2.05 grams per 100 pounds of flour (0.0045 percent; 45 parts per million). (2) As a dough conditioner in bread baking in a total amount not to exceed 0.0045 percent (45 parts per million) by weight of the flour used, including any quantity of azodicarbonamide added to flour in accordance with paragraph (a)(1) of this section.",
     "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-172/subpart-I/section-172.806",
-    "fact": "In the United States, azodicarbonamide is permitted only for specified uses in cereal flour and bread baking within stated maximum amounts."
+    "fact": "In the United States, azodicarbonamide is allowed for cereal flour and bread baking, up to 45 parts per million."
    },
    "IN": {
     "status": "unknown"
@@ -148,7 +148,7 @@
     "reason": "The page lists E 127 among the colours that may not be sold directly to the consumer.",
     "quote": "The colours E 123, E 127, E 160b, E 173 and E 180, may not be sold directly to the consumer.",
     "source_url": "https://eur-lex.europa.eu/eli/reg/2011/1129/oj/eng",
-    "fact": "In the European Union, Erythrosine (E127) may not be sold directly to consumers."
+    "fact": "Erythrosine (E127) is allowed in the European Union with limits, for example it may not be sold directly to consumers."
    },
    "US": {
     "status": "banned",
@@ -185,7 +185,7 @@
     "reason": "It may be safely used for coloring foods generally in amounts consistent with good manufacturing practice, except it may not be used to color foods with standards of identity unless added color is authorized by those standards.",
     "quote": "FD&C Yellow No. 5 may be safely used for coloring foods (including dietary supplements) generally in amounts consistent with good manufacturing practice, except that it may not be used to color foods for which standards of identity have been promulgated under section 401 of the act unless added color is authorized by such standards.",
     "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-74/subpart-A/section-74.705",
-    "fact": "In the United States, FD&C Yellow No. 5 may color foods in amounts consistent with good manufacturing practice, except foods with standards of identity unless authorized."
+    "fact": "Tartrazine (Yellow 5) is allowed in the United States for coloring foods generally, with an exception for foods having standards of identity unless color is authorized."
    },
    "IN": {
     "status": "allowed",
@@ -241,7 +241,7 @@
     "reason": "The page says Sunset yellow FCF (E 110) is authorised as a colour for use only in certain foodstuffs, and that its content of the impurity Sudan I must be restricted to below the limit of detection (0,5 mg/kg).",
     "quote": "Sunset yellow FCF (E 110) is authorised under Directive 94/36/EC as a colour for use in certain foodstuffs. There is scientific evidence that under certain circumstances, Sudan I (1-(phenylazo)-2-naphthalenol) may be formed as an impurity during the production of sunset yellow. Sudan I is an unauthorised colour and an undesired substance in food. Its presence in sunset yellow should therefore be restricted to an amount below the limit of detection, i.e. 0,5 mg/kg.",
     "source_url": "https://eur-lex.europa.eu/eli/dir/2006/33/oj/eng",
-    "fact": "In the European Union, Sunset yellow FCF (E110) is authorised only in certain foods, with its Sudan I impurity restricted below 0.5 mg/kg."
+    "fact": "In the European Union, Sunset Yellow FCF (E110) is allowed as a colour in certain foods, with Sudan I impurity limited to below 0.5 mg/kg."
    },
    "US": {
     "status": "restricted",
@@ -249,7 +249,7 @@
     "reason": "The page states it may be safely used for coloring foods generally in amounts consistent with current good manufacturing practice, except it may not be used to color foods with standards of identity unless added color is authorized by those standards.",
     "quote": "The color additive FD&C Yellow No. 6 may be safely used for coloring foods (including dietary supplements) generally in amounts consistent with current good manufacturing practice, except that it may not be used to color foods for which standards of identity have been promulgated under section 401 of the act unless added color is authorized by such standards.",
     "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-74/subpart-A/section-74.706",
-    "fact": "In the United States, FD&C Yellow No. 6 is generally allowed at good manufacturing practice levels but not in standardized foods unless authorized."
+    "fact": "In the United States, FD&C Yellow No. 6 is allowed for coloring foods at good manufacturing practice levels, except foods with identity standards unless those standards authorize added color."
    },
    "IN": {
     "status": "unknown"
@@ -280,7 +280,7 @@
     "reason": "The page lists Carmoisine as a synthetic colour for biscuits at 100 ppm max (singly or in combination) and for specified foods at 100 ppm maximum.",
     "quote": "| | 1 Ponceau 4R 2 Carmoisine 3 Erythrosine 4 Tartrazine 5 Sunset Yellow FCF 6 Indigo carmine 7 Brilliant blue FCF 8 Fast green FCF | - - - - - - - - | 100 ppm max (singly or in combination) |",
     "source_url": "https://fssai.gov.in/upload/uploadfiles/files/appendix_a_and_b_revised(30-12-2011).pdf",
-    "fact": "India limits Carmoisine, a synthetic food colour, to 100 ppm maximum in specified foods."
+    "fact": "Carmoisine is allowed in India up to 100 ppm, alone or combined with other listed colours, for example in biscuits."
    }
   }
  },
@@ -313,7 +313,7 @@
     "reason": "Ponceau 4R is listed for specified foods only, with a 100 ppm maximum singly or in combination.",
     "quote": "1 Ponceau 4R 2 Carmoisine 3 Erythrosine 4 Tartrazine 5 Sunset Yellow FCF 6 Indigo carmine 7 Brilliant blue FCF 8 Fast green FCF | - - - - - - - - | 100 ppm max (singly or in combination)",
     "source_url": "https://fssai.gov.in/upload/uploadfiles/files/appendix_a_and_b_revised(30-12-2011).pdf",
-    "fact": "In India, Ponceau 4R is listed with a 100 ppm maximum, singly or in combination."
+    "fact": "In India, Ponceau 4R is allowed up to 100 ppm singly or in combination."
    }
   }
  },
@@ -339,7 +339,7 @@
     "reason": "The page states it may be safely used for coloring foods generally in amounts consistent with good manufacturing practice, except it may not be used in foods with standards of identity unless added color is authorized.",
     "quote": "FD&C Red No. 40 may be safely used for coloring foods (including dietary supplements) generally in amounts consistent with good manufacturing practice except that it may not be used to color foods for which standards of identity have been promulgated under section 401 of the act unless added color is authorized by such standards.",
     "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-74/subpart-A/section-74.340",
-    "fact": "In the United States, Allura red AC (Red 40) may color foods generally but is barred from foods with standards of identity unless added color is authorized."
+    "fact": "In the United States, Allura red AC (Red 40) is allowed in foods at good manufacturing practice levels, except foods with standards of identity unless added color is authorized."
    },
    "IN": {
     "status": "unknown"
@@ -364,7 +364,7 @@
     "reason": "The page refers to maximum permitted levels of use for Amaranth in Americano and aperitif wine drinks.",
     "quote": "The Panel notes that anticipated exposure to these uses have been made with the maximum permitted levels of use for Americano although no usage value for this beverage was provided by industry, and with the maximum reported levels of use for aperitif wine drinks, which were reported by Industry to be at the same level as the maximum permitted level.",
     "source_url": "https://www.efsa.europa.eu/en/efsajournal/pub/1649",
-    "fact": "In the European Union, exposure to Amaranth (Red 2) (E123) was assessed using maximum permitted levels in Americano and maximum reported levels in aperitif wine drinks."
+    "fact": "Amaranth (Red 2) is allowed in the European Union with limits, such as maximum permitted levels for Americano and aperitif wine drinks."
    },
    "US": {
     "status": "unknown"
@@ -524,7 +524,7 @@
     "reason": "The page permits propylparaben in food only at levels not to exceed good manufacturing practices, with a maximum level of 0.1 percent in food.",
     "quote": "(d) The ingredient is used in food at levels not to exceed good manufacturing practices. Current good manufacturing practice results in a maximum level of 0.1 percent in food.",
     "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-184/subpart-B/section-184.1670",
-    "fact": "In the United States, propylparaben is permitted in food only up to 0.1 percent, the maximum level current good manufacturing practice produces."
+    "fact": "Propylparaben is allowed in United States food at levels not exceeding good manufacturing practices, with a maximum of 0.1 percent."
    },
    "IN": {
     "status": "unknown"
@@ -556,7 +556,7 @@
     "reason": "The page permits BHA for use in or on specified foods, subject to listed limitations in parts per million.",
     "quote": "The food additive BHA (butylated hydroxyanisole) alone or in combination with other antioxidants permitted in food for human consumption in this subpart B may be safely used in or on specified foods, as follows:",
     "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-172/subpart-B/section-172.110",
-    "fact": "In the United States, BHA (butylated hydroxyanisole) may be safely used in or on specified foods, as follows."
+    "fact": "BHA is allowed in the United States for specified foods, subject to listed limits."
    },
    "IN": {
     "status": "unknown"
@@ -581,7 +581,7 @@
     "reason": "The page lists E 321 only for use in emulsifiers containing fatty acids, with maximum levels in the preparation and final product.",
     "quote": "E 320 Butylated hydroxyanisole (BHA) 20 mg/kg singly or in combination (expressed on fat) in the preparation, 0,4 mg/kg in final product (singly or in combination) Emulsifiers containing fatty acids E 321 Butylated hydroxytoluene (BHT)",
     "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX%3A32011R1130",
-    "fact": "In the European Union, Butylated hydroxytoluene (BHT, E321) is listed for use in emulsifiers containing fatty acids."
+    "fact": "Butylated hydroxytoluene (BHT, E321) is allowed in the European Union with limits, for example in emulsifiers containing fatty acids."
    },
    "US": {
     "status": "restricted",
@@ -589,7 +589,7 @@
     "reason": "BHT is permitted as a food additive only in or on specified foods and only up to the listed limits for total BHA and BHT.",
     "quote": "The food additive BHT (butylated hydroxytoluene), alone or in combination with other antioxidants permitted in this subpart B may be safely used in or on specified foods, as follows:",
     "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-172/subpart-B/section-172.115",
-    "fact": "In the United States, BHT (butylated hydroxytoluene) may be safely used in or on specified foods, alone or with other permitted antioxidants."
+    "fact": "In the United States, BHT (E321) is allowed as a food additive only in or on specified foods and up to the listed limits for total BHA and BHT."
    },
    "IN": {
     "status": "unknown"
@@ -614,7 +614,7 @@
     "reason": "TBHQ (E 319) stays on the Union list of approved additives but, under this Regulation, is only permitted in specified food categories and at specified maximum levels (the Regulation deleted only octyl gallate E 311 and dodecyl gallate E 312).",
     "quote": "(b) in Part C, in Table 5: Other additives that may be regulated combined, point (k) ‘E 310-320: Gallates, TBHQ and BHA’ is replaced by the following: ‘(k) E-number Name E 310 Propyl gallate E 319 Tertiary-butyl hydroquinone (TBHQ) E 320 Butylated hydroxyanisole (BHA)’ | E 310–320: Propyl gallate, TBHQ and BHA | | --- | (c) Part E is amended as follows: 1. In category 01.5 (Dehydrated milk as defined by Directive 2001/114/EC), the entry concerning food additives E 310-320 (Gallates, TBHQ and BHA) is replaced by the following: ‘E 310-320 Propyl gallate, TBHQ and BHA 200 (1) only milk powder for vending machines’",
     "source_url": "https://eur-lex.europa.eu/eli/reg/2018/1481/oj",
-    "fact": "The European Union permits TBHQ (E319) only in specified food categories and at specified maximum levels under this regulation."
+    "fact": "TBHQ (E319) is allowed in the European Union with limits, for example at a maximum level of 200 in milk powder for vending machines."
    },
    "US": {
     "status": "allowed",
@@ -646,7 +646,7 @@
     "reason": "The Commission does not consider a complete ban justified but is examining how to ensure cyclamate intake does not exceed the new ADI, for example by amendments to authorised limits for its use.",
     "quote": "Therefore, the Commission does not consider a complete ban of cyclamate as justified. The Commission is however examining how to ensure that the intake of cyclamate does not exceed the new ADI, for example by amendments to authorised limits for its use and the authorisation of alternatives.",
     "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX%3A92002E000051",
-    "fact": "In the European Union, cyclamate is restricted; the Commission does not consider a complete ban justified and is examining how to keep intake within the new ADI."
+    "fact": "Cyclamate is allowed in the European Union within authorised limits, which the Commission is examining to keep intake below the new ADI."
    },
    "US": {
     "status": "banned",
@@ -683,7 +683,7 @@
     "reason": "The page lists E 954 (Saccharin and its Na, K and Ca salts) as authorised only in food category 14.2.3 (certain fermented beverages) at a maximum level of 80, and not in the named Polish quality ciders, perries, frozen ciders and frozen perries.",
     "quote": "E 954 Saccharin and its Na, K and Ca salts 80 (52) excluding cydr jakościowy, perry jakościowe, cydr lodowy, perry lodowe",
     "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ%3AL_202400374",
-    "fact": "The European Union permits saccharin (E954) at level 80 in certain foods but excludes Polish quality ciders, perries, frozen ciders and frozen perries."
+    "fact": "In the European Union, saccharin (E954) is allowed up to a maximum level of 80, excluding Polish quality ciders, perries, frozen ciders and frozen perries."
    },
    "US": {
     "status": "restricted",
@@ -691,7 +691,7 @@
     "reason": "The page states saccharin is currently approved for use under certain conditions in specified beverages, mixes, cooking or table use, and processed foods.",
     "quote": "The FDA has regulated saccharin as a food additive since 1977. First discovered and used in 1879, saccharin is currently approved for use, under certain conditions, in beverages, fruit juice drinks, and bases or mixes when prepared for consumption per directions, as a sugar substitute for cooking or table use, and in processed foods. Saccharin is also listed for use for certain technological purposes.",
     "source_url": "https://www.fda.gov/food/food-additives-petitions/aspartame-and-other-sweeteners-food",
-    "fact": "The United States regulates saccharin as a food additive approved for use under certain conditions in specified foods and drinks."
+    "fact": "In the United States, saccharin is allowed with limits, such as under certain conditions in beverages, mixes, cooking or table use, and processed foods."
    },
    "IN": {
     "status": "unknown"
@@ -722,7 +722,7 @@
     "reason": "The page says people with PKU should avoid or restrict aspartame and product labels must include a statement that the product contains phenylalanine.",
     "quote": "Consumers can identify whether a product has aspartame by looking for it by name in the ingredient list on the product label, which must include a statement to inform people with PKU that the product contains phenylalanine.",
     "source_url": "https://www.fda.gov/food/food-additives-petitions/aspartame-and-other-sweeteners-food",
-    "fact": "In the United States, product labels must tell people with PKU that a product contains phenylalanine when it contains aspartame."
+    "fact": "In the United States, aspartame is allowed, but labels must state the product contains phenylalanine to inform people with PKU."
    },
    "IN": {
     "status": "restricted",
@@ -730,7 +730,7 @@
     "reason": "FSSAI has laid down standards and limits for use of non-caloric sweeteners in various food products based on risk assessment and Acceptable Daily Intake (ADI).",
     "quote": "Food Safety and Standards Authority of India (FSSAI) has already laid down the standards for various artificial sweeteners in the Food Safety and Standards (Food Products Standards and Food Additives) Regulation, 2011. These standards for non-caloric sweeteners and limits for use of such non-caloric sweeteners in various food products have been laid down on the basis of risk assessment and Acceptable Daily Intake (ADI) established by Joint FAO/WHO Expert Committee on Food Additives (JECFA) and the limits are in harmonization with Codex Alimentarius Commission.",
     "source_url": "https://pib.gov.in/PressReleaseIframePage.aspx?PRID=1946711",
-    "fact": "India's FSSAI restricts aspartame by setting food-product standards and limits for non-caloric sweeteners based on risk assessment and Acceptable Daily Intake."
+    "fact": "In India, aspartame is allowed in various food products with limits set by FSSAI based on risk assessment and acceptable daily intake."
    }
   }
  },
@@ -759,7 +759,7 @@
     "reason": "The page permits acesulfame potassium as a general-purpose sweetener and flavor enhancer in foods generally, but not in meat and poultry, and only up to the amount reasonably required under good manufacturing practice.",
     "quote": "Acesulfame potassium (CAS Reg. No. 55589-62-3), also known as acesulfame K, may be safely used as a general-purpose sweetener and flavor enhancer in foods generally, except in meat and poultry, in accordance with current good manufacturing practice and in an amount not to exceed that reasonably required to accomplish the intended technical effect in foods for which standards of identity established under section 401 of the Federal Food, Drug, and Cosmetic Act do not preclude such use, under the following conditions:",
     "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-172/subpart-I/section-172.800",
-    "fact": "In the United States, acesulfame K is permitted as a general-purpose sweetener and flavor enhancer in foods generally, except meat and poultry."
+    "fact": "In the United States, acesulfame K is allowed as a general-purpose sweetener and flavor enhancer in foods generally, except meat and poultry, up to good manufacturing practice limits."
    },
    "IN": {
     "status": "unknown"
@@ -783,7 +783,7 @@
     "reason": "The page states E 955 is authorised for use in a range of reduced-sugar and sugar-free foods and beverages, while EFSA could not confirm the safety of additional uses.",
     "quote": "E 955 is a sweetener, around 600 times sweeter than sugar, that is authorised for use in a range of reduced-sugar and sugar-free foods and beverages.",
     "source_url": "https://www.efsa.europa.eu/en/news/efsa-finds-sucralose-safe-when-used-currently-authorised-cannot-confirm-safety-extending-its",
-    "fact": "Sucralose (E955), about 600 times sweeter than sugar, is authorized in the European Union for certain reduced-sugar and sugar-free foods and beverages."
+    "fact": "In the European Union, sucralose (E955) is allowed with limits, authorised for reduced-sugar and sugar-free foods and beverages."
    },
    "US": {
     "status": "allowed",
@@ -818,7 +818,7 @@
     "reason": "Monosodium glutamate (E 621) is authorised for use in foodstuffs in general with a maximum level of 10 gram per kilogram (g/kg).",
     "quote": "Monosodium glutamate (E 621) is authorised according to the Community legislation for use in foodstuffs in general with a maximum level of 10 gram per kilogram (g/kg); disodium and dipotassium inosinate (E 631 and E 632) are authorised for use in seasonings and condiments according to good manufacturing practice.",
     "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX%3A92001E000119",
-    "fact": "The European Union authorises monosodium glutamate (E621) in foodstuffs generally, with a maximum level of 10 grams per kilogram."
+    "fact": "In the European Union, monosodium glutamate (E621) is allowed in foodstuffs generally up to 10 grams per kilogram."
    },
    "US": {
     "status": "allowed",
@@ -833,7 +833,7 @@
     "reason": "The page states MSG may be added to specified foods as per Appendix A, subject to GMP level and proper declaration.",
     "quote": "Under Regulation 3.1.11 of the Food Safety and Standards (Food Product Standards and Food Additives), Regulations, 2011, Monosodium Glutamate (MSG), a flavour enhancer bearing INS number 621, may be added to specified foods as per the provisions of Appendix A, subject to Good Manufacturing Practice (GMP) level and under proper declaration as provided in 2.4.5 (18) of the Food Safety and Standards (Packaging and Labelling) Regulations, 2011.",
     "source_url": "https://fssai.gov.in/upload/advisories/2018/02/5a968c7d2a5ee138.pdf",
-    "fact": "In India, MSG (E621) may be added to specified foods under Good Manufacturing Practice levels and with proper declaration."
+    "fact": "In India, monosodium glutamate (MSG, E621) is allowed with limits in specified foods at Good Manufacturing Practice levels and with proper declaration."
    }
   }
  },
@@ -857,7 +857,7 @@
     "reason": "The page permits its use in food only at levels not to exceed good manufacturing practice, with current usage resulting in a maximum level of 0.1 percent.",
     "quote": "The ingredient is used in food at levels not to exceed good manufacturing practice. Current usage results in a maximum level of 0.1 percent in food.",
     "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-184/subpart-B/section-184.1733",
-    "fact": "In the United States, sodium benzoate is allowed in food only up to good manufacturing practice, with current use at a maximum of 0.1 percent."
+    "fact": "In the United States, sodium benzoate is allowed in food with limits, currently up to a maximum of 0.1 percent."
    },
    "IN": {
     "status": "unknown"
@@ -884,7 +884,7 @@
     "reason": "The page states that sodium nitrite may be safely used only in or on specified foods under prescribed conditions and concentration limits.",
     "quote": "The food additive sodium nitrite may be safely used in or on specified foods in accordance with the following prescribed conditions: (a) It is used or intended for use as follows: (1) As a color fixative in smoked cured tunafish products so that the level of sodium nitrite does not exceed 10 parts per million (0.001 percent) in the finished product.",
     "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-172/subpart-B/section-172.175",
-    "fact": "In the United States, sodium nitrite is allowed in specified foods only under prescribed conditions and concentration limits."
+    "fact": "In the United States, sodium nitrite is allowed as a color fixative in smoked cured tunafish products at up to 10 parts per million in the finished product."
    },
    "IN": {
     "status": "unknown"
@@ -918,7 +918,7 @@
     "reason": "The page lists Carrageenan (INS 407) as a food additive permitted in infant formula only at a maximum level of 0.03 gm in regular milk and soy based liquid infant formula.",
     "quote": "Carrageenan Emulsifiers Lecithin Mono- and diglycerides Citric and fatty acid esters of glycerol Acidity Regulators Sodium hydroxide | 1440 407 322 471 472c 524 | acid based infant formula only 0.03 gm (in regular milk and soy based liquid infant formula only)",
     "source_url": "https://fssai.gov.in/docs/food-law/regulations/Comp_IFR_VERSION-II_04_01_2024.pdf",
-    "fact": "India restricts carrageenan (E407) in infant formula to a maximum of 0.03 gm in regular milk and soy-based liquid formula."
+    "fact": "In India, carrageenan is allowed in regular milk and soy-based liquid infant formula up to 0.03 gm."
    }
   }
  },
@@ -962,7 +962,7 @@
     "reason": "The page replaces the entry for E 338-452 in food category 08.2 so that its use is limited to breakfast sausages and the listed meat preparations.",
     "quote": "In Part E of Annex II to Regulation (EC) No 1333/2008, in food category 08.2 ‘Meat preparations as defined by Regulation (EC) No 853/2004’, the entry for phosphoric acid – phosphates – di – tri – and polyphosphates (E 338-452) is replaced by the following: E 338-452 Phosphoric acid — phosphates — di — tri — and polyphosphates (1) (4) only breakfast sausages: in this product, the meat is minced in such a way so that the muscle and fat tissue are completely dispersed, so that fibre makes an emulsion with the fat, giving the product its typical appearance; Finnish grey salted Christmas ham, burger meat with a minimum vegetable and/or cereal content of 4 % mixed within the meat, Kasseler, Bräte, Surfleisch, toorvorst, šašlõkk, ahjupraad, Bílá klobása, Vinná klobása, Sváteční klobása and Syrová klobása",
     "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=PI_COM%3AC%282017%293223",
-    "fact": "In the European Union, phosphoric acid (E338) is restricted in meat preparations to breakfast sausages and certain listed products."
+    "fact": "In the European Union, phosphoric acid (E338) is allowed with limits in meat preparations, for example breakfast sausages and listed products."
    },
    "US": {
     "status": "allowed",
@@ -977,7 +977,7 @@
     "reason": "The page lists phosphoric acid (INS 338) as a processing aid only for sugar, with residual level GMP.",
     "quote": "15. | Phosphoric acid (INS 338) | Sugar | GMP]",
     "source_url": "https://fssai.gov.in/upload/uploadfiles/files/Appendix%20C(1).pdf",
-    "fact": "India lists phosphoric acid (INS 338) as a processing aid for sugar only, with residual level GMP."
+    "fact": "In India, phosphoric acid (E338) is allowed as a processing aid in sugar at good manufacturing practice levels."
    }
   }
  },
@@ -999,7 +999,7 @@
     "reason": "The page lists trans fat other than trans fat naturally occurring in fat of animal origin as a restricted substance with a maximum of 2 grams per 100 grams of fat in food intended for the final consumer and food intended for supply to retail.",
     "quote": "The content of trans fat, other than trans fat naturally occurring in fat of animal origin, in food intended for the final consumer and food intended for supply to retail, shall not exceed 2 grams per 100 grams of fat.",
     "source_url": "https://eur-lex.europa.eu/eli/reg/2019/649/oj",
-    "fact": "In the European Union, trans fat other than naturally occurring animal fat in food for consumers and retail must not exceed 2 grams per 100 grams of fat."
+    "fact": "In the European Union, trans fats other than naturally occurring animal fat are allowed in final-consumer and retail foods up to 2 grams per 100 grams of fat."
    },
    "US": {
     "status": "banned",
@@ -1015,7 +1015,7 @@
     "reason": "The page requires foods using hydrogenated vegetable fats or bakery shortening to declare on the label that they contain trans fats.",
     "quote": "The food, in which hydrogenated vegetable fats or bakery shortening is used shall declare on the label that ‘hydrogenated vegetable fats or bakery shortening used- contains trans fats;",
     "source_url": "https://www.fssai.gov.in/upload/uploadfiles/files/FSSAI-regulations.pdf",
-    "fact": "India requires foods made with hydrogenated vegetable fats or bakery shortening to label that they contain trans fats."
+    "fact": "In India, trans fats are allowed with limits: foods using hydrogenated vegetable fats or bakery shortening must label that they contain trans fats."
    }
   }
  },

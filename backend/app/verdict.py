@@ -34,8 +34,14 @@ def build(product: Product, counterpart: Counterpart | None = None) -> Verdict:
             if counterpart.only_in_counterpart:
                 parts.append(f"the {counterpart.country} pack has {', '.join(counterpart.only_in_counterpart)}")
             headline.append(f"Compared with the {counterpart.country} version: {'; '.join(parts)}.")
+        if additive_findings and not any(a.flagged for a in additive_findings):
+            headline.append("None of its additives are banned in India, the EU or the US.")
+            limited = sum(1 for a in additive_findings if any(s.status == "restricted" for s in a.status.values()))
+            if limited:
+                headline.append(f"{limited} {'has' if limited == 1 else 'have'} limits on which foods "
+                                f"{'it' if limited == 1 else 'they'} can be used in. See Additives below.")
         if not headline:
-            headline.append("Nothing flagged against EU benchmarks.")
+            headline.append("Nothing to flag from the additives and claims we check.")
         if product.source == "web" and product.evidence:
             site = urlparse(product.evidence.source_url).netloc.removeprefix("www.")
             headline.append(f"Ingredients are from {site}, not read from your pack.")

@@ -168,7 +168,7 @@ const FLAGS: Record<Region, string> = { IN: '🇮🇳', EU: '🇪🇺', US: '�
 
 const STATUS: Record<RegionStatus['status'], { mark: string; tone: 'bad' | 'warn' | 'good' | 'neutral'; word: string }> = {
   banned: { mark: '✕', tone: 'bad', word: 'Banned' },
-  restricted: { mark: '!', tone: 'warn', word: 'Restricted' },
+  restricted: { mark: '!', tone: 'warn', word: 'Limits apply' },
   allowed: { mark: '✓', tone: 'good', word: 'Allowed' },
   unknown: { mark: '?', tone: 'neutral', word: 'Not confirmed' },
 }
@@ -209,7 +209,10 @@ function Additives({ additives, others }: { additives: AdditiveFinding[]; others
                         {FLAGS[r]} {REGION_NAMES[r]}: {STATUS[s.status].word}
                         {s.since ? ` since ${s.since}` : ''}
                       </p>
-                      {(s.fact || s.reason) && <p className="mt-0.5 text-muted">{s.fact || s.reason}</p>}
+                      {s.status === 'restricted' && (
+                        <p className="mt-0.5 text-xs text-faint">Allowed, but only in some foods or amounts. This is not a ban.</p>
+                      )}
+                      {(s.fact || s.reason) && <p className="mt-1 text-muted">{s.fact || s.reason}</p>}
                       {s.quote && <p className="mt-1 text-xs text-faint italic">“{s.quote.length > 220 ? s.quote.slice(0, 220) + '…' : s.quote}”</p>}
                       {a.origin === 'auto' && s.source_url && (
                         <p className="mt-1 text-[11px] text-faint">Looked up automatically{a.researched_at ? ` on ${new Date(a.researched_at).toLocaleDateString()}` : ''}</p>
