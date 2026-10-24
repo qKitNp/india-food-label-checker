@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     appwrite_scan_logs_table: str = "scan_logs"
     appwrite_substances_table: str = "substances"
     appwrite_submissions_table: str = "submissions"
-    appwrite_submissions_bucket: str = "submission-images"
+    appwrite_submissions_bucket: str = "pack-images"  # free plan: one bucket for all photos
     research_daily_cap: int = 100  # codes researched automatically per day
 
     off_user_agent: str = "better-fssai/0.1 (hackathon project)"
