@@ -1,11 +1,11 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
-export function Page({ children }: { children: ReactNode }) {
+export function Page({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
   return (
     <div className="min-h-dvh pb-16">
       <Nav />
-      <main className="mx-auto w-full max-w-xl px-4 pt-6">{children}</main>
+      <main className={`mx-auto w-full px-4 pt-6 ${wide ? 'max-w-5xl' : 'max-w-xl'}`}>{children}</main>
     </div>
   )
 }

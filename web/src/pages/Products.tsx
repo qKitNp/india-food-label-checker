@@ -34,7 +34,7 @@ export default function ProductsPage() {
   const setFilter = (help: boolean) => setParams(help ? { filter: 'help' } : {}, { replace: true })
 
   return (
-    <Page>
+    <Page wide>
       <div className="rise text-center">
         <span className="eyebrow">Catalog</span>
         <h1 className="mt-3 font-serif text-[1.75rem] font-medium tracking-tight">Products we know</h1>
@@ -44,7 +44,7 @@ export default function ProductsPage() {
         </p>
       </div>
 
-      <div className="rise mt-6 space-y-3">
+      <div className="rise mx-auto mt-6 max-w-xl space-y-3">
         <label htmlFor="search" className="sr-only">Search products</label>
         <input
           id="search"
@@ -72,26 +72,27 @@ export default function ProductsPage() {
         </p>
       )}
 
-      <ul className="mt-5 space-y-3">
+      <ul className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
         {shown.map((p) => {
           const status = STATUS[p.status]
           return (
-            <li key={p.key}>
+            <li key={p.key} className="rise">
               <Link
                 to={`/p/${encodeURIComponent(p.key)}`}
-                className={`rise flex items-center gap-3 rounded-3xl border bg-white p-3 shadow-card hover:bg-wash ${p.needs_help ? 'border-accent/40' : 'border-line'}`}
+                className={`flex h-full flex-col overflow-hidden rounded-3xl border bg-white shadow-card transition-transform hover:-translate-y-0.5 ${p.needs_help ? 'border-accent/50 ring-2 ring-accent/20' : 'border-line'}`}
               >
-                <Cover seed={shortBrand(p.brand) || productTitle(p)} label={shortBrand(p.brand) || 'Product'} className="h-16 w-12 shrink-0" />
-                <div className="min-w-0 flex-1">
-                  {p.brand && <p className="truncate text-xs text-faint">{shortBrand(p.brand)}</p>}
+                <Cover
+                  seed={shortBrand(p.brand) || productTitle(p)}
+                  label={shortBrand(p.brand) || 'Product'}
+                  className="aspect-[4/3] rounded-none"
+                />
+                <div className="flex flex-1 flex-col gap-2 p-3">
                   <p className="line-clamp-2 text-[15px] leading-snug font-medium">{productTitle(p)}</p>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                  <div className="mt-auto space-y-1">
                     <Chip tone={status.tone}>{status.label}</Chip>
-                    {p.barcode && <span className="text-xs text-faint">{p.barcode}</span>}
+                    {status.hint && <p className="text-xs leading-snug text-muted">{status.hint}</p>}
                   </div>
-                  {status.hint && <p className="mt-1 text-xs text-muted">{status.hint}</p>}
                 </div>
-                <span aria-hidden="true" className="text-faint">›</span>
               </Link>
             </li>
           )
