@@ -1,6 +1,9 @@
+import asyncio
+import datetime as dt
 import logging
+import uuid
 from contextlib import asynccontextmanager
-from typing import Annotated
+from typing import Annotated, Literal
 
 import httpx
 from exa_py import Exa
@@ -9,13 +12,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, model_validator
 
-from app import additive_codes, agent, llm, verdict
+from app import additive_codes, agent, barcodes, llm, verdict
 from app.catalog import Embedder
 from app.config import get_settings
 from app.research import ResearchQueue
 from app.rules import substances, tips
 from app.jobs import IdentifyResponse, Job, JobStore
-from app.models import Product, Region, Verdict
+from app.models import Product, Region, Submission, Verdict
 from app.services import ProductService
 from app.sources import counterpart, label
 from app.store import make_store
@@ -209,6 +212,67 @@ async def confirm_product(product: Product, request: Request, svc: ProductsDep) 
     product = product.model_copy(update={"verified": True, "source": "label", "additives": additives})
     await svc.save(product)
     return with_research(request, verdict.build(product, await svc.store.get_counterpart(product.key, "EU")))
+
+
+class SubmissionResult(BaseModel):
+    submission: Submission
+    verdict: Verdict | None = None  # the updated report, when a contribution was applied
+
+
+@app.post("/products/{key}/submissions", status_code=201)
+async def submit(
+    key: str, request: Request, svc: ProductsDep,
+    images: Annotated[list[UploadFile], File(description="Photos of the pack: ingredients, and the barcode in one")],
+    kind: Annotated[Literal["contribute", "challenge"], Form()],
+    note: Annotated[str | None, Form(max_length=1000)] = None,
+) -> SubmissionResult:
+    """A shopper adds a missing ingredient list ("contribute", applied at once) or disputes ours
+    ("challenge", kept for review). The barcode must be readable in one of the photos and
+    match the product, so photos of a different product are turned away."""
+    product = await svc.store.get_product(key)
+    if product is None:
+        raise HTTPException(404, "Product not found")
+    if kind == "contribute" and product.ingredients_text:
+        raise HTTPException(409, "This product already has an ingredient list. You can challenge it instead.")
+    files = await read_images(images)
+
+    found = [code for data, _ in files for code in await asyncio.to_thread(barcodes.read, data)]
+    if not found:
+        raise HTTPException(422, "We couldn't find a barcode in your photos. Include the barcode, in focus, in one of them.")
+    if product.barcode and not barcodes.matches(found, product.barcode):
+        raise HTTPException(422, f"The barcode in your photo ({found[0]}) doesn't match this product ({product.barcode}).")
+    barcode = product.barcode or found[0]
+
+    read = await label.extract(request.app.state.settings, files, barcode)
+    proposed = read.product
+    if not proposed.ingredients_text:
+        raise HTTPException(422, "We couldn't read an ingredient list in your photos. Try a sharper, closer photo.")
+
+    current = set(verdict.build(product).product.additives)
+    image_ids = [await svc.store.save_submission_image(llm.shrink(data)) for data, _ in files]
+    submission = Submission(
+        id=uuid.uuid4().hex, product_key=product.key, kind=kind,
+        status="applied" if kind == "contribute" else "pending_review",
+        barcode=barcode, note=note, current_ingredients=product.ingredients_text, proposed=proposed,
+        added_codes=[c for c in proposed.additives if c not in current],
+        removed_codes=[c for c in current if c not in proposed.additives],
+        image_file_ids=image_ids, created_at=dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
+    )
+    await svc.store.save_submission(submission)
+
+    if kind == "challenge":
+        return SubmissionResult(submission=submission)
+    # Contribution: the product had no ingredient list, so use the one read from the photo.
+    nutrition = product.nutrition.model_copy(
+        update={k: v for k, v in proposed.nutrition.model_dump().items() if v is not None})
+    updated = product.model_copy(update={
+        "ingredients_text": proposed.ingredients_text, "additives": proposed.additives, "nutrition": nutrition,
+        "claims": proposed.claims or product.claims, "source": "label", "verified": False, "evidence": None,
+        "is_liquid": proposed.is_liquid if proposed.is_liquid is not None else product.is_liquid,
+    })
+    updated = await svc.save(updated)
+    v = with_research(request, verdict.build(updated, await svc.store.get_counterpart(updated.key, "EU")))
+    return SubmissionResult(submission=submission, verdict=v)
 
 
 @app.get("/products/{key}/counterpart")

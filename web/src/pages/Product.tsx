@@ -111,13 +111,30 @@ function VerdictView({ verdict, onUpdate }: { verdict: Verdict; onUpdate: (v: Ve
       <Ingredients verdict={verdict} />
       <Compare verdict={verdict} onUpdate={onUpdate} />
 
-      {!p.verified && !unreliable && (
-        <div className="rise mt-6 text-center">
-          <p className="text-sm text-muted">Have the pack? Its label is the most reliable source.</p>
-          <Link to={labelLink} className={buttonClass('secondary', 'mt-3')}>Check the back label</Link>
-        </div>
-      )}
+      <Contribute product={p} />
     </Page>
+  )
+}
+
+/** End of the report: ask for the ingredient list if we don't have one, or for a challenge if we do. */
+function Contribute({ product }: { product: Verdict['product'] }) {
+  const link = (kind: 'contribute' | 'challenge') => `/submit?${new URLSearchParams({ key: product.key, kind })}`
+  if (!product.ingredients_text) {
+    return (
+      <Card className="rise mt-6 border-accent/30 bg-accent-wash/40 text-center">
+        <p className="font-serif text-lg font-medium">Help complete this product</p>
+        <p className="mx-auto mt-1 max-w-sm text-sm leading-relaxed text-muted">
+          We don't have its ingredient list yet. If you have the pack, a photo of the back adds it for everyone.
+        </p>
+        <Link to={link('contribute')} className={buttonClass('primary', 'mt-4')}>Add the ingredient list</Link>
+      </Card>
+    )
+  }
+  return (
+    <div className="rise mt-6 text-center">
+      <p className="text-sm text-muted">Does your pack say something different?</p>
+      <Link to={link('challenge')} className={buttonClass('secondary', 'mt-3')}>Challenge the ingredient list</Link>
+    </div>
   )
 }
 
@@ -126,6 +143,7 @@ function SourceChip({ verdict }: { verdict: Verdict }) {
   if (p.verified) return <Chip tone="good">✓ Checked against the label</Chip>
   if (p.source === 'web' && p.evidence) return <Chip tone="accent">From {domain(p.evidence.source_url)}</Chip>
   if (p.source === 'off') return <Chip>Open Food Facts</Chip>
+  if (p.source === 'label') return <Chip tone="accent">Read from a shopper's photo</Chip>
   return <Chip>{p.source}</Chip>
 }
 

@@ -164,6 +164,20 @@ export interface LabelResult {
   legible: boolean
 }
 
+/** A shopper's photo of a pack: adds a missing ingredient list or challenges ours. */
+export interface Submission {
+  id: string
+  product_key: string
+  kind: 'contribute' | 'challenge'
+  status: 'applied' | 'pending_review' | 'accepted' | 'rejected'
+  barcode: string
+  note: string | null
+  current_ingredients: string | null
+  proposed: Product | null
+  added_codes: string[]
+  removed_codes: string[]
+}
+
 export class ApiError extends Error {
   status: number
   constructor(status: number, message: string) {
@@ -208,6 +222,11 @@ export const api = {
   tips: () => request<Tip[]>('/tips'),
   extractLabel: (photos: Blob[], barcode?: string) =>
     request<LabelResult>('/labels/extract', { method: 'POST', body: form(photos, barcode ? { barcode } : {}) }),
+  submit: (key: string, kind: 'contribute' | 'challenge', photos: Blob[], note?: string) =>
+    request<{ submission: Submission; verdict: Verdict | null }>(`/products/${encodeURIComponent(key)}/submissions`, {
+      method: 'POST',
+      body: form(photos, { kind, ...(note ? { note } : {}) }),
+    }),
   confirm: (product: Product) =>
     request<Verdict>('/products/confirm', {
       method: 'POST',

@@ -4,6 +4,7 @@ import JobPage from './pages/Job'
 import LabelPage from './pages/Label'
 import ProductPage from './pages/Product'
 import Scan from './pages/Scan'
+import SubmitPage from './pages/Submit'
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
         <Route path="/job/:id" element={<JobPage />} />
         <Route path="/p/:key" element={<ProductPage />} />
         <Route path="/label" element={<LabelPage />} />
+        <Route path="/submit" element={<SubmitPage />} />
         <Route path="*" element={<Home />} />
       </Routes>
     </BrowserRouter>

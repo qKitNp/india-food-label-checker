@@ -1,21 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, ApiError } from '../api'
+import { getDetector } from '../barcode'
 import { toJpeg, UnreadablePhoto } from '../images'
 import { Button, ErrorNote, Page, Spinner } from '../ui'
 import { CameraIcon } from './Home'
-
-const FORMATS = ['ean_13', 'ean_8', 'upc_a', 'upc_e']
-
-type Detector = { detect(source: HTMLVideoElement): Promise<{ rawValue: string }[]> }
-
-async function makeDetector(): Promise<Detector> {
-  const native = (globalThis as { BarcodeDetector?: new (o: { formats: string[] }) => Detector }).BarcodeDetector
-  if (native) return new native({ formats: FORMATS })
-  // iOS Safari and Firefox have no BarcodeDetector: use the ZXing WebAssembly ponyfill.
-  const { BarcodeDetector } = await import('barcode-detector/ponyfill')
-  return new BarcodeDetector({ formats: FORMATS as never })
-}
 
 export default function Scan() {
   const navigate = useNavigate()
@@ -45,7 +34,7 @@ export default function Scan() {
       await video.current.play().catch(() => {})
       setReady(true)
 
-      const detector = await makeDetector().catch(() => null)
+      const detector = await getDetector().catch(() => null)
       if (!detector) return
       let last = ''
       const tick = async () => {

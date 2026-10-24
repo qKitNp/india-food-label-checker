@@ -147,3 +147,21 @@ class Verdict(BaseModel):
     other_additives: list[OtherAdditive] = Field(default_factory=list)
     ingredients: list[Ingredient] = Field(default_factory=list)
     limits: list[LimitCheck] = Field(default_factory=list)
+
+
+class Submission(BaseModel):
+    """A shopper's photo of a pack: adds an ingredient list (contribute) or disputes ours
+    (challenge). The barcode is read from the photo, not typed in."""
+
+    id: str
+    product_key: str
+    kind: Literal["contribute", "challenge"]
+    status: Literal["applied", "pending_review", "accepted", "rejected"]
+    barcode: str  # read from the photo
+    note: str | None = None
+    current_ingredients: str | None = None
+    proposed: Product | None = None  # what we read from the photo
+    added_codes: list[str] = Field(default_factory=list)
+    removed_codes: list[str] = Field(default_factory=list)
+    image_file_ids: list[str] = Field(default_factory=list)
+    created_at: str

@@ -16,7 +16,7 @@ import numpy as np
 
 from app import catalog
 from app.config import Settings
-from app.models import Counterpart, Product, Region
+from app.models import Counterpart, Product, Region, Submission
 
 
 def row_id(key: str) -> str:
@@ -48,6 +48,8 @@ class Store(Protocol):
     async def save_scan_log(self, record: dict) -> None: ...
     async def list_substances(self) -> list[dict]: ...
     async def save_substance(self, sub: dict) -> None: ...
+    async def save_submission(self, submission: "Submission") -> None: ...
+    async def save_submission_image(self, data: bytes) -> str: ...
 
 
 class MemoryStore:
@@ -58,6 +60,8 @@ class MemoryStore:
         self.counterparts: dict[str, Counterpart] = {}
         self.scan_logs: list[dict] = []
         self.substances: dict[str, dict] = {}
+        self.submissions: dict[str, "Submission"] = {}
+        self.submission_images: dict[str, bytes] = {}
 
     async def get_product(self, key):
         return self.products.get(key)
@@ -92,6 +96,14 @@ class MemoryStore:
     async def save_substance(self, sub):
         self.substances[sub["id"]] = sub
 
+    async def save_submission(self, submission):
+        self.submissions[submission.id] = submission
+
+    async def save_submission_image(self, data):
+        file_id = uuid.uuid4().hex
+        self.submission_images[file_id] = data
+        return file_id
+
 
 class AppwriteStore:
     def __init__(self, settings: Settings) -> None:
@@ -107,6 +119,10 @@ class AppwriteStore:
         self.counterparts = settings.appwrite_counterparts_table
         self.scan_logs = settings.appwrite_scan_logs_table
         self.substances = settings.appwrite_substances_table
+        self.submissions = settings.appwrite_submissions_table
+        self.submission_storage = httpx.AsyncClient(
+            base_url=f"{endpoint}/storage/buckets/{settings.appwrite_submissions_bucket}/", headers=headers, timeout=30,
+        )
 
     async def _get(self, table: str, key: str) -> str | None:
         r = await self.http.get(f"{table}/rows/{row_id(key)}")
@@ -127,6 +143,7 @@ class AppwriteStore:
     async def aclose(self) -> None:
         await self.http.aclose()
         await self.storage.aclose()
+        await self.submission_storage.aclose()
 
     async def get_product(self, key):
         payload = await self._get(self.products, key)
@@ -218,6 +235,20 @@ class AppwriteStore:
             "name": sub["name"], "codes": ",".join(sub["codes"]), "origin": sub.get("origin", "seed"),
             "payload": json.dumps(sub, ensure_ascii=False),
         })
+
+    async def save_submission(self, submission):
+        await self._put(self.submissions, submission.id, {
+            "product_key": submission.product_key, "kind": submission.kind, "status": submission.status,
+            "barcode": submission.barcode, "note": submission.note,
+            "payload": submission.model_dump_json(),
+        })
+
+    async def save_submission_image(self, data):
+        file_id = uuid.uuid4().hex[:36]
+        r = await self.submission_storage.post("files", data={"fileId": file_id},
+                                               files={"file": (f"{file_id}.jpg", data, "image/jpeg")})
+        r.raise_for_status()
+        return file_id
 
 def make_store(settings: Settings) -> Store:
     return AppwriteStore(settings) if settings.appwrite_project_id else MemoryStore()
