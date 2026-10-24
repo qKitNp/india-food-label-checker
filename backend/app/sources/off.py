@@ -43,6 +43,7 @@ def parse(p: dict) -> Product:
             added_sugars_g=_num(n, "added-sugars"),
             fat_g=_num(n, "fat"),
             saturated_fat_g=_num(n, "saturated-fat"),
+            trans_fat_g=_num(n, "trans-fat"),
             protein_g=_num(n, "proteins"),
             sodium_mg=None if sodium_g is None else round(sodium_g * 1000, 1),
         ),

@@ -2,7 +2,7 @@ from urllib.parse import urlparse
 
 from app import additive_codes, ingredients, research, sanity
 from app.models import Counterpart, OtherAdditive, Product, Verdict
-from app.rules import claims, substances
+from app.rules import claims, limits, substances
 
 UNRELIABLE = "This product's online data looks unreliable. Scan the back label to check it."
 
@@ -19,13 +19,14 @@ def build(product: Product, counterpart: Counterpart | None = None) -> Verdict:
     contradictions = sanity.check(product)
     claim_findings = claims.evaluate(product)
     additive_findings = substances.evaluate(product)
+    limit_checks = limits.evaluate(product)
 
     headline: list[str] = []
     if contradictions and not product.verified:
         # Suspect data: don't accuse the product of anything, ask for the label instead.
         headline.append(UNRELIABLE)
     else:
-        headline += [c.message for c in claim_findings if c.passes is False or (c.passes and c.actual)]
+        headline += [c.message for c in claim_findings if c.passes is not None]  # within or above, said explicitly
         headline += [a.message for a in additive_findings if a.flagged]
         if counterpart and (counterpart.only_in_india or counterpart.only_in_counterpart):
             parts = []
@@ -34,12 +35,12 @@ def build(product: Product, counterpart: Counterpart | None = None) -> Verdict:
             if counterpart.only_in_counterpart:
                 parts.append(f"the {counterpart.country} pack has {', '.join(counterpart.only_in_counterpart)}")
             headline.append(f"Compared with the {counterpart.country} version: {'; '.join(parts)}.")
+        headline += [c.message for c in limit_checks]
         if additive_findings and not any(a.flagged for a in additive_findings):
             headline.append("None of its additives are banned in India, the EU or the US.")
-            limited = sum(1 for a in additive_findings if any(s.status == "restricted" for s in a.status.values()))
-            if limited:
-                headline.append(f"{limited} {'has' if limited == 1 else 'have'} limits on which foods "
-                                f"{'it' if limited == 1 else 'they'} can be used in. See Additives below.")
+        limited = sum(1 for a in additive_findings if any(s.status == "restricted" for s in a.status.values()))
+        if note := limits.additive_note(limited):
+            headline.append(note)
         if not headline:
             headline.append("Nothing to flag from the additives and claims we check.")
         if product.source == "web" and product.evidence:
@@ -55,7 +56,7 @@ def build(product: Product, counterpart: Counterpart | None = None) -> Verdict:
     return Verdict(
         product=product, data_issues=contradictions + sanity.missing(product),
         claims=claim_findings, additives=additive_findings, counterpart=counterpart, headline=headline,
-        other_additives=others, ingredients=items,
+        other_additives=others, ingredients=items, limits=limit_checks,
     )
 
 

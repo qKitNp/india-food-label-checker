@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
-import { api, ApiError, type AdditiveFinding, type ClaimFinding, type Ingredient, type Nutrition, type OtherAdditive, type Region, type RegionStatus, type Verdict } from '../api'
+import { api, ApiError, type AdditiveFinding, type ClaimFinding, type Ingredient, type LimitCheck, type Nutrition, type OtherAdditive, type Region, type RegionStatus, type Verdict } from '../api'
 import { remember } from '../history'
 import { Button, Card, Chip, Cover, ErrorNote, Page, SectionTitle, Spinner, buttonClass, productTitle, shortBrand } from '../ui'
 
@@ -101,7 +101,9 @@ function VerdictView({ verdict, onUpdate }: { verdict: Verdict; onUpdate: (v: Ve
         </Card>
       )}
 
-      {!unreliable && verdict.claims.length > 0 && <Claims claims={verdict.claims} liquid={!!p.is_liquid} />}
+      {!unreliable && (verdict.claims.length > 0 || verdict.limits.length > 0) && (
+        <Limits claims={verdict.claims} limits={verdict.limits} liquid={!!p.is_liquid} />
+      )}
       {!unreliable && (verdict.additives.length > 0 || verdict.other_additives.length > 0) && (
         <Additives additives={verdict.additives} others={verdict.other_additives} />
       )}
@@ -127,25 +129,46 @@ function SourceChip({ verdict }: { verdict: Verdict }) {
   return <Chip>{p.source}</Chip>
 }
 
-function Claims({ claims, liquid }: { claims: ClaimFinding[]; liquid: boolean }) {
+function ResultChip({ result }: { result: 'within' | 'above' | null }) {
+  // Deliberately neutral: these are facts about the numbers, not warnings.
+  return <Chip>{result === 'within' ? 'Within the limit' : result === 'above' ? 'Above the limit' : "Can't check"}</Chip>
+}
+
+function Limits({ claims, limits, liquid }: { claims: ClaimFinding[]; limits: LimitCheck[]; liquid: boolean }) {
   const per = liquid ? '100 ml' : '100 g'
   return (
     <Card className="rise mt-4">
-      <SectionTitle hint="EU legal limits">Claims on the pack</SectionTitle>
+      <SectionTitle hint="EU legal limits">Checked against legal limits</SectionTitle>
       <div className="space-y-3">
         {claims.map((c) => (
           <div key={c.rule} className="rounded-2xl bg-wash p-4">
             <div className="flex items-center justify-between gap-2">
               <p className="text-[15px] font-medium">Says “{c.claim}”</p>
-              {c.passes === false ? <Chip tone="bad">Over the limit</Chip> : c.passes ? <Chip tone="good">Within the limit</Chip> : <Chip>Can't check</Chip>}
+              <ResultChip result={c.passes === null ? null : c.passes ? 'within' : 'above'} />
             </div>
             {c.actual !== null && (
               <div className="mt-3 flex items-end gap-6">
-                <Stat label="Actually has" value={`${c.actual}`} unit={`${c.unit} / ${per}`} />
-                <Stat label="Allowed up to" value={`${c.threshold}`} unit={`${c.unit} / ${per}`} muted />
+                <Stat label="Has" value={`${c.actual}`} unit={`${c.unit} / ${per}`} />
+                <Stat label="Limit" value={`${c.threshold}`} unit={`${c.unit} / ${per}`} muted />
               </div>
             )}
             <p className="mt-2 text-sm leading-relaxed text-muted">{c.message}</p>
+          </div>
+        ))}
+        {limits.map((l) => (
+          <div key={l.name + l.region} className="rounded-2xl bg-wash p-4">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[15px] font-medium">{l.name}</p>
+              <ResultChip result={l.result} />
+            </div>
+            <div className="mt-3 flex items-end gap-6">
+              <Stat label="Has" value={`${l.actual}`} unit={l.unit} />
+              <Stat label={`${l.region} limit`} value={`${l.limit}`} unit={l.unit} muted />
+            </div>
+            <p className="mt-2 text-sm leading-relaxed text-muted">{l.message}</p>
+            <a href={l.source_url} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs text-accent-deep underline">
+              {domain(l.source_url)}
+            </a>
           </div>
         ))}
       </div>
@@ -210,7 +233,10 @@ function Additives({ additives, others }: { additives: AdditiveFinding[]; others
                         {s.since ? ` since ${s.since}` : ''}
                       </p>
                       {s.status === 'restricted' && (
-                        <p className="mt-0.5 text-xs text-faint">Allowed, but only in some foods or amounts. This is not a ban.</p>
+                        <p className="mt-0.5 text-xs text-faint">
+                          Allowed, but only in some foods or amounts. This is not a ban. The label doesn't say how much is
+                          used, so we can't tell whether this product is within the limit.
+                        </p>
                       )}
                       {(s.fact || s.reason) && <p className="mt-1 text-muted">{s.fact || s.reason}</p>}
                       {s.quote && <p className="mt-1 text-xs text-faint italic">“{s.quote.length > 220 ? s.quote.slice(0, 220) + '…' : s.quote}”</p>}
@@ -259,6 +285,7 @@ const NUTRIENTS: [keyof Nutrition, string, string][] = [
   ['sugars_g', 'Sugars', 'g'],
   ['fat_g', 'Fat', 'g'],
   ['saturated_fat_g', 'Saturated fat', 'g'],
+  ['trans_fat_g', 'Trans fat', 'g'],
   ['carbs_g', 'Carbohydrates', 'g'],
   ['protein_g', 'Protein', 'g'],
   ['sodium_mg', 'Sodium', 'mg'],

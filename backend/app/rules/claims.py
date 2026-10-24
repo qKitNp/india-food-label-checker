@@ -56,18 +56,15 @@ def evaluate(product: Product) -> list[ClaimFinding]:
             passes, msg = None, f"Claims '{rule.label}', but the label data has no {rule.unit} value to check."
         elif actual > limit:
             passes, msg = False, (
-                f"Claims '{rule.label}' but has {actual:g} {rule.unit} per {per}, "
+                f"Says '{rule.label}': has {actual:g} {rule.unit} per {per}, "
                 f"above the EU limit of {limit:g}."
             )
-        elif actual > 0:
-            passes, msg = True, (
-                f"'{rule.label.capitalize()}' only means ≤{limit:g} {rule.unit} per {per}. "
-                f"This has {actual:g}: legal, but not literally zero."
-                if rule.key.endswith("_free")
-                else f"Meets the EU '{rule.label}' limit (≤{limit:g} {rule.unit} per {per}); has {actual:g}."
-            )
         else:
-            passes, msg = True, f"Meets the '{rule.label}' claim ({actual:g} {rule.unit} per {per})."
+            passes = True
+            msg = (f"Says '{rule.label}': has {actual:g} {rule.unit} per {per}, "
+                   f"within the EU limit of {limit:g}.")
+            if actual > 0 and rule.key.endswith("_free"):
+                msg += " Legal, but not literally zero."
         findings.append(ClaimFinding(
             claim=rule.label, rule=rule.key, actual=actual, threshold=limit, unit=rule.unit,
             passes=passes, message=msg, source_url=EU_ANNEX, source_verified=True,

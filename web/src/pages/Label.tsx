@@ -10,6 +10,7 @@ const FIELDS: [keyof Nutrition, string][] = [
   ['added_sugars_g', 'Added sugars (g)'],
   ['fat_g', 'Fat (g)'],
   ['saturated_fat_g', 'Saturated fat (g)'],
+  ['trans_fat_g', 'Trans fat (g)'],
   ['carbs_g', 'Carbohydrates (g)'],
   ['protein_g', 'Protein (g)'],
   ['sodium_mg', 'Sodium (mg)'],

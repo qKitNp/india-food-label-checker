@@ -101,7 +101,7 @@ TOOLS = [
             "is_liquid": {"type": "boolean"},
             "energy_kcal": {"type": "number"}, "carbs_g": {"type": "number"}, "sugars_g": {"type": "number"},
             "added_sugars_g": {"type": "number"}, "fat_g": {"type": "number"},
-            "saturated_fat_g": {"type": "number"}, "protein_g": {"type": "number"},
+            "saturated_fat_g": {"type": "number"}, "trans_fat_g": {"type": "number"}, "protein_g": {"type": "number"},
             "sodium_mg": {"type": "number"},
             "claims": {"type": "array", "items": {"type": "string"}, "description": "Marketing claims on the page"},
         }, "required": ["brand", "name", "source_url", "ingredients_quote"]}}},

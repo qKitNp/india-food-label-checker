@@ -16,6 +16,7 @@ class Nutrition(BaseModel):
     added_sugars_g: float | None = None
     fat_g: float | None = None
     saturated_fat_g: float | None = None
+    trans_fat_g: float | None = None
     protein_g: float | None = None
     sodium_mg: float | None = None
 
@@ -92,6 +93,19 @@ class AdditiveFinding(BaseModel):
     researched_at: str | None = None
 
 
+class LimitCheck(BaseModel):
+    """A product number compared with a legal limit. Informational: never flagged."""
+
+    name: str
+    region: Region
+    actual: float
+    limit: float
+    unit: str
+    result: Literal["within", "above"]
+    message: str
+    source_url: str
+
+
 class Ingredient(BaseModel):
     """One entry of the ingredients list, for display."""
 
@@ -132,3 +146,4 @@ class Verdict(BaseModel):
     headline: list[str]
     other_additives: list[OtherAdditive] = Field(default_factory=list)
     ingredients: list[Ingredient] = Field(default_factory=list)
+    limits: list[LimitCheck] = Field(default_factory=list)

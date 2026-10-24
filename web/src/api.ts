@@ -11,6 +11,7 @@ export interface Nutrition {
   added_sugars_g: number | null
   fat_g: number | null
   saturated_fat_g: number | null
+  trans_fat_g: number | null
   protein_g: number | null
   sodium_mg: number | null
 }
@@ -66,6 +67,18 @@ export interface AdditiveFinding {
   researched_at: string | null
 }
 
+/** A product number compared with a legal limit. Informational: never flagged. */
+export interface LimitCheck {
+  name: string
+  region: Region
+  actual: number
+  limit: number
+  unit: string
+  result: 'within' | 'above'
+  message: string
+  source_url: string
+}
+
 /** One entry of the ingredients list, parsed by the server. */
 export interface Ingredient {
   name: string
@@ -112,6 +125,7 @@ export interface Verdict {
   headline: string[]
   other_additives: OtherAdditive[]
   ingredients: Ingredient[]
+  limits: LimitCheck[]
 }
 
 export interface Step {

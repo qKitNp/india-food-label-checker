@@ -183,5 +183,30 @@ def test_summary_says_none_banned_and_counts_limits(monkeypatch):
     v = verdict.build(product(additives=["E500", "E330"], ingredients_text="Wheat flour, salt",
                               nutrition=Nutrition(energy_kcal=400)))
     assert "None of its additives are banned in India, the EU or the US." in v.headline
-    assert "1 has limits on which foods it can be used in. See Additives below." in v.headline
+    assert ("1 additive has usage limits, but labels don't say how much it is used, so we can't tell "
+            "whether this product is within them.") in v.headline
     assert not any("EU benchmarks" in h for h in v.headline)
+
+
+TRANS_FAT = {"id": "trans-fat", "name": "Trans fats", "codes": [], "synonyms": ["vanaspati"], "category": "fat",
+             "regions": {"EU": {"status": "restricted", "quote": "q", "source_url": "https://eur-lex.europa.eu/tf"}}}
+
+
+def test_trans_fat_within_and_above_eu_limit(monkeypatch):
+    from app.rules import limits
+    monkeypatch.setattr(substances, "table", lambda: [TRANS_FAT])
+    [within] = limits.evaluate(product(nutrition=Nutrition(fat_g=30, trans_fat_g=0.3)))
+    assert within.result == "within" and within.actual == 1.0
+    assert within.message.startswith("Trans fat is 1 g per 100 g of fat: within the EU limit of 2 g.")
+    [above] = limits.evaluate(product(nutrition=Nutrition(fat_g=20, trans_fat_g=1)))
+    assert above.result == "above" and above.actual == 5.0
+    assert limits.evaluate(product(nutrition=Nutrition(fat_g=20))) == []  # no trans fat value: nothing claimed
+
+
+def test_claim_messages_say_within_or_above():
+    p = product(name="Diet Cola", is_liquid=True, nutrition=Nutrition(energy_kcal=0))
+    [c] = claims.evaluate(p)
+    assert c.message == "Says 'zero calorie': has 0 kcal per 100 ml, within the EU limit of 4."
+    p = product(claims=["Low fat"], is_liquid=False, nutrition=Nutrition(fat_g=5))
+    [c] = claims.evaluate(p)
+    assert c.message == "Says 'low fat': has 5 g fat per 100 g, above the EU limit of 3."
