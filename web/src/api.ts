@@ -30,6 +30,7 @@ export interface Product {
   verified: boolean
   evidence: { source_url: string; ingredients_quote: string } | null
   image_file_id: string | null
+  image_url: string | null
 }
 
 export interface ClaimFinding {
@@ -188,6 +189,7 @@ export interface ProductSummary {
   verified: boolean
   status: 'needs_ingredients' | 'data_looks_wrong' | 'checked' | 'ok'
   needs_help: boolean
+  has_image: boolean
 }
 
 export class ApiError extends Error {
@@ -224,6 +226,8 @@ function form(images: Blob[], extra: Record<string, string> = {}): FormData {
   for (const [k, v] of Object.entries(extra)) data.append(k, v)
   return data
 }
+
+export const imageUrl = (key: string) => `${API_URL}/products/${encodeURIComponent(key)}/image`
 
 export const api = {
   products: () => request<ProductSummary[]>('/products'),

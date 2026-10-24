@@ -9,7 +9,7 @@ from app import additive_codes
 from app.models import Nutrition, Product
 
 API = "https://world.openfoodfacts.org/api/v2/product/{barcode}.json"
-FIELDS = "code,product_name,brands,ingredients_text,ingredients_text_en,additives_tags,nutriments,quantity,labels"
+FIELDS = "code,product_name,brands,ingredients_text,ingredients_text_en,additives_tags,nutriments,quantity,labels,image_front_url"
 _LIQUID = re.compile(r"\d\s*(ml|cl|l|ltr|litre|liter)\b", re.IGNORECASE)
 
 
@@ -51,6 +51,7 @@ def parse(p: dict) -> Product:
         is_liquid=bool(_LIQUID.search(quantity)) if quantity else None,
         source="off",
         verified=False,
+        image_url=p.get("image_front_url"),
     )
 
 

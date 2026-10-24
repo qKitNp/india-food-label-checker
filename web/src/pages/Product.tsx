@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { api, ApiError, type AdditiveFinding, type ClaimFinding, type Ingredient, type LimitCheck, type Nutrition, type OtherAdditive, type Region, type RegionStatus, type Verdict } from '../api'
 import { remember } from '../history'
-import { Button, Card, Chip, Cover, ErrorNote, Page, SectionTitle, Spinner, buttonClass, productTitle, shortBrand } from '../ui'
+import { Button, Card, Chip, ErrorNote, Page, ProductImage, SectionTitle, Spinner, buttonClass, productTitle, shortBrand } from '../ui'
 
 const UNRELIABLE = "This product's online data looks unreliable"
 
@@ -66,7 +66,13 @@ function VerdictView({ verdict, onUpdate }: { verdict: Verdict; onUpdate: (v: Ve
   return (
     <Page>
       <header className="rise flex items-end gap-4">
-        <Cover seed={shortBrand(p.brand) || productTitle(p)} label={shortBrand(p.brand) || 'Product'} className="h-28 w-22 shrink-0 shadow-card" />
+        <ProductImage
+          productKey={p.key}
+          hasImage={!!(p.image_file_id || p.image_url || (p.source === 'off' && p.barcode))}
+          seed={shortBrand(p.brand) || productTitle(p)}
+          label={shortBrand(p.brand) || 'Product'}
+          className="h-28 w-22 shrink-0 rounded-2xl shadow-card"
+        />
         <div className="min-w-0 pb-1">
           {p.brand && <p className="text-sm text-muted">{shortBrand(p.brand)}</p>}
           <h1 className="font-serif text-[1.6rem] leading-tight font-medium tracking-tight">{productTitle(p)}</h1>
@@ -74,6 +80,9 @@ function VerdictView({ verdict, onUpdate }: { verdict: Verdict; onUpdate: (v: Ve
             <SourceChip verdict={verdict} />
             {p.barcode && <Chip>{p.barcode}</Chip>}
           </div>
+          {!p.image_file_id && p.image_url?.includes('openfoodfacts') && (
+            <p className="mt-1.5 text-[11px] text-faint">Photo: Open Food Facts contributors (CC BY-SA)</p>
+          )}
         </div>
       </header>
 

@@ -41,6 +41,7 @@ class Product(BaseModel):
     verified: bool = False
     evidence: Evidence | None = None
     image_file_id: str | None = Field(default=None, description="Pack photo in Appwrite Storage")
+    image_url: str | None = Field(default=None, description="External pack photo, e.g. from Open Food Facts")
 
     @computed_field  # included in API responses so clients can link to products without a barcode
     @property
@@ -177,4 +178,5 @@ class ProductSummary(BaseModel):
     source: Source
     verified: bool
     status: Literal["needs_ingredients", "data_looks_wrong", "checked", "ok"]
+    has_image: bool = False
     needs_help: bool  # someone with the pack can add or correct its ingredient list

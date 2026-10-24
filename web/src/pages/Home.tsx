@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { loadRecent } from '../history'
-import { Card, Cover, Page, buttonClass } from '../ui'
+import { Card, Page, ProductImage, buttonClass } from '../ui'
 
 const STEPS = [
   ['Scan', 'Point your camera at the barcode, or snap the front of the pack.'],
@@ -64,7 +64,7 @@ export default function Home() {
           <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-2">
             {recent.map((r) => (
               <Link key={r.key} to={`/p/${encodeURIComponent(r.key)}`} className="w-36 shrink-0 snap-start">
-                <Cover seed={r.brand || r.title} label={r.brand || 'Product'} className="h-40 shadow-card" />
+                <ProductImage productKey={r.key} seed={r.brand || r.title} label={r.brand || 'Product'} className="h-40 rounded-2xl shadow-card" />
                 <p className="mt-2 line-clamp-2 text-sm font-medium text-ink">{r.title}</p>
                 <p className="text-xs text-faint">{r.flagged ? `${r.flagged} thing${r.flagged > 1 ? 's' : ''} to note` : 'Nothing flagged'}</p>
               </Link>

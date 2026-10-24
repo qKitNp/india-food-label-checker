@@ -80,6 +80,15 @@ def shrink(data: bytes) -> bytes:
     return out.getvalue()
 
 
+def thumbnail(data: bytes, width: int) -> bytes:
+    """A small WebP for product cards and headers."""
+    image = ImageOps.exif_transpose(_open(data)).convert("RGB")
+    image.thumbnail((width, width * 2))
+    out = io.BytesIO()
+    image.save(out, "WEBP", quality=78, method=4)
+    return out.getvalue()
+
+
 def _content(prompt: str, images: list[tuple[bytes, str]]) -> list[dict]:
     parts: list[dict] = [{"type": "text", "text": prompt}]
     for data, _mime in images:

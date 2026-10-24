@@ -254,3 +254,22 @@ def test_product_list_marks_what_needs_help(client):
     assert [(i["barcode"], i["status"], i["needs_help"]) for i in items] == [
         ("1", "needs_ingredients", True), ("2", "data_looks_wrong", True), ("3", "checked", False), ("4", "ok", False)]
     assert [i["barcode"] for i in client.get("/products?needs_help=true").json()] == ["1", "2"]
+
+
+def test_product_image_thumbnail_and_fallbacks(client):
+    svc = client.app.state.products
+
+    async def seed():
+        await svc.save(Product(barcode="10", name="Scanned", source="web"), image=jpeg(size=(1200, 900)))
+        await svc.store.save_product(Product(barcode="11", name="From OFF", source="off",
+                                             image_url="https://images.openfoodfacts.org/x.jpg"))
+        await svc.store.save_product(Product(barcode="12", name="No photo", source="web"))
+    client.portal.call(seed)
+
+    r = client.get("/products/10/image")
+    assert r.status_code == 200 and r.headers["content-type"] == "image/webp"
+    assert Image.open(io.BytesIO(r.content)).width == 480 and "max-age" in r.headers["cache-control"]
+    r = client.get("/products/11/image", follow_redirects=False)
+    assert r.status_code == 302 and r.headers["location"] == "https://images.openfoodfacts.org/x.jpg"
+    assert client.get("/products/12/image").status_code == 404
+    assert {p["barcode"]: p["has_image"] for p in client.get("/products").json()} == {"10": True, "11": True, "12": False}

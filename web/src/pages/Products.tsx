@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { api, ApiError, type ProductSummary } from '../api'
-import { Chip, Cover, ErrorNote, Page, Spinner, productTitle, shortBrand } from '../ui'
+import { Chip, ErrorNote, Page, ProductImage, Spinner, productTitle, shortBrand } from '../ui'
 
 const STATUS: Record<ProductSummary['status'], { label: string; tone: 'accent' | 'warn' | 'good' | 'neutral'; hint?: string }> = {
   needs_ingredients: { label: '+ Needs ingredient list', tone: 'accent', hint: 'Have the pack? Add its ingredients.' },
@@ -81,7 +81,9 @@ export default function ProductsPage() {
                 to={`/p/${encodeURIComponent(p.key)}`}
                 className={`flex h-full flex-col overflow-hidden rounded-3xl border bg-white shadow-card transition-transform hover:-translate-y-0.5 ${p.needs_help ? 'border-accent/50 ring-2 ring-accent/20' : 'border-line'}`}
               >
-                <Cover
+                <ProductImage
+                  productKey={p.key}
+                  hasImage={p.has_image}
                   seed={shortBrand(p.brand) || productTitle(p)}
                   label={shortBrand(p.brand) || 'Product'}
                   className="aspect-[4/3] rounded-none"

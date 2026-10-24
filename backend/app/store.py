@@ -44,6 +44,7 @@ class Store(Protocol):
     async def save_product(self, product: Product, vectors: Vectors | None = None) -> None: ...
     def vectors(self) -> AsyncIterator[StoredVectors]: ...
     async def save_image(self, key: str, data: bytes) -> str: ...
+    async def get_image(self, file_id: str) -> bytes | None: ...
     async def get_counterpart(self, barcode: str, region: Region) -> Counterpart | None: ...
     async def save_counterpart(self, barcode: str, counterpart: Counterpart) -> None: ...
     async def save_scan_log(self, record: dict) -> None: ...
@@ -83,6 +84,9 @@ class MemoryStore:
         file_id = uuid.uuid4().hex
         self.images[file_id] = data
         return file_id
+
+    async def get_image(self, file_id):
+        return self.images.get(file_id)
 
     async def get_counterpart(self, barcode, region):
         return self.counterparts.get(f"{barcode}.{region}")
@@ -205,6 +209,14 @@ class AppwriteStore:
             if len(rows) < 100:
                 return
             cursor = rows[-1]["$id"]
+
+    async def get_image(self, file_id):
+        """The stored pack photo (original; the free plan blocks server-side transformations)."""
+        r = await self.storage.get(f"files/{file_id}/view")
+        if r.status_code == 404:
+            return None
+        r.raise_for_status()
+        return r.content
 
     async def save_image(self, key, data):
         """Store a pack photo in Appwrite Storage; returns the file ID."""

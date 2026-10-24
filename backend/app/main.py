@@ -2,6 +2,7 @@ import asyncio
 import datetime as dt
 import logging
 import uuid
+from collections import OrderedDict
 from contextlib import asynccontextmanager
 from typing import Annotated, Literal
 
@@ -9,7 +10,7 @@ import httpx
 from exa_py import Exa
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 from pydantic import BaseModel, model_validator
 
 from app import additive_codes, agent, barcodes, llm, sanity, verdict
@@ -20,7 +21,7 @@ from app.rules import substances, tips
 from app.jobs import IdentifyResponse, Job, JobStore
 from app.models import Product, ProductSummary, Region, Submission, Verdict
 from app.services import ProductService
-from app.sources import counterpart, label
+from app.sources import counterpart, label, off
 from app.store import make_store
 
 # One JSON line per finished scan (full agent trace), picked up by journald on the server.
@@ -159,6 +160,7 @@ def summarise(product: Product) -> ProductSummary:
     return ProductSummary(
         key=product.key, barcode=product.barcode, brand=product.brand, name=product.name, source=product.source,
         verified=product.verified, status=status, needs_help=status in ("needs_ingredients", "data_looks_wrong"),
+        has_image=bool(product.image_file_id or product.image_url or (product.source == "off" and product.barcode)),
     )
 
 
@@ -170,6 +172,42 @@ async def list_products(svc: ProductsDep, needs_help: bool = False) -> list[Prod
     if needs_help:
         items = [i for i in items if i.needs_help]
     return sorted(items, key=lambda i: (not i.needs_help, (i.brand or "").lower(), (i.name or "").lower()))
+
+
+THUMB_WIDTH = 480
+_thumbs: OrderedDict[str, bytes] = OrderedDict()  # small in-memory cache; Cloudflare caches too
+
+
+@app.get("/products/{key}/image", response_model=None)
+async def product_image(key: str, svc: ProductsDep) -> Response:
+    """The product's pack photo: a shopper's scan (resized here, since the Appwrite free plan
+    blocks server-side transformations) or Open Food Facts' front photo."""
+    product = await svc.store.get_product(key)
+    if product is None:
+        raise HTTPException(404, "Product not found")
+    cache = {"Cache-Control": "public, max-age=86400"}
+    if product.image_file_id:
+        thumb = _thumbs.get(product.image_file_id)
+        if thumb is None:
+            original = await svc.store.get_image(product.image_file_id)
+            if original is None:
+                raise HTTPException(404, "No photo")
+            thumb = await asyncio.to_thread(llm.thumbnail, original, THUMB_WIDTH)
+            _thumbs[product.image_file_id] = thumb
+            if len(_thumbs) > 300:
+                _thumbs.popitem(last=False)
+        return Response(thumb, media_type="image/webp", headers=cache)
+    if not product.image_url and product.source == "off" and product.barcode:
+        # Saved before we kept Open Food Facts photo links: fetch it once and store it.
+        try:
+            fresh = await off.fetch(svc.http, product.barcode)
+        except httpx.HTTPError:
+            fresh = None
+        if fresh and fresh.image_url:
+            product = await svc.save(product.model_copy(update={"image_url": fresh.image_url}))
+    if product.image_url:
+        return RedirectResponse(product.image_url, status_code=302, headers=cache)
+    raise HTTPException(404, "No photo")
 
 
 @app.get("/products/{key}")

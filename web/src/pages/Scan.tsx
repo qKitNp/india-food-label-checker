@@ -138,6 +138,9 @@ export default function Scan() {
             }}
           />
         </label>
+        <p className="text-center text-xs leading-relaxed text-faint">
+          A photo of the front of the pack may be shown as the product's picture. Avoid faces and personal details.
+        </p>
       </div>
     </Page>
   )
