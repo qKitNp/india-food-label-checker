@@ -1,0 +1,17 @@
+[Unit]
+Description=India food label checker API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/app/backend
+# One worker: the product vector index lives in memory.
+ExecStart=/home/ubuntu/.local/bin/uv run --frozen uvicorn app.main:app --host 127.0.0.1 --port 8000 --workers 1
+Restart=always
+RestartSec=5
+# Loading the embedding model takes ~30 s on a cold start.
+TimeoutStartSec=180
+
+[Install]
+WantedBy=multi-user.target
