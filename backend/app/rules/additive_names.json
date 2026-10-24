@@ -1,0 +1,3378 @@
+{
+"_source": "Open Food Facts additives taxonomy (ODbL), https://world.openfoodfacts.org/",
+"E100": {
+"name": "Curcumin",
+"functions": [
+"colour"
+]
+},
+"E100i": {
+"name": "E100i",
+"functions": []
+},
+"E101": {
+"name": "Riboflavins",
+"functions": [
+"colour"
+]
+},
+"E101a": {
+"name": "E101a food additive",
+"functions": [
+"colour"
+]
+},
+"E101i": {
+"name": "Riboflavin",
+"functions": [
+"colour"
+]
+},
+"E102": {
+"name": "Tartrazine",
+"functions": [
+"colour"
+]
+},
+"E103": {
+"name": "Alkannin",
+"functions": []
+},
+"E104": {
+"name": "Quinoline yellow",
+"functions": [
+"colour"
+]
+},
+"E105": {
+"name": "Fast Yellow AB",
+"functions": []
+},
+"E106": {
+"name": "flavin mononucleotide",
+"functions": []
+},
+"E107": {
+"name": "Yellow 2G",
+"functions": []
+},
+"E110": {
+"name": "Sunset yellow FCF",
+"functions": [
+"colour"
+]
+},
+"E111": {
+"name": "Orange GGN",
+"functions": []
+},
+"E120": {
+"name": "Cochineal",
+"functions": [
+"colour"
+]
+},
+"E121": {
+"name": "Citrus Red 2",
+"functions": []
+},
+"E122": {
+"name": "Azorubine",
+"functions": [
+"colour"
+]
+},
+"E123": {
+"name": "Amaranth",
+"functions": [
+"colour"
+]
+},
+"E124": {
+"name": "Ponceau 4r",
+"functions": [
+"colour"
+]
+},
+"E125": {
+"name": "Scarlet GN",
+"functions": []
+},
+"E127": {
+"name": "Erythrosine",
+"functions": [
+"colour"
+]
+},
+"E128": {
+"name": "Red 2G",
+"functions": [
+"colour"
+]
+},
+"E129": {
+"name": "Allura red",
+"functions": [
+"colour"
+]
+},
+"E130": {
+"name": "Indanthrene blue RS",
+"functions": []
+},
+"E131": {
+"name": "Patent blue v",
+"functions": []
+},
+"E132": {
+"name": "Indigotine",
+"functions": [
+"colour"
+]
+},
+"E133": {
+"name": "Brilliant blue FCF",
+"functions": [
+"colour"
+]
+},
+"E140": {
+"name": "Chlorophylls and Chlorophyllins",
+"functions": [
+"colour"
+]
+},
+"E140i": {
+"name": "Chlorophylls",
+"functions": [
+"colour"
+]
+},
+"E141": {
+"name": "Copper complexes of chlorophylls and chlorophyllins",
+"functions": [
+"colour"
+]
+},
+"E141i": {
+"name": "Copper complexes of chlorophylls",
+"functions": [
+"colour"
+]
+},
+"E142": {
+"name": "Green s",
+"functions": []
+},
+"E143": {
+"name": "Fast Green FCF",
+"functions": [
+"colour"
+]
+},
+"E150": {
+"name": "Caramel",
+"functions": []
+},
+"E150a": {
+"name": "Plain caramel",
+"functions": [
+"colour"
+]
+},
+"E150b": {
+"name": "Caustic sulphite caramel",
+"functions": [
+"colour"
+]
+},
+"E150c": {
+"name": "Ammonia caramel",
+"functions": [
+"colour"
+]
+},
+"E150d": {
+"name": "Sulphite ammonia caramel",
+"functions": [
+"colour"
+]
+},
+"E151": {
+"name": "Brilliant black bn",
+"functions": [
+"colour"
+]
+},
+"E152": {
+"name": "Black 7984",
+"functions": []
+},
+"E153": {
+"name": "Vegetable carbon",
+"functions": []
+},
+"E154": {
+"name": "Brown FK",
+"functions": []
+},
+"E155": {
+"name": "Brown ht",
+"functions": [
+"colour"
+]
+},
+"E160": {
+"name": "Carotenoids",
+"functions": []
+},
+"E160a": {
+"name": "carotene",
+"functions": [
+"colour"
+]
+},
+"E160b": {
+"name": "Annatto",
+"functions": [
+"colour"
+]
+},
+"E160c": {
+"name": "Paprika extract",
+"functions": [
+"colour"
+]
+},
+"E160d": {
+"name": "Lycopene",
+"functions": [
+"colour"
+]
+},
+"E160e": {
+"name": "Beta-apo-8′-carotenal (c30)",
+"functions": [
+"colour"
+]
+},
+"E160f": {
+"name": "Ethyl ester of beta-apo-8'-carotenic acid (C 30)",
+"functions": [
+"colour"
+]
+},
+"E161": {
+"name": "Xanthophylls",
+"functions": []
+},
+"E161a": {
+"name": "Flavoxanthin",
+"functions": []
+},
+"E161b": {
+"name": "Lutein",
+"functions": [
+"colour"
+]
+},
+"E161c": {
+"name": "Cryptoaxanthin",
+"functions": []
+},
+"E161d": {
+"name": "Rubixanthin",
+"functions": []
+},
+"E161e": {
+"name": "Violaxanthin",
+"functions": []
+},
+"E161f": {
+"name": "Rhodoxanthin",
+"functions": []
+},
+"E161g": {
+"name": "Canthaxanthin",
+"functions": [
+"colour"
+]
+},
+"E161h": {
+"name": "Zeaxanthin",
+"functions": [
+"colour"
+]
+},
+"E161i": {
+"name": "Citranaxanthin",
+"functions": []
+},
+"E161j": {
+"name": "Astaxanthin",
+"functions": []
+},
+"E162": {
+"name": "Beetroot red",
+"functions": [
+"colour"
+]
+},
+"E163": {
+"name": "Anthocyanins",
+"functions": [
+"colour"
+]
+},
+"E163a": {
+"name": "Cyanidin",
+"functions": [
+"colour"
+]
+},
+"E163b": {
+"name": "Delphinidin",
+"functions": [
+"colour"
+]
+},
+"E163c": {
+"name": "Malvidin",
+"functions": [
+"colour"
+]
+},
+"E163d": {
+"name": "Pelargonidin",
+"functions": [
+"colour"
+]
+},
+"E163e": {
+"name": "Peonidin",
+"functions": [
+"colour"
+]
+},
+"E163f": {
+"name": "Petunidin",
+"functions": [
+"colour"
+]
+},
+"E163v": {
+"name": "E163v",
+"functions": []
+},
+"E163x": {
+"name": "E163x",
+"functions": []
+},
+"E164": {
+"name": "saffron",
+"functions": []
+},
+"E165": {
+"name": "Gardenia Blue",
+"functions": []
+},
+"E166": {
+"name": "Sandalwood",
+"functions": []
+},
+"E170": {
+"name": "Calcium carbonates",
+"functions": []
+},
+"E170i": {
+"name": "Calcium carbonate",
+"functions": [
+"colour",
+"stabiliser"
+]
+},
+"E171": {
+"name": "Titanium dioxide",
+"functions": [
+"colour"
+]
+},
+"E172": {
+"name": "Iron oxides and iron hydroxides",
+"functions": [
+"colour"
+]
+},
+"E172i": {
+"name": "Black iron oxide",
+"functions": [
+"colour"
+]
+},
+"E173": {
+"name": "Aluminium",
+"functions": []
+},
+"E174": {
+"name": "Silver",
+"functions": []
+},
+"E175": {
+"name": "Gold",
+"functions": []
+},
+"E180": {
+"name": "Litholrubine bk",
+"functions": []
+},
+"E181": {
+"name": "Tannin",
+"functions": [
+"colour",
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E182": {
+"name": "Orcein",
+"functions": []
+},
+"E200": {
+"name": "Sorbic acid",
+"functions": [
+"preservative"
+]
+},
+"E201": {
+"name": "Sodium sorbate",
+"functions": [
+"preservative"
+]
+},
+"E202": {
+"name": "Potassium sorbate",
+"functions": [
+"preservative"
+]
+},
+"E203": {
+"name": "Calcium sorbate",
+"functions": [
+"preservative"
+]
+},
+"E209": {
+"name": "Heptylparaben",
+"functions": []
+},
+"E210": {
+"name": "Benzoic acid",
+"functions": [
+"preservative"
+]
+},
+"E211": {
+"name": "Sodium benzoate",
+"functions": [
+"preservative"
+]
+},
+"E212": {
+"name": "Potassium benzoate",
+"functions": [
+"preservative"
+]
+},
+"E213": {
+"name": "Calcium benzoate",
+"functions": [
+"preservative"
+]
+},
+"E214": {
+"name": "Ethyl p-hydroxybenzoate",
+"functions": [
+"preservative"
+]
+},
+"E215": {
+"name": "Sodium ethyl p-hydroxybenzoate",
+"functions": []
+},
+"E216": {
+"name": "Propyl para-hydroxybenzoate",
+"functions": []
+},
+"E217": {
+"name": "Sodium propyl para-hydroxybenzoate",
+"functions": []
+},
+"E218": {
+"name": "Methyl p-hydroxybenzoate",
+"functions": [
+"preservative"
+]
+},
+"E219": {
+"name": "Sodium methyl p-hydroxybenzoate",
+"functions": []
+},
+"E220": {
+"name": "Sulphur dioxide",
+"functions": [
+"antioxidant",
+"preservative"
+]
+},
+"E221": {
+"name": "Sodium sulphite",
+"functions": [
+"antioxidant",
+"preservative"
+]
+},
+"E222": {
+"name": "Sodium bisulphite",
+"functions": [
+"antioxidant",
+"preservative"
+]
+},
+"E223": {
+"name": "Sodium metabisulphite",
+"functions": [
+"antioxidant",
+"preservative"
+]
+},
+"E224": {
+"name": "Potassium metabisulphite",
+"functions": [
+"antioxidant",
+"preservative"
+]
+},
+"E225": {
+"name": "Calcium Disulphite",
+"functions": [
+"antioxidant",
+"preservative"
+]
+},
+"E226": {
+"name": "Calcium sulphite",
+"functions": []
+},
+"E227": {
+"name": "Calcium bisulphite",
+"functions": []
+},
+"E228": {
+"name": "Potassium bisulphite",
+"functions": []
+},
+"E230": {
+"name": "Biphenyl",
+"functions": [
+"preservative"
+]
+},
+"E231": {
+"name": "Orthophenyl phenol",
+"functions": [
+"preservative"
+]
+},
+"E232": {
+"name": "Sodium orthophenyl phenol",
+"functions": [
+"preservative"
+]
+},
+"E233": {
+"name": "Thiabendazole",
+"functions": []
+},
+"E234": {
+"name": "Nisin",
+"functions": [
+"preservative"
+]
+},
+"E235": {
+"name": "Natamycin",
+"functions": [
+"preservative"
+]
+},
+"E236": {
+"name": "Formic acid",
+"functions": []
+},
+"E237": {
+"name": "Sodium formiate",
+"functions": []
+},
+"E238": {
+"name": "Calcium formiate",
+"functions": []
+},
+"E239": {
+"name": "Hexamethylene tetramine",
+"functions": [
+"preservative"
+]
+},
+"E240": {
+"name": "Formaldehyde",
+"functions": []
+},
+"E241": {
+"name": "Gum Guaicum",
+"functions": []
+},
+"E242": {
+"name": "Dimethyl dicarbonate",
+"functions": [
+"preservative"
+]
+},
+"E243": {
+"name": "Ethyl lauroyl arginate",
+"functions": [
+"preservative"
+]
+},
+"E246": {
+"name": "Glycolipids",
+"functions": []
+},
+"E249": {
+"name": "Potassium nitrite",
+"functions": [
+"preservative"
+]
+},
+"E250": {
+"name": "Sodium nitrite",
+"functions": [
+"preservative"
+]
+},
+"E251": {
+"name": "Sodium nitrate",
+"functions": [
+"preservative"
+]
+},
+"E252": {
+"name": "Potassium nitrate",
+"functions": [
+"preservative"
+]
+},
+"E260": {
+"name": "Acetic acid",
+"functions": [
+"preservative"
+]
+},
+"E261": {
+"name": "Potassium acetate",
+"functions": [
+"preservative"
+]
+},
+"E261i": {
+"name": "E261i",
+"functions": []
+},
+"E262": {
+"name": "Sodium acetates",
+"functions": [
+"preservative",
+"sequestrant"
+]
+},
+"E262i": {
+"name": "Sodium acetate",
+"functions": [
+"preservative",
+"sequestrant"
+]
+},
+"E263": {
+"name": "Calcium acetate",
+"functions": [
+"preservative",
+"stabiliser"
+]
+},
+"E264": {
+"name": "Ammonium acetate",
+"functions": []
+},
+"E265": {
+"name": "Dehydroacetic acid",
+"functions": []
+},
+"E266": {
+"name": "Sodium dehydroacetate",
+"functions": []
+},
+"E267": {
+"name": "Buffered vinegar",
+"functions": []
+},
+"E270": {
+"name": "Lactic acid",
+"functions": []
+},
+"E280": {
+"name": "Propionic acid",
+"functions": [
+"preservative"
+]
+},
+"E281": {
+"name": "Sodium propionate",
+"functions": [
+"preservative"
+]
+},
+"E282": {
+"name": "calcium propionate",
+"functions": [
+"preservative"
+]
+},
+"E283": {
+"name": "Potassium propionate",
+"functions": [
+"preservative"
+]
+},
+"E284": {
+"name": "Boric acid",
+"functions": []
+},
+"E285": {
+"name": "Sodium tetraborate (borax)",
+"functions": []
+},
+"E290": {
+"name": "Carbon dioxide",
+"functions": [
+"preservative",
+"propellent gas"
+]
+},
+"E296": {
+"name": "Malic acid",
+"functions": []
+},
+"E297": {
+"name": "Fumaric acid",
+"functions": []
+},
+"E300": {
+"name": "Ascorbic acid",
+"functions": [
+"antioxidant",
+"sequestrant"
+]
+},
+"E301": {
+"name": "Sodium ascorbate",
+"functions": [
+"antioxidant"
+]
+},
+"E302": {
+"name": "Calcium ascorbate",
+"functions": [
+"antioxidant"
+]
+},
+"E303": {
+"name": "Potassium ascorbate",
+"functions": []
+},
+"E304": {
+"name": "Fatty acid esters of ascorbic acid",
+"functions": [
+"antioxidant"
+]
+},
+"E304i": {
+"name": "Ascorbyl palmitate",
+"functions": [
+"antioxidant"
+]
+},
+"E306": {
+"name": "Tocopherol-rich extract",
+"functions": []
+},
+"E307": {
+"name": "Alpha-tocopherol",
+"functions": []
+},
+"E307a": {
+"name": "D-Alpha-tocopherol",
+"functions": [
+"antioxidant"
+]
+},
+"E307b": {
+"name": "concentrated tocopherol",
+"functions": [
+"antioxidant"
+]
+},
+"E307c": {
+"name": "DL-Alpha-tocopherol",
+"functions": [
+"antioxidant"
+]
+},
+"E308": {
+"name": "Gamme-tocopherol",
+"functions": []
+},
+"E309": {
+"name": "Delta-tocopherol",
+"functions": []
+},
+"E310": {
+"name": "Propyl gallate",
+"functions": [
+"antioxidant"
+]
+},
+"E311": {
+"name": "Octyl gallate",
+"functions": []
+},
+"E312": {
+"name": "Dodecyl gallate",
+"functions": []
+},
+"E313": {
+"name": "Ethyl gallate",
+"functions": []
+},
+"E314": {
+"name": "Guaiacum",
+"functions": [
+"antioxidant"
+]
+},
+"E315": {
+"name": "Erythorbic acid",
+"functions": [
+"antioxidant"
+]
+},
+"E316": {
+"name": "sodium erythorbate",
+"functions": [
+"antioxidant"
+]
+},
+"E317": {
+"name": "Erythorbin acid",
+"functions": []
+},
+"E318": {
+"name": "Calcium erythorbin",
+"functions": []
+},
+"E319": {
+"name": "Tertiary-butylhydroquinone (tbhq)",
+"functions": [
+"antioxidant"
+]
+},
+"E320": {
+"name": "Butylated hydroxyanisole (bha)",
+"functions": [
+"antioxidant"
+]
+},
+"E321": {
+"name": "Butylated hydroxytoluene",
+"functions": [
+"antioxidant"
+]
+},
+"E322": {
+"name": "Lecithins",
+"functions": [
+"antioxidant",
+"emulsifier"
+]
+},
+"E322a": {
+"name": "Oat lecithin",
+"functions": []
+},
+"E322i": {
+"name": "Lecithin",
+"functions": [
+"antioxidant",
+"emulsifier"
+]
+},
+"E323": {
+"name": "Anoxomer",
+"functions": []
+},
+"E324": {
+"name": "Ethoxyquin",
+"functions": []
+},
+"E325": {
+"name": "sodium lactate",
+"functions": [
+"antioxidant",
+"emulsifier",
+"humectant",
+"thickener"
+]
+},
+"E326": {
+"name": "potassium lactate",
+"functions": [
+"antioxidant",
+"emulsifier",
+"humectant"
+]
+},
+"E327": {
+"name": "calcium lactate",
+"functions": [
+"thickener"
+]
+},
+"E328": {
+"name": "ammonium lactate",
+"functions": []
+},
+"E329": {
+"name": "Magnesium lactate",
+"functions": []
+},
+"E330": {
+"name": "Citric acid",
+"functions": [
+"antioxidant",
+"sequestrant"
+]
+},
+"E331": {
+"name": "Sodium citrates",
+"functions": [
+"emulsifier",
+"sequestrant",
+"stabiliser"
+]
+},
+"E331i": {
+"name": "Monosodium citrate",
+"functions": [
+"emulsifier",
+"sequestrant",
+"stabiliser"
+]
+},
+"E332": {
+"name": "Potassium citrates",
+"functions": [
+"sequestrant",
+"stabiliser"
+]
+},
+"E332i": {
+"name": "Monopotassium citrate",
+"functions": [
+"sequestrant",
+"stabiliser"
+]
+},
+"E333": {
+"name": "Calcium citrates",
+"functions": [
+"sequestrant",
+"stabiliser"
+]
+},
+"E333i": {
+"name": "Monocalcium citrate",
+"functions": [
+"sequestrant",
+"stabiliser"
+]
+},
+"E334": {
+"name": "L(+)-tartaric acid",
+"functions": [
+"antioxidant",
+"sequestrant"
+]
+},
+"E335": {
+"name": "Sodium tartrates",
+"functions": [
+"sequestrant",
+"stabiliser"
+]
+},
+"E335i": {
+"name": "Monosodium tartrate",
+"functions": [
+"sequestrant",
+"stabiliser"
+]
+},
+"E336": {
+"name": "Potassium tartrates",
+"functions": []
+},
+"E336i": {
+"name": "Monopotassium tartrate",
+"functions": []
+},
+"E337": {
+"name": "Potassium sodium tartrate",
+"functions": [
+"sequestrant",
+"stabiliser"
+]
+},
+"E338": {
+"name": "Phosphoric acid",
+"functions": [
+"antioxidant",
+"sequestrant"
+]
+},
+"E339": {
+"name": "Sodium phosphates",
+"functions": [
+"emulsifier",
+"humectant",
+"preservative",
+"sequestrant",
+"stabiliser",
+"thickener"
+]
+},
+"E339i": {
+"name": "Monosodium phosphate",
+"functions": [
+"emulsifier",
+"humectant",
+"preservative",
+"sequestrant",
+"stabiliser",
+"thickener"
+]
+},
+"E340": {
+"name": "Potassium phosphates",
+"functions": [
+"emulsifier",
+"humectant",
+"sequestrant",
+"stabiliser",
+"thickener"
+]
+},
+"E340i": {
+"name": "Monopotassium phosphate",
+"functions": [
+"emulsifier",
+"humectant",
+"sequestrant",
+"stabiliser",
+"thickener"
+]
+},
+"E341": {
+"name": "Calcium phosphates",
+"functions": [
+"emulsifier",
+"humectant",
+"sequestrant",
+"stabiliser",
+"thickener"
+]
+},
+"E341i": {
+"name": "Monocalcium phosphate",
+"functions": [
+"emulsifier",
+"humectant",
+"sequestrant",
+"stabiliser",
+"thickener"
+]
+},
+"E342": {
+"name": "Ammonium phosphate",
+"functions": [
+"stabiliser",
+"thickener"
+]
+},
+"E342i": {
+"name": "Ammonium dihydrogen phosphate",
+"functions": []
+},
+"E343": {
+"name": "Magnesium phosphates",
+"functions": [
+"stabiliser",
+"thickener"
+]
+},
+"E343i": {
+"name": "Monomagnesium phosphate",
+"functions": [
+"stabiliser",
+"thickener"
+]
+},
+"E344": {
+"name": "Lecithin citrate",
+"functions": []
+},
+"E345": {
+"name": "Magnesium citrate",
+"functions": []
+},
+"E349": {
+"name": "ammonium malate",
+"functions": []
+},
+"E350": {
+"name": "Sodium malates",
+"functions": [
+"humectant"
+]
+},
+"E350i": {
+"name": "Sodium malate",
+"functions": [
+"humectant"
+]
+},
+"E351": {
+"name": "Potassium malate",
+"functions": []
+},
+"E351i": {
+"name": "Potassium hydrogen malate",
+"functions": []
+},
+"E352": {
+"name": "Calcium malates",
+"functions": []
+},
+"E352i": {
+"name": "Calcium malate",
+"functions": []
+},
+"E353": {
+"name": "Metatartaric acid",
+"functions": []
+},
+"E354": {
+"name": "Calcium tartrate",
+"functions": []
+},
+"E355": {
+"name": "Adipic acid",
+"functions": []
+},
+"E356": {
+"name": "Sodium adipate",
+"functions": []
+},
+"E357": {
+"name": "Potassium adipate",
+"functions": []
+},
+"E359": {
+"name": "ammonium adipate",
+"functions": []
+},
+"E363": {
+"name": "Succinic acid",
+"functions": []
+},
+"E364": {
+"name": "Sodium succinates",
+"functions": []
+},
+"E364i": {
+"name": "Monosodium succinate",
+"functions": []
+},
+"E365": {
+"name": "Sodium fumarate",
+"functions": []
+},
+"E366": {
+"name": "Potassium fumarate",
+"functions": []
+},
+"E367": {
+"name": "Calcium fumarate",
+"functions": []
+},
+"E368": {
+"name": "ammonium fumarate",
+"functions": []
+},
+"E369": {
+"name": "Alanin",
+"functions": []
+},
+"E370": {
+"name": "1‚4-Heptonolactone",
+"functions": []
+},
+"E375": {
+"name": "Nicotinic acid",
+"functions": []
+},
+"E380": {
+"name": "Triammonium citrate",
+"functions": []
+},
+"E381": {
+"name": "ferric ammonium citrate",
+"functions": []
+},
+"E383": {
+"name": "calcium glycerophosphate",
+"functions": []
+},
+"E384": {
+"name": "Isopropyl citrates",
+"functions": [
+"antioxidant",
+"preservative",
+"sequestrant"
+]
+},
+"E385": {
+"name": "Calcium disodium ethylenediaminetetraacetate",
+"functions": [
+"antioxidant",
+"preservative",
+"sequestrant"
+]
+},
+"E388": {
+"name": "Thiodipropionic acid",
+"functions": [
+"antioxidant"
+]
+},
+"E391": {
+"name": "Phytic acid",
+"functions": []
+},
+"E392": {
+"name": "Extracts of rosemary",
+"functions": []
+},
+"E399": {
+"name": "Calcium lactobionate",
+"functions": []
+},
+"E400": {
+"name": "Alginic acid",
+"functions": [
+"carrier",
+"emulsifier",
+"humectant",
+"sequestrant",
+"stabiliser",
+"thickener"
+]
+},
+"E401": {
+"name": "sodium alginate",
+"functions": [
+"carrier",
+"emulsifier",
+"humectant",
+"sequestrant",
+"stabiliser",
+"thickener"
+]
+},
+"E402": {
+"name": "Potassium alginate",
+"functions": [
+"carrier",
+"emulsifier",
+"humectant",
+"sequestrant",
+"stabiliser",
+"thickener"
+]
+},
+"E403": {
+"name": "Ammonium alginate",
+"functions": [
+"carrier",
+"emulsifier",
+"humectant",
+"sequestrant",
+"stabiliser",
+"thickener"
+]
+},
+"E404": {
+"name": "Calcium alginate",
+"functions": [
+"carrier",
+"humectant",
+"sequestrant",
+"stabiliser",
+"thickener"
+]
+},
+"E405": {
+"name": "Propane-1‚2-diol alginate",
+"functions": [
+"carrier",
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E406": {
+"name": "Agar",
+"functions": [
+"carrier",
+"emulsifier",
+"humectant",
+"stabiliser",
+"thickener"
+]
+},
+"E407": {
+"name": "Carrageenan",
+"functions": [
+"carrier",
+"emulsifier",
+"humectant",
+"stabiliser",
+"thickener"
+]
+},
+"E407a": {
+"name": "Processed eucheuma seaweed",
+"functions": [
+"carrier",
+"emulsifier",
+"humectant",
+"stabiliser",
+"thickener"
+]
+},
+"E408": {
+"name": "Bakers yeast glycan",
+"functions": []
+},
+"E409": {
+"name": "Arabinogalactan",
+"functions": []
+},
+"E410": {
+"name": "Locust bean gum",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E411": {
+"name": "E411 food additive",
+"functions": []
+},
+"E412": {
+"name": "Guar gum",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E413": {
+"name": "Tragacanth",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E414": {
+"name": "Acacia gum",
+"functions": [
+"carrier",
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E414a": {
+"name": "E414a food additive",
+"functions": [
+"carrier",
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E415": {
+"name": "Xanthan gum",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E416": {
+"name": "Karaya-gum",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E417": {
+"name": "Tara gum",
+"functions": [
+"stabiliser",
+"thickener"
+]
+},
+"E418": {
+"name": "Gellan gum",
+"functions": [
+"stabiliser",
+"thickener"
+]
+},
+"E418i": {
+"name": "E418i",
+"functions": []
+},
+"E419": {
+"name": "Gum ghatti",
+"functions": [
+"stabiliser",
+"thickener"
+]
+},
+"E420": {
+"name": "Sorbitol",
+"functions": [
+"humectant",
+"sequestrant",
+"stabiliser",
+"sweetener",
+"thickener"
+]
+},
+"E420i": {
+"name": "D-sorbitol",
+"functions": [
+"humectant",
+"sequestrant",
+"stabiliser",
+"sweetener",
+"thickener"
+]
+},
+"E421": {
+"name": "Mannitol",
+"functions": [
+"humectant",
+"stabiliser",
+"sweetener",
+"thickener"
+]
+},
+"E422": {
+"name": "Glycerol",
+"functions": [
+"humectant",
+"thickener"
+]
+},
+"E424": {
+"name": "Curdlan",
+"functions": [
+"stabiliser",
+"thickener"
+]
+},
+"E425": {
+"name": "Konjac",
+"functions": [
+"carrier",
+"emulsifier",
+"humectant",
+"stabiliser",
+"thickener"
+]
+},
+"E425i": {
+"name": "Konjac gum",
+"functions": [
+"carrier",
+"emulsifier",
+"humectant",
+"stabiliser",
+"thickener"
+]
+},
+"E426": {
+"name": "Soybean hemicellulose",
+"functions": []
+},
+"E427": {
+"name": "Cassia gum",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E428": {
+"name": "Gelatine",
+"functions": []
+},
+"E429": {
+"name": "peptone",
+"functions": []
+},
+"E430": {
+"name": "Polyoxyethylene (8) stearate",
+"functions": [
+"emulsifier"
+]
+},
+"E431": {
+"name": "Polyoxyethylene (40) stearate",
+"functions": [
+"emulsifier"
+]
+},
+"E432": {
+"name": "Polyoxyethylene sorbitan monolaurate",
+"functions": [
+"emulsifier",
+"stabiliser"
+]
+},
+"E433": {
+"name": "Polyoxyethylene sorbitan monooleate",
+"functions": [
+"emulsifier",
+"stabiliser"
+]
+},
+"E434": {
+"name": "Polyoxyethylene sorbitan monopalmitate",
+"functions": [
+"emulsifier"
+]
+},
+"E435": {
+"name": "Polyoxyethylene sorbitan monostearate",
+"functions": [
+"emulsifier",
+"stabiliser"
+]
+},
+"E436": {
+"name": "Polyoxyethylene sorbitan tristearate",
+"functions": [
+"emulsifier",
+"stabiliser"
+]
+},
+"E440": {
+"name": "Pectins",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E440a": {
+"name": "E440a",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E440b": {
+"name": "E440b",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E440i": {
+"name": "non-amidated pectin",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E441": {
+"name": "Superglycerinated hydrogenated rapeseed oil",
+"functions": []
+},
+"E442": {
+"name": "Ammonium phosphatides",
+"functions": [
+"emulsifier"
+]
+},
+"E443": {
+"name": "Brominated vegetable oil",
+"functions": []
+},
+"E444": {
+"name": "Sucrose acetate isobutyrate",
+"functions": [
+"emulsifier",
+"stabiliser"
+]
+},
+"E445": {
+"name": "Glycerol esters of wood rosin",
+"functions": [
+"emulsifier",
+"stabiliser"
+]
+},
+"E445i": {
+"name": "Glycerol ester of gum rosin",
+"functions": []
+},
+"E446": {
+"name": "Succistearin",
+"functions": []
+},
+"E450": {
+"name": "Diphosphates",
+"functions": [
+"emulsifier",
+"humectant",
+"sequestrant",
+"stabiliser",
+"thickener"
+]
+},
+"E450i": {
+"name": "Disodium diphosphate",
+"functions": [
+"emulsifier",
+"humectant",
+"sequestrant",
+"stabiliser",
+"thickener"
+]
+},
+"E450v": {
+"name": "Tetrapotassium diphosphate",
+"functions": [
+"emulsifier",
+"humectant",
+"sequestrant",
+"stabiliser",
+"thickener"
+]
+},
+"E451": {
+"name": "Triphosphates",
+"functions": [
+"emulsifier",
+"humectant",
+"sequestrant",
+"stabiliser",
+"thickener"
+]
+},
+"E451i": {
+"name": "Pentasodium triphosphate",
+"functions": [
+"emulsifier",
+"humectant",
+"sequestrant",
+"stabiliser",
+"thickener"
+]
+},
+"E452": {
+"name": "Polyphosphates",
+"functions": [
+"emulsifier",
+"humectant",
+"sequestrant",
+"stabiliser",
+"thickener"
+]
+},
+"E452i": {
+"name": "Sodium polyphosphate",
+"functions": [
+"emulsifier",
+"humectant",
+"sequestrant",
+"stabiliser",
+"thickener"
+]
+},
+"E452v": {
+"name": "Ammonium polyphosphate",
+"functions": [
+"emulsifier",
+"humectant",
+"sequestrant",
+"stabiliser",
+"thickener"
+]
+},
+"E457": {
+"name": "Alpha-Cyclodextrine",
+"functions": [
+"stabiliser",
+"thickener"
+]
+},
+"E458": {
+"name": "Gamma-Cyclodextrine",
+"functions": [
+"stabiliser",
+"thickener"
+]
+},
+"E459": {
+"name": "Beta-cyclodextrine",
+"functions": [
+"carrier",
+"stabiliser",
+"thickener"
+]
+},
+"E460": {
+"name": "Cellulose",
+"functions": [
+"carrier",
+"emulsifier",
+"humectant",
+"stabiliser",
+"thickener"
+]
+},
+"E460i": {
+"name": "Microcrystalline cellulose",
+"functions": [
+"carrier",
+"emulsifier",
+"humectant",
+"stabiliser",
+"thickener"
+]
+},
+"E461": {
+"name": "methyl cellulose",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E462": {
+"name": "Ethyl cellulose",
+"functions": [
+"carrier",
+"thickener"
+]
+},
+"E463": {
+"name": "Hydroxypropyl cellulose",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E464": {
+"name": "Hydroxypropyl methyl cellulose",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E465": {
+"name": "Ethyl methyl cellulose",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E466": {
+"name": "Sodium carboxy methyl cellulose",
+"functions": [
+"emulsifier",
+"humectant",
+"stabiliser",
+"thickener"
+]
+},
+"E467": {
+"name": "Ethulose",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E468": {
+"name": "Cross-linked sodium carboxymethylcellulose",
+"functions": [
+"stabiliser",
+"thickener"
+]
+},
+"E469": {
+"name": "Enzymatically hydrolysed carboxymethylcellulose",
+"functions": [
+"stabiliser",
+"thickener"
+]
+},
+"E470": {
+"name": "Sodium/potassium/calcium and magnesium salts of fatty acids",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E470a": {
+"name": "Sodium/potassium and calcium salts of fatty acids",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E470b": {
+"name": "Magnesium salts of fatty acids",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E470i": {
+"name": "E470i",
+"functions": []
+},
+"E471": {
+"name": "Mono- and diglycerides of fatty acids",
+"functions": [
+"emulsifier",
+"stabiliser"
+]
+},
+"E472": {
+"name": "acid esters of mono- and diglycerides of fatty acids",
+"functions": []
+},
+"E472a": {
+"name": "Acetic acid esters of mono- and diglycerides of fatty acids",
+"functions": [
+"emulsifier",
+"sequestrant",
+"stabiliser"
+]
+},
+"E472b": {
+"name": "Lactic acid esters of mono- and diglycerides of fatty acids",
+"functions": [
+"emulsifier",
+"sequestrant",
+"stabiliser"
+]
+},
+"E472c": {
+"name": "Citric acid esters of mono- and diglycerides of fatty acids",
+"functions": [
+"antioxidant",
+"emulsifier",
+"sequestrant",
+"stabiliser"
+]
+},
+"E472d": {
+"name": "Tartaric acid esters of mono- and diglycerides of fatty acids",
+"functions": []
+},
+"E472e": {
+"name": "Mono- and diacetyltartaric acid esters of mono- and diglycerides of fatty acids",
+"functions": [
+"emulsifier",
+"sequestrant",
+"stabiliser"
+]
+},
+"E472f": {
+"name": "Mixed acetic and tartaric acid esters of mono- and diglycerides of fatty acids",
+"functions": []
+},
+"E472g": {
+"name": "Succinylated monoglycerides",
+"functions": []
+},
+"E473": {
+"name": "Sucrose esters of fatty acids",
+"functions": [
+"emulsifier",
+"stabiliser"
+]
+},
+"E473a": {
+"name": "Oligoesters of sucrose type I",
+"functions": [
+"emulsifier",
+"stabiliser"
+]
+},
+"E474": {
+"name": "Sucroglycerides",
+"functions": [
+"emulsifier"
+]
+},
+"E475": {
+"name": "Polyglycerol esters of fatty acids",
+"functions": [
+"emulsifier",
+"stabiliser"
+]
+},
+"E476": {
+"name": "Polyglycerol polyricinoleate",
+"functions": [
+"emulsifier"
+]
+},
+"E477": {
+"name": "Propane-1‚2-diol esters of fatty acids",
+"functions": [
+"emulsifier"
+]
+},
+"E478": {
+"name": "Lactylated fatty acid esters of glycerol and propane-1",
+"functions": []
+},
+"E479b": {
+"name": "Thermally oxidised soya bean oil interacted with mono- and diglycerides of fatty acids",
+"functions": [
+"emulsifier"
+]
+},
+"E481": {
+"name": "Sodium stearoyl-2-lactylate",
+"functions": [
+"emulsifier",
+"stabiliser"
+]
+},
+"E481i": {
+"name": "E481i",
+"functions": []
+},
+"E482": {
+"name": "Calcium stearoyl-2-lactylate",
+"functions": [
+"emulsifier",
+"stabiliser"
+]
+},
+"E482i": {
+"name": "Calcium stearoyl lactylate",
+"functions": []
+},
+"E483": {
+"name": "Stearyl tartrate",
+"functions": []
+},
+"E484": {
+"name": "Stearyl citrate",
+"functions": [
+"antioxidant",
+"emulsifier",
+"sequestrant"
+]
+},
+"E485": {
+"name": "Sodium stearoyl fumarate",
+"functions": []
+},
+"E486": {
+"name": "Calcium stearoyl fumarate",
+"functions": []
+},
+"E487": {
+"name": "sodium dodecyl sulfate",
+"functions": []
+},
+"E488": {
+"name": "Ethoxylated Mono- and Di-Glycerides",
+"functions": []
+},
+"E489": {
+"name": "Methyl glucoside-coconut oil ester",
+"functions": []
+},
+"E490": {
+"name": "E490",
+"functions": []
+},
+"E491": {
+"name": "Sorbitan monostearate",
+"functions": [
+"emulsifier"
+]
+},
+"E492": {
+"name": "Sorbitan tristearate",
+"functions": [
+"emulsifier",
+"stabiliser"
+]
+},
+"E493": {
+"name": "Sorbitan monolaurate",
+"functions": [
+"emulsifier",
+"stabiliser"
+]
+},
+"E494": {
+"name": "Sorbitan monooleate",
+"functions": [
+"emulsifier",
+"stabiliser"
+]
+},
+"E495": {
+"name": "Sorbitan monopalmitate",
+"functions": [
+"emulsifier"
+]
+},
+"E496": {
+"name": "Sorbitan trioleate",
+"functions": []
+},
+"E500": {
+"name": "Sodium carbonates",
+"functions": [
+"stabiliser",
+"thickener"
+]
+},
+"E500i": {
+"name": "Sodium carbonate",
+"functions": [
+"stabiliser",
+"thickener"
+]
+},
+"E501": {
+"name": "Potassium carbonates",
+"functions": [
+"stabiliser"
+]
+},
+"E501i": {
+"name": "Potassium carbonate",
+"functions": [
+"stabiliser"
+]
+},
+"E502": {
+"name": "Carbonates",
+"functions": []
+},
+"E503": {
+"name": "Ammonium carbonates",
+"functions": []
+},
+"E503i": {
+"name": "Ammonium carbonate",
+"functions": []
+},
+"E504": {
+"name": "Magnesium carbonates",
+"functions": [
+"carrier"
+]
+},
+"E504i": {
+"name": "Magnesium carbonate",
+"functions": [
+"carrier"
+]
+},
+"E505": {
+"name": "Ferrous carbonate",
+"functions": []
+},
+"E507": {
+"name": "Hydrochloric acid",
+"functions": []
+},
+"E508": {
+"name": "Potassium chloride",
+"functions": [
+"stabiliser",
+"thickener",
+"preservative"
+]
+},
+"E509": {
+"name": "Calcium chloride",
+"functions": [
+"stabiliser",
+"thickener",
+"coagulant"
+]
+},
+"E510": {
+"name": "ammonium chloride",
+"functions": []
+},
+"E511": {
+"name": "Magnesium chloride",
+"functions": [
+"stabiliser",
+"coagulant"
+]
+},
+"E512": {
+"name": "Stannous chloride",
+"functions": [
+"antioxidant"
+]
+},
+"E513": {
+"name": "Sulphuric acid",
+"functions": []
+},
+"E514": {
+"name": "Sodium sulphates",
+"functions": []
+},
+"E514i": {
+"name": "Sodium sulphate",
+"functions": []
+},
+"E515": {
+"name": "Potassium sulphates",
+"functions": []
+},
+"E515i": {
+"name": "Potassium sulphate",
+"functions": []
+},
+"E516": {
+"name": "Calcium sulphate",
+"functions": [
+"sequestrant",
+"stabiliser"
+]
+},
+"E517": {
+"name": "Ammonium sulphate",
+"functions": []
+},
+"E518": {
+"name": "Magnesium sulphate",
+"functions": []
+},
+"E519": {
+"name": "Copper sulphate",
+"functions": []
+},
+"E520": {
+"name": "Aluminium sulphate",
+"functions": []
+},
+"E521": {
+"name": "Aluminium sodium sulphate",
+"functions": []
+},
+"E522": {
+"name": "Aluminium potassium sulphate",
+"functions": []
+},
+"E523": {
+"name": "Aluminium ammonium sulphate",
+"functions": [
+"stabiliser"
+]
+},
+"E524": {
+"name": "Sodium hydroxide",
+"functions": []
+},
+"E525": {
+"name": "Potassium hydroxide",
+"functions": []
+},
+"E526": {
+"name": "Calcium hydroxide",
+"functions": []
+},
+"E527": {
+"name": "Ammonium hydroxide",
+"functions": []
+},
+"E528": {
+"name": "Magnesium hydroxide",
+"functions": []
+},
+"E529": {
+"name": "Calcium oxide",
+"functions": []
+},
+"E530": {
+"name": "Magnesium oxide",
+"functions": []
+},
+"E535": {
+"name": "Sodium ferrocyanide",
+"functions": []
+},
+"E536": {
+"name": "Potassium ferrocyanide",
+"functions": []
+},
+"E537": {
+"name": "ferrous hexacyanomanganate",
+"functions": []
+},
+"E538": {
+"name": "Calcium ferrocyanide",
+"functions": []
+},
+"E539": {
+"name": "sodium thiosulfate",
+"functions": [
+"antioxidant",
+"sequestrant"
+]
+},
+"E540": {
+"name": "E540",
+"functions": []
+},
+"E541": {
+"name": "Sodium aluminium phosphate",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E541i": {
+"name": "Acid sodium aluminium phosphate",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E542": {
+"name": "Bone phosphate",
+"functions": [
+"emulsifier",
+"humectant"
+]
+},
+"E543": {
+"name": "E543 food additive",
+"functions": []
+},
+"E544": {
+"name": "E544",
+"functions": []
+},
+"E545": {
+"name": "E545",
+"functions": []
+},
+"E546": {
+"name": "Magnesium pyrophosphate",
+"functions": []
+},
+"E550": {
+"name": "Sodium silicate",
+"functions": []
+},
+"E550i": {
+"name": "E550i",
+"functions": []
+},
+"E551": {
+"name": "Silicon dioxide",
+"functions": [
+"carrier"
+]
+},
+"E552": {
+"name": "Calcium silicate",
+"functions": []
+},
+"E553": {
+"name": "Magnesium silicates",
+"functions": [
+"thickener"
+]
+},
+"E553a": {
+"name": "synthetic magnesium silicates",
+"functions": [
+"thickener"
+]
+},
+"E553b": {
+"name": "Talc",
+"functions": [
+"thickener"
+]
+},
+"E553i": {
+"name": "Magnesium silicate‚ synthetic",
+"functions": []
+},
+"E554": {
+"name": "Sodium aluminium silicate",
+"functions": []
+},
+"E555": {
+"name": "Potassium aluminium silicate",
+"functions": []
+},
+"E556": {
+"name": "Calcium aluminium silicate",
+"functions": []
+},
+"E557": {
+"name": "hemimorphite",
+"functions": []
+},
+"E558": {
+"name": "Bentonite",
+"functions": []
+},
+"E559": {
+"name": "Aluminium silicate",
+"functions": []
+},
+"E560": {
+"name": "Potassium silicate",
+"functions": []
+},
+"E570": {
+"name": "Fatty acids",
+"functions": []
+},
+"E571": {
+"name": "E571",
+"functions": []
+},
+"E572": {
+"name": "Magnesium stearate",
+"functions": []
+},
+"E573": {
+"name": "Aluminium stearate",
+"functions": []
+},
+"E574": {
+"name": "Gluconic acid",
+"functions": []
+},
+"E575": {
+"name": "Glucono-delta-lactone",
+"functions": [
+"sequestrant"
+]
+},
+"E576": {
+"name": "Sodium gluconate",
+"functions": [
+"sequestrant",
+"stabiliser",
+"thickener"
+]
+},
+"E577": {
+"name": "Potassium gluconate",
+"functions": [
+"sequestrant"
+]
+},
+"E578": {
+"name": "calcium gluconate",
+"functions": [
+"sequestrant"
+]
+},
+"E579": {
+"name": "iron gluconate",
+"functions": []
+},
+"E580": {
+"name": "Magnesium Gluconate",
+"functions": []
+},
+"E585": {
+"name": "Ferrous lactate",
+"functions": []
+},
+"E586": {
+"name": "4-hexylresorcinol",
+"functions": []
+},
+"E620": {
+"name": "Glutamic acid",
+"functions": []
+},
+"E621": {
+"name": "Monosodium glutamate",
+"functions": [
+"flavour enhancer"
+]
+},
+"E622": {
+"name": "Monopotassium glutamate",
+"functions": []
+},
+"E623": {
+"name": "Calcium diglutamate",
+"functions": []
+},
+"E624": {
+"name": "Monoammonium glutamate",
+"functions": []
+},
+"E625": {
+"name": "Magnesium diglutamate",
+"functions": []
+},
+"E626": {
+"name": "Guanylic acid",
+"functions": []
+},
+"E627": {
+"name": "Disodium guanylate",
+"functions": []
+},
+"E628": {
+"name": "Dipotassium guanylate",
+"functions": []
+},
+"E629": {
+"name": "Calcium guanylate",
+"functions": []
+},
+"E630": {
+"name": "Inosinic acid",
+"functions": []
+},
+"E631": {
+"name": "Disodium inosinate",
+"functions": []
+},
+"E632": {
+"name": "Dipotassium inosinate",
+"functions": []
+},
+"E633": {
+"name": "Calcium inosinate",
+"functions": []
+},
+"E634": {
+"name": "Calcium 5'-ribonucleotide",
+"functions": []
+},
+"E635": {
+"name": "Disodium 5'-ribonucleotide",
+"functions": []
+},
+"E636": {
+"name": "Maltol",
+"functions": []
+},
+"E637": {
+"name": "Ethyl maltol",
+"functions": []
+},
+"E638": {
+"name": "E638",
+"functions": []
+},
+"E640": {
+"name": "Glycine and its sodium salt",
+"functions": []
+},
+"E640i": {
+"name": "Glycine",
+"functions": []
+},
+"E641": {
+"name": "Leucine",
+"functions": []
+},
+"E642": {
+"name": "E642",
+"functions": []
+},
+"E650": {
+"name": "Zinc acetate",
+"functions": []
+},
+"E710": {
+"name": "Spiramycin",
+"functions": []
+},
+"E713": {
+"name": "Tylosin",
+"functions": []
+},
+"E900": {
+"name": "Dimethylpolysiloxane and Methylphenylpolysiloxane",
+"functions": []
+},
+"E900a": {
+"name": "Dimethyl polysiloxane",
+"functions": [
+"emulsifier"
+]
+},
+"E900b": {
+"name": "Methylphenylpolysiloxane",
+"functions": []
+},
+"E901": {
+"name": "white and yellow beeswax",
+"functions": [
+"carrier",
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E902": {
+"name": "Candelilla wax",
+"functions": [
+"carrier",
+"emulsifier",
+"thickener"
+]
+},
+"E903": {
+"name": "Carnauba wax",
+"functions": [
+"carrier"
+]
+},
+"E904": {
+"name": "Shellac",
+"functions": []
+},
+"E905": {
+"name": "Synthetic wax",
+"functions": []
+},
+"E905a": {
+"name": "mineral oil",
+"functions": []
+},
+"E905b": {
+"name": "petroleum jelly",
+"functions": []
+},
+"E905c": {
+"name": "Petroleum wax",
+"functions": []
+},
+"E905d": {
+"name": "Mineral oil high viscosity",
+"functions": []
+},
+"E905e": {
+"name": "Mineral oil medium viscosity",
+"functions": []
+},
+"E905f": {
+"name": "Mineral oil medium and low viscosity class II",
+"functions": []
+},
+"E905g": {
+"name": "Mineral oil medium and low viscosity class III",
+"functions": []
+},
+"E906": {
+"name": "Benzoin resin",
+"functions": []
+},
+"E907": {
+"name": "Hydrogenated poly-1-decene",
+"functions": []
+},
+"E908": {
+"name": "Rice bran wax",
+"functions": []
+},
+"E909": {
+"name": "Spermaceti",
+"functions": []
+},
+"E910": {
+"name": "Wax ester",
+"functions": []
+},
+"E911": {
+"name": "Fatty acid methyl ester",
+"functions": []
+},
+"E912": {
+"name": "Montanic acid esters",
+"functions": []
+},
+"E913": {
+"name": "Lanolin",
+"functions": []
+},
+"E914": {
+"name": "Oxidised polyethylene wax",
+"functions": []
+},
+"E915": {
+"name": "Esters of Colophane",
+"functions": []
+},
+"E916": {
+"name": "Calcium iodate",
+"functions": []
+},
+"E917": {
+"name": "potassium iodate",
+"functions": []
+},
+"E918": {
+"name": "Nitrogen oxides",
+"functions": []
+},
+"E919": {
+"name": "Nitrosyl chloride",
+"functions": []
+},
+"E920": {
+"name": "l-cysteine",
+"functions": []
+},
+"E921": {
+"name": "L-cysteine hydrochloride monohydrate",
+"functions": []
+},
+"E922": {
+"name": "Potassium persulfate",
+"functions": []
+},
+"E923": {
+"name": "ammonium persulfate",
+"functions": []
+},
+"E924": {
+"name": "E924",
+"functions": []
+},
+"E924a": {
+"name": "Potassium bromate",
+"functions": []
+},
+"E924b": {
+"name": "Calcium bromate",
+"functions": []
+},
+"E925": {
+"name": "Chlorine",
+"functions": []
+},
+"E926": {
+"name": "Chlorine dioxide",
+"functions": []
+},
+"E927": {
+"name": "Azodicarbonamide and Carbamide",
+"functions": []
+},
+"E927a": {
+"name": "Azodicarbonamide",
+"functions": []
+},
+"E927b": {
+"name": "Carbamide",
+"functions": []
+},
+"E928": {
+"name": "Benzole peroxide",
+"functions": [
+"preservative"
+]
+},
+"E929": {
+"name": "acetone peroxide",
+"functions": []
+},
+"E930": {
+"name": "calcium peroxide",
+"functions": []
+},
+"E931": {
+"name": "E931",
+"functions": []
+},
+"E932": {
+"name": "Nitrogen oxide",
+"functions": []
+},
+"E938": {
+"name": "Argon",
+"functions": []
+},
+"E939": {
+"name": "Helium",
+"functions": []
+},
+"E940": {
+"name": "Dichlorodifluoromethane",
+"functions": []
+},
+"E941": {
+"name": "Nitrogen",
+"functions": [
+"propellent gas"
+]
+},
+"E942": {
+"name": "Nitrous oxide",
+"functions": [
+"antioxidant",
+"propellent gas"
+]
+},
+"E943a": {
+"name": "Butane",
+"functions": []
+},
+"E943b": {
+"name": "Isobutane",
+"functions": []
+},
+"E944": {
+"name": "Propane",
+"functions": []
+},
+"E945": {
+"name": "chloropentafluoroethane",
+"functions": []
+},
+"E946": {
+"name": "octafluorocyclobutane",
+"functions": []
+},
+"E948": {
+"name": "Oxygen",
+"functions": []
+},
+"E949": {
+"name": "Hydrogen",
+"functions": []
+},
+"E950": {
+"name": "Acesulfame k",
+"functions": [
+"sweetener"
+]
+},
+"E951": {
+"name": "Aspartame",
+"functions": [
+"sweetener"
+]
+},
+"E952": {
+"name": "Cyclamic acid and its Na and Ca salts",
+"functions": [
+"sweetener"
+]
+},
+"E952i": {
+"name": "E952i",
+"functions": []
+},
+"E953": {
+"name": "isomalt",
+"functions": [
+"stabiliser",
+"sweetener",
+"thickener"
+]
+},
+"E954": {
+"name": "saccharin and its salts",
+"functions": [
+"sweetener"
+]
+},
+"E954i": {
+"name": "E954i",
+"functions": []
+},
+"E955": {
+"name": "Sucralose",
+"functions": [
+"sweetener"
+]
+},
+"E956": {
+"name": "Alitame",
+"functions": [
+"sweetener"
+]
+},
+"E957": {
+"name": "Thaumatin",
+"functions": [
+"sweetener"
+]
+},
+"E958": {
+"name": "Glycyrrhizin",
+"functions": [
+"sweetener"
+]
+},
+"E959": {
+"name": "Neohesperidine dihydrochalcone",
+"functions": [
+"sweetener"
+]
+},
+"E960": {
+"name": "Steviol glycosides",
+"functions": [
+"sweetener"
+]
+},
+"E960a": {
+"name": "Steviol glycosides from Stevia",
+"functions": [
+"sweetener"
+]
+},
+"E960b": {
+"name": "Rebaudioside from multiple gene donors expressed in Yarrowia lipolityca",
+"functions": [
+"sweetener"
+]
+},
+"E960c": {
+"name": "Enzymatically produced steviol glycosides",
+"functions": [
+"sweetener"
+]
+},
+"E960d": {
+"name": "Glucosylated steviol glycosides",
+"functions": [
+"sweetener"
+]
+},
+"E961": {
+"name": "Neotame",
+"functions": [
+"sweetener"
+]
+},
+"E962": {
+"name": "Salt of aspartame-acesulfame",
+"functions": [
+"sweetener"
+]
+},
+"E963": {
+"name": "Tagatose",
+"functions": [
+"sweetener"
+]
+},
+"E964": {
+"name": "Polyglycitol syrup",
+"functions": [
+"sweetener"
+]
+},
+"E965": {
+"name": "maltitol",
+"functions": [
+"emulsifier",
+"humectant",
+"stabiliser",
+"sweetener",
+"thickener"
+]
+},
+"E965i": {
+"name": "D-Maltitol",
+"functions": [
+"emulsifier",
+"humectant",
+"stabiliser",
+"sweetener",
+"thickener"
+]
+},
+"E966": {
+"name": "Lactitol",
+"functions": [
+"emulsifier",
+"sweetener",
+"thickener"
+]
+},
+"E967": {
+"name": "Xylitol",
+"functions": [
+"emulsifier",
+"humectant",
+"stabiliser",
+"sweetener",
+"thickener"
+]
+},
+"E968": {
+"name": "Erythritol",
+"functions": [
+"humectant",
+"sweetener"
+]
+},
+"E969": {
+"name": "Advantame",
+"functions": [
+"sweetener"
+]
+},
+"E999": {
+"name": "Quillaia extract",
+"functions": [
+"emulsifier"
+]
+},
+"E999i": {
+"name": "Quillaia extract type 1",
+"functions": []
+},
+"E1000": {
+"name": "Cholic acid",
+"functions": []
+},
+"E1001": {
+"name": "Choline salt",
+"functions": []
+},
+"E1001i": {
+"name": "Choline acetate",
+"functions": []
+},
+"E1001v": {
+"name": "Choline tartrate",
+"functions": []
+},
+"E1100": {
+"name": "Alpha-Amylase",
+"functions": []
+},
+"E1100i": {
+"name": "E1100i",
+"functions": []
+},
+"E1100v": {
+"name": "E1100v",
+"functions": []
+},
+"E1101": {
+"name": "Protease",
+"functions": [
+"stabiliser"
+]
+},
+"E1101i": {
+"name": "E1101i",
+"functions": []
+},
+"E1101v": {
+"name": "Protease from Streptomyces fradiae",
+"functions": []
+},
+"E1102": {
+"name": "Glucose oxidase",
+"functions": [
+"antioxidant"
+]
+},
+"E1103": {
+"name": "Invertase",
+"functions": [
+"stabiliser"
+]
+},
+"E1104": {
+"name": "lipase",
+"functions": []
+},
+"E1105": {
+"name": "Lysozyme",
+"functions": [
+"preservative"
+]
+},
+"E1200": {
+"name": "Polydextrose",
+"functions": [
+"humectant",
+"stabiliser",
+"thickener"
+]
+},
+"E1201": {
+"name": "Polyvinylpyrrolidone",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E1202": {
+"name": "Polyvinylpolypyrrolidone",
+"functions": [
+"stabiliser"
+]
+},
+"E1203": {
+"name": "Polyvinyl alcohol",
+"functions": [
+"thickener"
+]
+},
+"E1204": {
+"name": "Pullulan",
+"functions": [
+"thickener"
+]
+},
+"E1205": {
+"name": "Basic methacrylate copolymer",
+"functions": []
+},
+"E1206": {
+"name": "Neutral methacrylate copolymer",
+"functions": []
+},
+"E1207": {
+"name": "Anionic methacrylate copolymer",
+"functions": []
+},
+"E1208": {
+"name": "Polyvinylpyrrolidone-vinyl acetate copolymer",
+"functions": []
+},
+"E1209": {
+"name": "Polyvinyl alcohol-polyethylene glycol-graft-co-polymer",
+"functions": []
+},
+"E1210": {
+"name": "Carbomer",
+"functions": []
+},
+"E1400": {
+"name": "Dextrin",
+"functions": [
+"carrier",
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E1401": {
+"name": "Acid-treated modified starch",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E1402": {
+"name": "Alkaline modified starch",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E1403": {
+"name": "Bleached starch",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E1404": {
+"name": "Oxidised starch",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E1405": {
+"name": "Enzyme treated starch",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E1410": {
+"name": "Monostarch phosphate",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E1411": {
+"name": "Distarch glycerol",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E1412": {
+"name": "Distarch phosphate",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E1413": {
+"name": "Phosphated distarch phosphate",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E1414": {
+"name": "Acetylated distarch phosphate",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E1420": {
+"name": "Acetylated starch",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E1421": {
+"name": "mono starch acetate",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E1422": {
+"name": "Acetylated distarch adipate",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E1423": {
+"name": "Acetylated distarch glycerol",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E1430": {
+"name": "Distarch glycerine",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E1440": {
+"name": "Hydroxypropyl starch",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E1441": {
+"name": "Hydroxy propyl distarch glycerine",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E1442": {
+"name": "Hydroxypropyl distarch phosphate",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E1443": {
+"name": "Hydroxy propyl distarch glycerol",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E1450": {
+"name": "Starch sodium octenyl succinate",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E1451": {
+"name": "Acetylated oxidised starch",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E1452": {
+"name": "Starch aluminium octenyl succinate",
+"functions": [
+"emulsifier",
+"stabiliser",
+"thickener"
+]
+},
+"E1503": {
+"name": "Castor oil",
+"functions": [
+"carrier",
+"emulsifier"
+]
+},
+"E1504": {
+"name": "ethyl acetate",
+"functions": [
+"carrier"
+]
+},
+"E1505": {
+"name": "Triethyl citrate",
+"functions": [
+"carrier",
+"emulsifier",
+"sequestrant",
+"stabiliser"
+]
+},
+"E1510": {
+"name": "Ethanol",
+"functions": []
+},
+"E1517": {
+"name": "Glyceryl diacetate",
+"functions": []
+},
+"E1518": {
+"name": "Glyceryl triacetate",
+"functions": [
+"carrier",
+"emulsifier",
+"humectant"
+]
+},
+"E1519": {
+"name": "Benzyl alcohol",
+"functions": []
+},
+"E1520": {
+"name": "Propylene glycol",
+"functions": [
+"emulsifier",
+"humectant"
+]
+},
+"E1521": {
+"name": "Polyethylene glycol",
+"functions": []
+}
+}

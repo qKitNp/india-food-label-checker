@@ -31,6 +31,8 @@ class Settings(BaseSettings):
     appwrite_products_table: str = "products"
     appwrite_counterparts_table: str = "counterparts"
     appwrite_scan_logs_table: str = "scan_logs"
+    appwrite_substances_table: str = "substances"
+    research_daily_cap: int = 100  # codes researched automatically per day
 
     off_user_agent: str = "better-fssai/0.1 (hackathon project)"
 

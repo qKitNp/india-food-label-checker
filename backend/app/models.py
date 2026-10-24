@@ -88,6 +88,16 @@ class AdditiveFinding(BaseModel):
     status: dict[Region, RegionStatus]
     flagged: bool  # banned in at least one region
     message: str
+    origin: Literal["seed", "auto"] = "seed"  # "auto": researched automatically after a scan found it
+    researched_at: str | None = None
+
+
+class OtherAdditive(BaseModel):
+    """A code on the label that isn't in our researched list (yet)."""
+
+    code: str
+    name: str | None  # from the Open Food Facts additive taxonomy
+    researching: bool = False  # research started now; results show on a later scan
 
 
 class Counterpart(BaseModel):
@@ -108,3 +118,4 @@ class Verdict(BaseModel):
     additives: list[AdditiveFinding]
     counterpart: Counterpart | None = None
     headline: list[str]
+    other_additives: list[OtherAdditive] = Field(default_factory=list)

@@ -1,5 +1,6 @@
 """Substances to watch (additives, illegal dyes, trans fats, contaminants) and their status in
-India, the EU and the US, researched from official sources by scripts/research_substances.py.
+India, the EU and the US. The seed list is researched by scripts/research_substances.py;
+codes found in scans are researched at runtime (app/research.py) and added here.
 
 Every status other than "unknown" carries a verbatim quote that was checked against its
 source page. Products are matched by additive code or by name in the ingredients text.
@@ -7,7 +8,6 @@ source page. Products are matched by additive code or by name in the ingredients
 
 import json
 import re
-from functools import lru_cache
 from pathlib import Path
 
 from app.models import AdditiveFinding, Product, RegionStatus
@@ -16,10 +16,24 @@ _FILE = Path(__file__).with_name("substances.json")
 REGIONS = ("IN", "EU", "US")
 REGION_NAMES = {"IN": "India", "EU": "the EU", "US": "the US"}
 
+# In memory, keyed by id: the seed file at import, then Appwrite rows and new research results.
+_items: dict[str, dict] = {s["id"]: s for s in json.loads(_FILE.read_text())} if _FILE.exists() else {}
 
-@lru_cache
+
 def table() -> list[dict]:
+    return list(_items.values())
+
+
+def upsert(sub: dict) -> None:
+    _items[sub["id"]] = sub
+
+
+def seed() -> list[dict]:
     return json.loads(_FILE.read_text()) if _FILE.exists() else []
+
+
+def is_known(code: str) -> bool:
+    return any(code in s["codes"] for s in table())
 
 
 def _name_pattern(names: list[str]) -> re.Pattern | None:
@@ -58,10 +72,6 @@ def evaluate(product: Product) -> list[AdditiveFinding]:
             category=sub["category"], matched=matched, status=status,
             flagged=any(s.status == "banned" for s in status.values()),
             message=_message(sub["name"], status),
+            origin=sub.get("origin", "seed"), researched_at=sub.get("researched_at"),
         ))
     return findings
-
-
-def reviewed_codes() -> set[str]:
-    return {c for sub in table() for c in sub["codes"]}
-

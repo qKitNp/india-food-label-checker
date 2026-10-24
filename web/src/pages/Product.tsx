@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
-import { api, ApiError, type AdditiveFinding, type ClaimFinding, type Nutrition, type Region, type RegionStatus, type Verdict } from '../api'
+import { api, ApiError, type AdditiveFinding, type ClaimFinding, type Nutrition, type OtherAdditive, type Region, type RegionStatus, type Verdict } from '../api'
 import { remember } from '../history'
 import { Button, Card, Chip, Cover, ErrorNote, Page, SectionTitle, Spinner, buttonClass, productTitle, shortBrand } from '../ui'
 
@@ -102,7 +102,9 @@ function VerdictView({ verdict, onUpdate }: { verdict: Verdict; onUpdate: (v: Ve
       )}
 
       {!unreliable && verdict.claims.length > 0 && <Claims claims={verdict.claims} liquid={!!p.is_liquid} />}
-      {!unreliable && p.additives.length > 0 && <Additives additives={verdict.additives} all={p.additives} />}
+      {!unreliable && (verdict.additives.length > 0 || verdict.other_additives.length > 0) && (
+        <Additives additives={verdict.additives} others={verdict.other_additives} />
+      )}
       <NutritionCard nutrition={p.nutrition} liquid={!!p.is_liquid} />
       <Ingredients verdict={verdict} />
       <Compare verdict={verdict} onUpdate={onUpdate} />
@@ -172,13 +174,15 @@ const STATUS: Record<RegionStatus['status'], { mark: string; tone: 'bad' | 'warn
 }
 const REGION_NAMES: Record<Region, string> = { IN: 'India', EU: 'European Union', US: 'United States' }
 
-function Additives({ additives, all }: { additives: AdditiveFinding[]; all: string[] }) {
+function Additives({ additives, others }: { additives: AdditiveFinding[]; others: OtherAdditive[] }) {
   const sorted = [...additives].sort((a, b) => Number(b.flagged) - Number(a.flagged))
-  const matched = new Set(additives.map((a) => a.code).filter(Boolean))
-  const unreviewed = all.filter((code) => !matched.has(code))
+  const banned = additives.filter((a) => a.flagged).length
+  const researching = others.filter((o) => o.researching).length
   return (
     <Card className="rise mt-4">
-      <SectionTitle hint={`${additives.filter((a) => a.flagged).length} banned somewhere`}>Additives and substances</SectionTitle>
+      <SectionTitle hint={banned ? `${banned} banned in another country` : sorted.length ? 'None banned in India, EU or US' : undefined}>
+        Additives
+      </SectionTitle>
       <ul className="divide-y divide-line">
         {sorted.map((a) => (
           <li key={a.id} className="py-3 first:pt-0">
@@ -207,6 +211,9 @@ function Additives({ additives, all }: { additives: AdditiveFinding[]; all: stri
                       </p>
                       {(s.fact || s.reason) && <p className="mt-0.5 text-muted">{s.fact || s.reason}</p>}
                       {s.quote && <p className="mt-1 text-xs text-faint italic">“{s.quote.length > 220 ? s.quote.slice(0, 220) + '…' : s.quote}”</p>}
+                      {a.origin === 'auto' && s.source_url && (
+                        <p className="mt-1 text-[11px] text-faint">Looked up automatically{a.researched_at ? ` on ${new Date(a.researched_at).toLocaleDateString()}` : ''}</p>
+                      )}
                       {s.source_url ? (
                         <a href={s.source_url} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs text-accent-deep underline">
                           {domain(s.source_url)}
@@ -222,10 +229,22 @@ function Additives({ additives, all }: { additives: AdditiveFinding[]; all: stri
           </li>
         ))}
       </ul>
-      {unreviewed.length > 0 && (
-        <p className={`text-sm leading-relaxed text-muted ${sorted.length ? 'mt-3 border-t border-line pt-3' : ''}`}>
-          Also contains, not reviewed yet: <span className="font-medium text-ink-2">{unreviewed.join(', ')}</span>
-        </p>
+      {others.length > 0 && (
+        <div className={sorted.length ? 'mt-3 border-t border-line pt-3' : ''}>
+          <p className="text-xs text-faint">Other additives</p>
+          <ul className="mt-1.5 flex flex-wrap gap-1.5">
+            {others.map((o) => (
+              <li key={o.code} className="rounded-full bg-wash px-2.5 py-1 text-sm text-ink-2">
+                {o.name ?? 'Unknown additive'} <span className="text-faint">{o.code}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs leading-relaxed text-faint">
+            {researching
+              ? "We're looking up these countries' rules now. They'll show here next time you check this product."
+              : "We haven't checked these countries' rules yet."}
+          </p>
+        </div>
       )}
       {sorted.length > 0 && <p className="mt-3 text-xs text-faint">Tap a substance to see each country's rule and its source.</p>}
     </Card>

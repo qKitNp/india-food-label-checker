@@ -62,6 +62,15 @@ export interface AdditiveFinding {
   status: Record<Region, RegionStatus>
   flagged: boolean
   message: string
+  origin: 'seed' | 'auto' // auto: researched automatically after a scan found it
+  researched_at: string | null
+}
+
+/** A code on the label that isn't in our researched list yet. */
+export interface OtherAdditive {
+  code: string
+  name: string | null
+  researching: boolean
 }
 
 /** A label-reading tip, checked against the official source it links to. */
@@ -90,6 +99,7 @@ export interface Verdict {
   additives: AdditiveFinding[]
   counterpart: Counterpart | null
   headline: string[]
+  other_additives: OtherAdditive[]
 }
 
 export interface Step {

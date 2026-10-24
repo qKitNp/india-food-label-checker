@@ -12,7 +12,8 @@ from pydantic import BaseModel, model_validator
 from app import additive_codes, agent, llm, verdict
 from app.catalog import Embedder
 from app.config import get_settings
-from app.rules import tips
+from app.research import ResearchQueue
+from app.rules import substances, tips
 from app.jobs import IdentifyResponse, Job, JobStore
 from app.models import Product, Region, Verdict
 from app.services import ProductService
@@ -47,11 +48,41 @@ async def lifespan(app: FastAPI):
     await app.state.products.load_index()
     app.state.exa = Exa(settings.exa_api_key) if settings.exa_api_key else None
     app.state.jobs = JobStore(on_finish=store.save_scan_log)
+    await load_substances(store)
+
+    async def save_substance(sub: dict) -> None:
+        await store.save_substance(sub)
+        substances.upsert(sub)
+
+    app.state.research = ResearchQueue(settings, app.state.exa, substances.is_known, save_substance,
+                                       daily_cap=settings.research_daily_cap)
     yield
     await http.aclose()
     for closeable in (store, embedder):
         if hasattr(closeable, "aclose"):
             await closeable.aclose()
+
+
+async def load_substances(store) -> None:
+    """Researched substances live in Appwrite so runtime research persists. Seed entries
+    missing from the store are copied in; everything stored is loaded into memory."""
+    stored = await store.list_substances()
+    stored_ids = {s["id"] for s in stored}
+    for sub in substances.seed():
+        if sub["id"] not in stored_ids:
+            await store.save_substance(sub)
+            stored.append(sub)
+    for sub in stored:
+        substances.upsert(sub)
+    logging.getLogger(__name__).info("Loaded %d substances", len(stored))
+
+
+def with_research(request: Request, v: Verdict) -> Verdict:
+    """Queue research for additive codes we don't know yet, and say which are in progress."""
+    started = set(request.app.state.research.enqueue([o.code for o in v.other_additives]))
+    for o in v.other_additives:
+        o.researching = o.code in started
+    return v
 
 
 app = FastAPI(title="Better FSSAI", lifespan=lifespan)
@@ -100,12 +131,12 @@ async def health(svc: ProductsDep):
 
 
 @app.get("/products/{key}")
-async def get_product(key: str, svc: ProductsDep) -> Verdict:
+async def get_product(key: str, request: Request, svc: ProductsDep) -> Verdict:
     """Look up by barcode (or by the key returned for products found without one)."""
     product = await lookup(svc, key)
     if product is None:
         raise HTTPException(404, "Product not found. Scan the back label instead.")
-    return verdict.build(product, await svc.store.get_counterpart(key, "EU"))
+    return with_research(request, verdict.build(product, await svc.store.get_counterpart(key, "EU")))
 
 
 class JobStarted(BaseModel):
@@ -128,7 +159,8 @@ async def identify(
         result = await agent.find_from_front(request.app.state.settings, svc, request.app.state.exa, files, steps)
         v = None
         if result.product:
-            v = verdict.build(result.product, await svc.store.get_counterpart(result.product.key, "EU"))
+            v = with_research(request, verdict.build(
+                result.product, await svc.store.get_counterpart(result.product.key, "EU")))
         return IdentifyResponse(result=result, verdict=v)
 
     job = request.app.state.jobs.start(work)
@@ -155,7 +187,7 @@ async def extract_label(
 
 
 @app.post("/products/confirm")
-async def confirm_product(product: Product, svc: ProductsDep) -> Verdict:
+async def confirm_product(product: Product, request: Request, svc: ProductsDep) -> Verdict:
     """Save a user-confirmed product (from a label scan) as verified."""
     if not product.barcode:
         raise HTTPException(400, "A barcode is needed to save a product")
@@ -163,7 +195,7 @@ async def confirm_product(product: Product, svc: ProductsDep) -> Verdict:
     additives = additive_codes.find_in_text(product.ingredients_text or "")
     product = product.model_copy(update={"verified": True, "source": "label", "additives": additives})
     await svc.save(product)
-    return verdict.build(product, await svc.store.get_counterpart(product.key, "EU"))
+    return with_research(request, verdict.build(product, await svc.store.get_counterpart(product.key, "EU")))
 
 
 @app.get("/products/{key}/counterpart")
@@ -180,7 +212,7 @@ async def get_counterpart(key: str, request: Request, svc: ProductsDep, region: 
         found = await counterpart.find(request.app.state.exa, request.app.state.settings, product, region)
         if found:
             await svc.store.save_counterpart(key, found)
-    return verdict.build(product, found)
+    return with_research(request, verdict.build(product, found))
 
 
 class VoiceLookup(BaseModel):

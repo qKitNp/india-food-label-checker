@@ -46,6 +46,8 @@ class Store(Protocol):
     async def get_counterpart(self, barcode: str, region: Region) -> Counterpart | None: ...
     async def save_counterpart(self, barcode: str, counterpart: Counterpart) -> None: ...
     async def save_scan_log(self, record: dict) -> None: ...
+    async def list_substances(self) -> list[dict]: ...
+    async def save_substance(self, sub: dict) -> None: ...
 
 
 class MemoryStore:
@@ -55,6 +57,7 @@ class MemoryStore:
         self.images: dict[str, bytes] = {}
         self.counterparts: dict[str, Counterpart] = {}
         self.scan_logs: list[dict] = []
+        self.substances: dict[str, dict] = {}
 
     async def get_product(self, key):
         return self.products.get(key)
@@ -83,6 +86,12 @@ class MemoryStore:
     async def save_scan_log(self, record):
         self.scan_logs.append(record)
 
+    async def list_substances(self):
+        return list(self.substances.values())
+
+    async def save_substance(self, sub):
+        self.substances[sub["id"]] = sub
+
 
 class AppwriteStore:
     def __init__(self, settings: Settings) -> None:
@@ -97,6 +106,7 @@ class AppwriteStore:
         self.products = settings.appwrite_products_table
         self.counterparts = settings.appwrite_counterparts_table
         self.scan_logs = settings.appwrite_scan_logs_table
+        self.substances = settings.appwrite_substances_table
 
     async def _get(self, table: str, key: str) -> str | None:
         r = await self.http.get(f"{table}/rows/{row_id(key)}")
@@ -187,6 +197,26 @@ class AppwriteStore:
             "job_id": record["job_id"], "status": record["status"], "outcome": record["outcome"],
             "product_key": record["product_key"], "duration_ms": record["duration_ms"],
             "error": (record["error"] or "")[:2000] or None, "steps": steps[:1_000_000],
+        })
+
+    async def list_substances(self):
+        out, cursor = [], None
+        while True:
+            queries = [{"method": "select", "values": ["$id", "payload"]}, {"method": "limit", "values": [100]}]
+            if cursor:
+                queries.append({"method": "cursorAfter", "values": [cursor]})
+            r = await self.http.get(f"{self.substances}/rows", params={"queries[]": [json.dumps(q) for q in queries]})
+            r.raise_for_status()
+            rows = r.json()["rows"]
+            out += [json.loads(row["payload"]) for row in rows]
+            if len(rows) < 100:
+                return out
+            cursor = rows[-1]["$id"]
+
+    async def save_substance(self, sub):
+        await self._put(self.substances, sub["id"], {
+            "name": sub["name"], "codes": ",".join(sub["codes"]), "origin": sub.get("origin", "seed"),
+            "payload": json.dumps(sub, ensure_ascii=False),
         })
 
 def make_store(settings: Settings) -> Store:
