@@ -74,6 +74,7 @@ class RegionStatus(BaseModel):
     status: Literal["banned", "restricted", "allowed", "unknown"]
     since: str | None = None
     reason: str | None = None
+    fact: str | None = None  # plain-language summary written from the quote
     quote: str | None = None
     source_url: str | None = None
 

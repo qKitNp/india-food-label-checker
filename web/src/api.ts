@@ -48,6 +48,7 @@ export interface RegionStatus {
   status: 'banned' | 'restricted' | 'allowed' | 'unknown'
   since: string | null
   reason: string | null
+  fact: string | null
   quote: string | null
   source_url: string | null
 }

@@ -205,7 +205,7 @@ function Additives({ additives, all }: { additives: AdditiveFinding[]; all: stri
                         {FLAGS[r]} {REGION_NAMES[r]}: {STATUS[s.status].word}
                         {s.since ? ` since ${s.since}` : ''}
                       </p>
-                      {s.reason && <p className="mt-0.5 text-muted">{s.reason}</p>}
+                      {(s.fact || s.reason) && <p className="mt-0.5 text-muted">{s.fact || s.reason}</p>}
                       {s.quote && <p className="mt-1 text-xs text-faint italic">“{s.quote.length > 220 ? s.quote.slice(0, 220) + '…' : s.quote}”</p>}
                       {s.source_url ? (
                         <a href={s.source_url} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs text-accent-deep underline">
