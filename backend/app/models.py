@@ -39,6 +39,7 @@ class Product(BaseModel):
     source: Source
     verified: bool = False
     evidence: Evidence | None = None
+    image_file_id: str | None = Field(default=None, description="Pack photo in Appwrite Storage")
 
     @property
     def key(self) -> str:

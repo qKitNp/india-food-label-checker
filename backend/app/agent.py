@@ -16,6 +16,7 @@ import re
 from typing import Literal
 
 import litellm
+import numpy as np
 from exa_py import Exa
 from pydantic import BaseModel, Field
 
@@ -53,6 +54,9 @@ Process:
    use_catalog_product right away. Catalog entries were already checked when saved, whatever
    their source or "verified" flag, so don't search the web again for a product you matched.
    Names may differ in wording ("Kurkure Namkeen Masala Munch" = "Kurkure Masala Munch").
+   Candidates show name_similarity and pack_image_similarity (the user's photo vs our stored
+   pack photo). Packs of one brand look alike across variants, so a high image score alone
+   never proves the variant: the variant name on the pack must match.
 2. Only if no candidate is the same product, web_search for the Indian version's ingredients. Good sources, best first:
    the brand's official Indian site, then Indian retailers that show the back of pack
    (bigbasket, blinkit, amazon.in, jiomart, zepto). Read promising pages with read_page.
@@ -138,10 +142,12 @@ def number_on_page(value: float, text: str) -> bool:
 
 
 class _Run:
-    def __init__(self, settings: Settings, products: ProductService, exa: Exa | None) -> None:
+    def __init__(self, settings: Settings, products: ProductService, exa: Exa | None,
+                 image_vector: np.ndarray | None = None) -> None:
         self.settings = settings
         self.products = products
         self.exa = exa
+        self.image_vector = image_vector  # the scanned photo, for catalog search
         self.pages: dict[str, str] = {}
         self.final: AgentResult | None = None
 
@@ -206,19 +212,24 @@ class _Run:
         dropped = sorted(set(values) - set(kept))
         return f"Accepted. Dropped values not found on the page: {dropped}" if dropped else "Accepted."
 
-    async def candidates(self, query: str) -> str:
-        """Top catalog matches with enough detail to confirm the variant without another step."""
+    async def candidates(self, query: str, use_photo: bool = False) -> str:
+        """Top catalog matches with enough detail to confirm the variant without another step.
+        With use_photo, the scanned pack image is part of the search."""
         out = []
-        for m in await self.products.similar(query, k=3):
+        matches = await self.products.similar(query, self.image_vector if use_photo else None, k=3)
+        for m in matches:
             p = await self.products.store.get_product(m.key)
             out.append({"key": m.key, "brand": p and p.brand, "name": p and p.name,
                         "barcode": p and p.barcode, "similarity": round(m.score, 3),
+                        "name_similarity": None if m.name_score is None else round(m.name_score, 3),
+                        "pack_image_similarity": None if m.image_score is None else round(m.image_score, 3),
                         "ingredients_start": p and (p.ingredients_text or "")[:150]})
         return json.dumps(out)
 
     async def loop(self, ident: Identification) -> AgentResult:
         query = " ".join(x for x in (ident.brand, ident.product_name) if x)
-        trace = [Step(tool="search_catalog", args={"query": query}, result=await self.candidates(query))]
+        trace = [Step(tool="search_catalog", args={"query": query, "with_photo": self.image_vector is not None},
+                      result=await self.candidates(query, use_photo=True))]
         messages = [
             {"role": "system", "content": SYSTEM},
             {"role": "user", "content": f"Product seen on the front of the pack: {ident.model_dump_json()}\n"
@@ -255,7 +266,9 @@ async def identify(settings: Settings, images: list[tuple[bytes, str]]) -> Ident
 
 async def find_from_front(settings: Settings, products: ProductService, exa: Exa | None,
                           images: list[tuple[bytes, str]]) -> AgentResult:
-    ident = await identify(settings, images)
+    photo = llm.shrink(images[0][0])
+    # Reading the pack (~5 s) and embedding the photo (~3 s on 2 vCPUs) run side by side.
+    ident, image_vector = await asyncio.gather(identify(settings, images), _embed_or_none(products, photo))
     if not ident.is_packaged_food:
         return AgentResult(status="not_food", identification=ident)
 
@@ -264,7 +277,7 @@ async def find_from_front(settings: Settings, products: ProductService, exa: Exa
         if product:
             return AgentResult(status="barcode", identification=ident, product=product)
 
-    run = _Run(settings, products, exa)
+    run = _Run(settings, products, exa, image_vector)
     try:
         result = await asyncio.wait_for(run.loop(ident), settings.agent_timeout)
     except TimeoutError:
@@ -272,6 +285,15 @@ async def find_from_front(settings: Settings, products: ProductService, exa: Exa
     except Exception as e:  # LiteLLM raises provider-specific exception types
         raise llm.LLMError(f"Agent failed: {e}") from e
 
-    if result.status == "web" and result.product:
-        await products.save(result.product)
+    # Keep the scan as the product's pack photo if it has none, so the next scan matches by image too.
+    if result.product and (result.status == "web" or not result.product.image_file_id):
+        result.product = await products.save(result.product, image=photo, image_vector=image_vector)
     return result
+
+
+async def _embed_or_none(products: ProductService, photo: bytes) -> np.ndarray | None:
+    try:
+        return await products.embed_image(photo)
+    except Exception as e:  # image search is a bonus; the name still works without it
+        log.warning("Photo embedding failed: %s", e)
+        return None

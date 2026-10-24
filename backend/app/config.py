@@ -14,7 +14,12 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     exa_api_key: str = ""
 
-    embedding_model: str = "nomic-embed-text"  # Appwrite built-in; switch to embedding-gemma when it ships
+    embeddings_enabled: bool = True  # false skips loading the model (tests, quick local runs)
+    embedding_model: str = "google/embeddinggemma-2"
+    embedding_device: str = "cpu"  # "mps" on a Mac
+    embedding_image_tokens: int = 140
+    image_weight: float = 0.5  # photo scans: share of the score from the pack image vs the name
+    appwrite_images_bucket: str = "pack-images"
     agent_max_steps: int = 8
     agent_timeout: float = 90
 

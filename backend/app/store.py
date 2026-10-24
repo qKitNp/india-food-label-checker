@@ -6,7 +6,9 @@ SDK, which opens a new TLS connection per call (too slow for the voice path)."""
 
 import json
 import re
+import uuid
 from collections.abc import AsyncIterator
+from dataclasses import dataclass
 from typing import Protocol
 
 import httpx
@@ -22,10 +24,25 @@ def row_id(key: str) -> str:
     return re.sub(r"[^a-zA-Z0-9._-]", "_", key)[:36]
 
 
+@dataclass
+class Vectors:
+    model: str
+    name: np.ndarray | None = None
+    image: np.ndarray | None = None
+
+
+@dataclass
+class StoredVectors:
+    key: str
+    text: str
+    vectors: Vectors
+
+
 class Store(Protocol):
     async def get_product(self, key: str) -> Product | None: ...
-    async def save_product(self, product: Product, embedding: np.ndarray | None = None) -> None: ...
-    def embeddings(self) -> AsyncIterator[tuple[str, str, np.ndarray]]: ...
+    async def save_product(self, product: Product, vectors: Vectors | None = None) -> None: ...
+    def vectors(self) -> AsyncIterator[StoredVectors]: ...
+    async def save_image(self, key: str, data: bytes) -> str: ...
     async def get_counterpart(self, barcode: str, region: Region) -> Counterpart | None: ...
     async def save_counterpart(self, barcode: str, counterpart: Counterpart) -> None: ...
 
@@ -33,20 +50,26 @@ class Store(Protocol):
 class MemoryStore:
     def __init__(self) -> None:
         self.products: dict[str, Product] = {}
-        self.vectors: dict[str, np.ndarray] = {}
+        self.stored_vectors: dict[str, Vectors] = {}
+        self.images: dict[str, bytes] = {}
         self.counterparts: dict[str, Counterpart] = {}
 
     async def get_product(self, key):
         return self.products.get(key)
 
-    async def save_product(self, product, embedding=None):
+    async def save_product(self, product, vectors=None):
         self.products[product.key] = product
-        if embedding is not None:
-            self.vectors[product.key] = embedding
+        if vectors is not None:
+            self.stored_vectors[product.key] = vectors
 
-    async def embeddings(self):
-        for key, vector in self.vectors.items():
-            yield key, self.products[key].embed_text, vector
+    async def vectors(self):
+        for key, v in self.stored_vectors.items():
+            yield StoredVectors(key, self.products[key].embed_text, v)
+
+    async def save_image(self, key, data):
+        file_id = uuid.uuid4().hex
+        self.images[file_id] = data
+        return file_id
 
     async def get_counterpart(self, barcode, region):
         return self.counterparts.get(f"{barcode}.{region}")
@@ -57,13 +80,13 @@ class MemoryStore:
 
 class AppwriteStore:
     def __init__(self, settings: Settings) -> None:
+        endpoint = settings.appwrite_endpoint.rstrip("/")
+        headers = {"X-Appwrite-Project": settings.appwrite_project_id, "X-Appwrite-Key": settings.appwrite_api_key}
         self.http = httpx.AsyncClient(
-            base_url=f"{settings.appwrite_endpoint.rstrip('/')}/tablesdb/{settings.appwrite_database_id}/tables/",
-            headers={
-                "X-Appwrite-Project": settings.appwrite_project_id,
-                "X-Appwrite-Key": settings.appwrite_api_key,
-            },
-            timeout=10,
+            base_url=f"{endpoint}/tablesdb/{settings.appwrite_database_id}/tables/", headers=headers, timeout=10,
+        )
+        self.storage = httpx.AsyncClient(
+            base_url=f"{endpoint}/storage/buckets/{settings.appwrite_images_bucket}/", headers=headers, timeout=30,
         )
         self.products = settings.appwrite_products_table
         self.counterparts = settings.appwrite_counterparts_table
@@ -86,28 +109,33 @@ class AppwriteStore:
 
     async def aclose(self) -> None:
         await self.http.aclose()
+        await self.storage.aclose()
 
     async def get_product(self, key):
         payload = await self._get(self.products, key)
         return Product.model_validate_json(payload) if payload else None
 
-    async def save_product(self, product, embedding=None):
+    async def save_product(self, product, vectors=None):
         data = {
             "barcode": product.barcode or "", "name": product.name, "brand": product.brand,
             "source": product.source, "verified": product.verified,
             "payload": product.model_dump_json(),
         }
-        if embedding is not None:
-            data |= {"embedding": catalog.encode(embedding), "embed_text": product.embed_text[:512]}
+        if vectors is not None:
+            data |= {
+                "embed_model": vectors.model, "embed_text": product.embed_text[:512],
+                "embedding": None if vectors.name is None else catalog.encode(vectors.name),
+                "image_embedding": None if vectors.image is None else catalog.encode(vectors.image),
+            }
         await self._put(self.products, product.key, data)
 
-    async def embeddings(self):
+    async def vectors(self):
         """All stored product vectors, paged with a cursor."""
         cursor = None
         while True:
             queries = [
-                {"method": "select", "values": ["$id", "embed_text", "embedding"]},
-                {"method": "isNotNull", "attribute": "embedding"},
+                {"method": "select", "values": ["$id", "embed_text", "embed_model", "embedding", "image_embedding"]},
+                {"method": "isNotNull", "attribute": "embed_text"},
                 {"method": "limit", "values": [100]},
             ]
             if cursor:
@@ -117,10 +145,22 @@ class AppwriteStore:
             r.raise_for_status()
             rows = r.json()["rows"]
             for row in rows:
-                yield row["$id"], row.get("embed_text") or "", catalog.decode(row["embedding"])
+                yield StoredVectors(row["$id"], row.get("embed_text") or "", Vectors(
+                    model=row.get("embed_model") or "",
+                    name=catalog.decode(row["embedding"]) if row.get("embedding") else None,
+                    image=catalog.decode(row["image_embedding"]) if row.get("image_embedding") else None,
+                ))
             if len(rows) < 100:
                 return
             cursor = rows[-1]["$id"]
+
+    async def save_image(self, key, data):
+        """Store a pack photo in Appwrite Storage; returns the file ID."""
+        file_id = uuid.uuid4().hex[:36]
+        r = await self.storage.post("files", data={"fileId": file_id},
+                                    files={"file": (f"{row_id(key)}.jpg", data, "image/jpeg")})
+        r.raise_for_status()
+        return file_id
 
     async def get_counterpart(self, barcode, region):
         payload = await self._get(self.counterparts, f"{barcode}.{region}")

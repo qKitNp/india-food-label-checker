@@ -16,8 +16,9 @@ from app.services import ProductService
 from app.sources import counterpart, label
 from app.store import make_store
 
-# Below this cosine similarity, a spoken product name is treated as not found.
-VOICE_MATCH_THRESHOLD = 0.7
+# Below this similarity, a spoken product name is treated as not found. Correct matches
+# scored ~0.77-0.81 in testing; this cut-off hasn't been tuned against unrelated products yet.
+VOICE_MATCH_THRESHOLD = 0.6
 
 
 @asynccontextmanager
@@ -27,8 +28,10 @@ async def lifespan(app: FastAPI):
     llm.export_keys(settings)
     http = httpx.AsyncClient(headers={"User-Agent": settings.off_user_agent}, timeout=15)
     store = make_store(settings)
-    embedder = Embedder(settings) if settings.appwrite_project_id else None
-    app.state.products = ProductService(store, http, embedder)
+    embedder = Embedder(settings) if settings.embeddings_enabled else None
+    if embedder:
+        await embedder.load()  # ~5-30 s; better at startup than on the first scan
+    app.state.products = ProductService(store, http, embedder, settings.image_weight)
     await app.state.products.load_index()
     app.state.exa = Exa(settings.exa_api_key) if settings.exa_api_key else None
     yield

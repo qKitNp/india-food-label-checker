@@ -1,7 +1,7 @@
 [project]
-name = "better-fssai"
+name = "india-food-label-checker"
 version = "0.1.0"
-description = "Add your description here"
+description = "Checks Indian packaged food labels against EU/US benchmarks"
 requires-python = ">=3.12"
 dependencies = [
     "appwrite>=26.0.0",
@@ -14,8 +14,21 @@ dependencies = [
     "pillow>=13.0.0",
     "pydantic-settings>=2.16.1",
     "python-multipart>=0.0.32",
+    "sentence-transformers[image]>=6.1.0",
+    "torch>=2.14.0",
+    "torchvision>=0.29.0",
     "uvicorn[standard]>=0.54.0",
 ]
+
+# CPU-only PyTorch on Linux (the server); the default wheels on macOS use the Mac GPU.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+torchvision = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
 
 [dependency-groups]
 dev = [

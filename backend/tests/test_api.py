@@ -15,16 +15,26 @@ OFF_URL = "https://world.openfoodfacts.org/api/v2/product/{}.json"
 
 
 class FakeEmbedder:
-    """Bag-of-words vectors: texts sharing words are similar, unrelated texts score 0."""
+    """Bag-of-words vectors: texts sharing words are similar, unrelated texts score 0.
+    An image's 'content' is its bytes decoded as text, so tests can control image similarity."""
 
-    async def embed(self, texts):
-        out = []
-        for text in texts:
-            v = np.zeros(768, dtype=np.float32)
-            for word in text.lower().split():
-                v[hash(word) % 768] += 1
-            out.append(v)
-        return out
+    model_id = "fake-embedder"
+
+    @staticmethod
+    def _bow(text):
+        v = np.zeros(768, dtype=np.float32)
+        for word in text.lower().split():
+            v[hash(word) % 768] += 1
+        return v
+
+    async def queries(self, texts):
+        return [self._bow(t) for t in texts]
+
+    async def documents(self, products):
+        return [self._bow(text) for _title, text in products]
+
+    async def images(self, images):
+        return [self._bow(b.decode()) for b in images]
 
 
 @pytest.fixture
@@ -32,6 +42,7 @@ def client(monkeypatch):
     monkeypatch.setenv("APPWRITE_PROJECT_ID", "")
     monkeypatch.setenv("GEMINI_API_KEY", "")
     monkeypatch.setenv("EXA_API_KEY", "")
+    monkeypatch.setenv("EMBEDDINGS_ENABLED", "false")
     get_settings.cache_clear()
     with TestClient(app) as c:
         yield c

@@ -8,7 +8,7 @@ from app.agent import Identification, _Run, number_on_page
 from app.config import Settings
 from app.models import Nutrition, Product
 from app.services import ProductService
-from app.store import MemoryStore
+from app.store import MemoryStore, Vectors
 from tests.test_api import FakeEmbedder
 
 PAGE = """Kurkure Masala Munch 90 g. Ingredients: Rice Meal, Edible Vegetable Oil (Palmolein),
@@ -97,4 +97,62 @@ def test_service_indexes_on_save_and_reloads():
         fresh = ProductService(store, httpx.AsyncClient(), FakeEmbedder())
         await fresh.load_index()
         assert len(fresh.index) == 1
+    asyncio.run(go())
+
+
+def axis(i: int) -> np.ndarray:
+    v = np.zeros(768, dtype=np.float32)
+    v[i] = 1
+    return v
+
+
+def test_photo_scan_blends_name_and_image():
+    index = catalog.VectorIndex()
+    # Same brand, so names are close; packs differ.
+    index.add("munch", "Kurkure Masala Munch", name=axis(0) + 0.9 * axis(1), image=axis(2))
+    index.add("tomato", "Kurkure Naughty Tomato", name=axis(0) + 1.0 * axis(1), image=axis(3))
+    # Name read from the pack slightly favours "tomato", but the photo clearly matches "munch".
+    [top, second] = index.search(name=axis(0) + 1.0 * axis(1), image=axis(2), k=2, image_weight=0.5)
+    assert top.key == "munch" and top.image_score > 0.99 and top.name_score < second.name_score
+
+
+def test_voice_query_also_matches_pack_images():
+    index = catalog.VectorIndex()
+    index.add("photo-only", "Unnamed snack", image=axis(5))
+    index.add("named", "Other", name=axis(6))
+    [top] = index.search(name=axis(5), k=1)
+    assert top.key == "photo-only" and top.name_score is None and top.image_score > 0.99
+
+
+def test_products_without_image_still_rank_by_name():
+    index = catalog.VectorIndex()
+    index.add("a", "A", name=axis(0))
+    index.add("b", "B", name=axis(1), image=axis(2))
+    assert index.search(name=axis(0), image=axis(9), k=1)[0].key == "a"
+
+
+def test_vectors_from_another_model_are_reembedded():
+    async def go():
+        store = MemoryStore()
+        p = Product(brand="Kurkure", name="Masala Munch", source="web")
+        await store.save_product(p, Vectors("nomic-embed-text", name=axis(0)))
+        svc = ProductService(store, httpx.AsyncClient(), FakeEmbedder())
+        await svc.load_index()
+        assert store.stored_vectors[p.key].model == "fake-embedder" and len(svc.index) == 1
+    asyncio.run(go())
+
+
+def test_save_with_photo_stores_image_and_vector():
+    async def go():
+        store = MemoryStore()
+        svc = ProductService(store, httpx.AsyncClient(), FakeEmbedder())
+        saved = await svc.save(Product(brand="Kurkure", name="Masala Munch", source="web"),
+                               image=b"orange kurkure pack")
+        assert saved.image_file_id in store.images
+        assert store.stored_vectors[saved.key].image is not None
+        # A later save without a photo keeps the stored image vector.
+        await svc.save(saved)
+        assert store.stored_vectors[saved.key].image is not None
+        [top] = await svc.similar(image_vector=(await FakeEmbedder().images([b"orange kurkure pack"]))[0], k=1)
+        assert top.key == saved.key
     asyncio.run(go())
