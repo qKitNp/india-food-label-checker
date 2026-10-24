@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
-import { api, ApiError, type AdditiveFinding, type ClaimFinding, type Nutrition, type Region, type Verdict } from '../api'
+import { api, ApiError, type AdditiveFinding, type ClaimFinding, type Nutrition, type Region, type RegionStatus, type Verdict } from '../api'
 import { remember } from '../history'
 import { Button, Card, Chip, Cover, ErrorNote, Page, SectionTitle, Spinner, buttonClass, productTitle, shortBrand } from '../ui'
 
@@ -164,42 +164,70 @@ function Stat({ label, value, unit, muted }: { label: string; value: string; uni
 
 const FLAGS: Record<Region, string> = { IN: '🇮🇳', EU: '🇪🇺', US: '🇺🇸' }
 
+const STATUS: Record<RegionStatus['status'], { mark: string; tone: 'bad' | 'warn' | 'good' | 'neutral'; word: string }> = {
+  banned: { mark: '✕', tone: 'bad', word: 'Banned' },
+  restricted: { mark: '!', tone: 'warn', word: 'Restricted' },
+  allowed: { mark: '✓', tone: 'good', word: 'Allowed' },
+  unknown: { mark: '?', tone: 'neutral', word: 'Not confirmed' },
+}
+const REGION_NAMES: Record<Region, string> = { IN: 'India', EU: 'European Union', US: 'United States' }
+
 function Additives({ additives, all }: { additives: AdditiveFinding[]; all: string[] }) {
   const sorted = [...additives].sort((a, b) => Number(b.flagged) - Number(a.flagged))
-  const reviewed = new Set(additives.map((a) => a.code))
-  const unreviewed = all.filter((code) => !reviewed.has(code))
+  const matched = new Set(additives.map((a) => a.code).filter(Boolean))
+  const unreviewed = all.filter((code) => !matched.has(code))
   return (
     <Card className="rise mt-4">
-      <SectionTitle hint={`${all.length} found · ${additives.filter((a) => a.flagged).length} flagged`}>Additives</SectionTitle>
-      {unreviewed.length > 0 && (
-        <p className={`text-sm leading-relaxed text-muted ${sorted.length ? 'mb-3' : ''}`}>
-          Not reviewed yet: <span className="font-medium text-ink-2">{unreviewed.join(', ')}</span>
-        </p>
-      )}
+      <SectionTitle hint={`${additives.filter((a) => a.flagged).length} banned somewhere`}>Additives and substances</SectionTitle>
       <ul className="divide-y divide-line">
         {sorted.map((a) => (
-          <li key={a.code} className="py-3 first:pt-0 last:pb-0">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-[15px] font-medium">
-                {a.name} <span className="text-sm font-normal text-faint">{a.code}</span>
-              </p>
-              <div className="flex shrink-0 gap-1">
+          <li key={a.id} className="py-3 first:pt-0">
+            <details className="group">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+                <span className="text-[15px] font-medium">
+                  {a.name} {a.code && <span className="text-sm font-normal text-faint">{a.code}</span>}
+                </span>
+                <span className="flex shrink-0 gap-1">
+                  {(['IN', 'EU', 'US'] as Region[]).map((r) => (
+                    <Chip key={r} tone={STATUS[a.status[r].status].tone} title={`${REGION_NAMES[r]}: ${STATUS[a.status[r].status].word}`}>
+                      {FLAGS[r]} {STATUS[a.status[r].status].mark}
+                    </Chip>
+                  ))}
+                </span>
+              </summary>
+              {a.flagged && <p className="mt-1 text-sm text-muted">{a.message}</p>}
+              <div className="mt-3 space-y-2">
                 {(['IN', 'EU', 'US'] as Region[]).map((r) => {
                   const s = a.status[r]
-                  const tone = s.allowed === true ? 'good' : s.allowed === false ? 'bad' : 'neutral'
                   return (
-                    <Chip key={r} tone={tone} title={s.note || undefined}>
-                      {FLAGS[r]} {s.allowed === true ? '✓' : s.allowed === false ? '✕' : '?'}
-                    </Chip>
+                    <div key={r} className="rounded-2xl bg-wash px-3 py-2.5 text-sm">
+                      <p className="font-medium">
+                        {FLAGS[r]} {REGION_NAMES[r]}: {STATUS[s.status].word}
+                        {s.since ? ` since ${s.since}` : ''}
+                      </p>
+                      {s.reason && <p className="mt-0.5 text-muted">{s.reason}</p>}
+                      {s.quote && <p className="mt-1 text-xs text-faint italic">“{s.quote.length > 220 ? s.quote.slice(0, 220) + '…' : s.quote}”</p>}
+                      {s.source_url ? (
+                        <a href={s.source_url} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs text-accent-deep underline">
+                          {domain(s.source_url)}
+                        </a>
+                      ) : (
+                        <p className="mt-0.5 text-xs text-faint">We couldn't find an official source for this yet.</p>
+                      )}
+                    </div>
                   )
                 })}
               </div>
-            </div>
-            {a.flagged && <p className="mt-1 text-sm leading-relaxed text-muted">{a.message}</p>}
+            </details>
           </li>
         ))}
       </ul>
-      <p className="mt-3 text-xs text-faint">? means we haven't confirmed the rule for that country yet.</p>
+      {unreviewed.length > 0 && (
+        <p className={`text-sm leading-relaxed text-muted ${sorted.length ? 'mt-3 border-t border-line pt-3' : ''}`}>
+          Also contains, not reviewed yet: <span className="font-medium text-ink-2">{unreviewed.join(', ')}</span>
+        </p>
+      )}
+      {sorted.length > 0 && <p className="mt-3 text-xs text-faint">Tap a substance to see each country's rule and its source.</p>}
     </Card>
   )
 }

@@ -67,17 +67,25 @@ class ClaimFinding(BaseModel):
     source_verified: bool
 
 
-class AdditiveStatus(BaseModel):
-    allowed: bool | None  # None = unknown / not yet researched
-    note: str = ""
+class RegionStatus(BaseModel):
+    """A substance's status in one region. Anything but "unknown" is backed by `quote`,
+    verified to appear on `source_url`."""
+
+    status: Literal["banned", "restricted", "allowed", "unknown"]
+    since: str | None = None
+    reason: str | None = None
+    quote: str | None = None
     source_url: str | None = None
 
 
 class AdditiveFinding(BaseModel):
-    code: str
+    id: str
+    code: str  # E-number, or "" for substances without one (e.g. trans fats)
     name: str
-    status: dict[Region, AdditiveStatus]
-    flagged: bool
+    category: str
+    matched: str  # the code or ingredient name found on the product
+    status: dict[Region, RegionStatus]
+    flagged: bool  # banned in at least one region
     message: str
 
 

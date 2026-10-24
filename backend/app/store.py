@@ -45,6 +45,7 @@ class Store(Protocol):
     async def save_image(self, key: str, data: bytes) -> str: ...
     async def get_counterpart(self, barcode: str, region: Region) -> Counterpart | None: ...
     async def save_counterpart(self, barcode: str, counterpart: Counterpart) -> None: ...
+    async def save_scan_log(self, record: dict) -> None: ...
 
 
 class MemoryStore:
@@ -53,6 +54,7 @@ class MemoryStore:
         self.stored_vectors: dict[str, Vectors] = {}
         self.images: dict[str, bytes] = {}
         self.counterparts: dict[str, Counterpart] = {}
+        self.scan_logs: list[dict] = []
 
     async def get_product(self, key):
         return self.products.get(key)
@@ -78,6 +80,10 @@ class MemoryStore:
         self.counterparts[f"{barcode}.{counterpart.region}"] = counterpart
 
 
+    async def save_scan_log(self, record):
+        self.scan_logs.append(record)
+
+
 class AppwriteStore:
     def __init__(self, settings: Settings) -> None:
         endpoint = settings.appwrite_endpoint.rstrip("/")
@@ -90,6 +96,7 @@ class AppwriteStore:
         )
         self.products = settings.appwrite_products_table
         self.counterparts = settings.appwrite_counterparts_table
+        self.scan_logs = settings.appwrite_scan_logs_table
 
     async def _get(self, table: str, key: str) -> str | None:
         r = await self.http.get(f"{table}/rows/{row_id(key)}")
@@ -172,6 +179,15 @@ class AppwriteStore:
             "payload": counterpart.model_dump_json(),
         })
 
+
+    async def save_scan_log(self, record):
+        """One row per finished scan, with the agent's full trace, for observability."""
+        steps = json.dumps(record["steps"], ensure_ascii=False)
+        await self._put(self.scan_logs, record["job_id"], {
+            "job_id": record["job_id"], "status": record["status"], "outcome": record["outcome"],
+            "product_key": record["product_key"], "duration_ms": record["duration_ms"],
+            "error": (record["error"] or "")[:2000] or None, "steps": steps[:1_000_000],
+        })
 
 def make_store(settings: Settings) -> Store:
     return AppwriteStore(settings) if settings.appwrite_project_id else MemoryStore()

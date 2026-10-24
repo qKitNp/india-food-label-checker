@@ -1,0 +1,1080 @@
+[
+ {
+  "id": "titanium-dioxide",
+  "name": "Titanium dioxide",
+  "codes": [
+   "E171"
+  ],
+  "synonyms": [
+   "titanium dioxide",
+   "ci 77891"
+  ],
+  "category": "colour",
+  "regions": {
+   "EU": {
+    "status": "banned",
+    "since": "2022",
+    "reason": "The Authority concluded that titanium dioxide (E 171) can no longer be considered safe when used as a food additive.",
+    "quote": "In light of the conclusion of the 2021 Authority’s opinion about the safety of titanium dioxide (E 171) when used as a food additive, it is appropriate to remove the authorisation to use titanium dioxide (E 171) in foods. Accordingly, titanium dioxide (E 171) may no longer be used in foods.",
+    "source_url": "https://eur-lex.europa.eu/eli/reg/2022/63/oj/eng",
+    "fact": "The European Union regulation removed the authorization to use titanium dioxide (E171) in foods."
+   },
+   "US": {
+    "status": "restricted",
+    "since": null,
+    "reason": "The page permits titanium dioxide for coloring foods generally only up to 1 percent by weight and not for foods with standards of identity unless added color is authorized.",
+    "quote": "The color additive titanium dioxide may be safely used for coloring foods generally, subject to the following restrictions: (1) The quantity of titanium dioxide does not exceed 1 percent by weight of the food. (2) It may not be used to color foods for which standards of identity have been promulgated under section 401 of the act unless added color is authorized by such standards.",
+    "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-73/subpart-A/section-73.575",
+    "fact": "United States rules permit titanium dioxide for coloring foods generally up to 1 percent by weight, but not foods with standards of identity unless added color is authorized."
+   },
+   "IN": {
+    "status": "unknown"
+   }
+  }
+ },
+ {
+  "id": "potassium-bromate",
+  "name": "Potassium bromate",
+  "codes": [
+   "E924"
+  ],
+  "synonyms": [
+   "potassium bromate"
+  ],
+  "category": "flour treatment",
+  "regions": {
+   "EU": {
+    "status": "unknown"
+   },
+   "US": {
+    "status": "restricted",
+    "since": null,
+    "reason": "Potassium bromate is permitted in standardized breads, rolls, and buns only as an optional ingredient within a set maximum quantity relative to the flour used.",
+    "quote": "(i) Potassium bromate, calcium bromate, potassium iodate, calcium iodate, calcium peroxide, or any combination of 2 or more of these if the total quantity, including the potassium bromate in any bromated flour used, is not more than 0.0075 part for each 100 parts by weight of flour used.",
+    "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-136",
+    "fact": "United States rules cap potassium bromate at 0.0075 part per 100 parts by weight of flour used."
+   },
+   "IN": {
+    "status": "banned",
+    "since": null,
+    "reason": "FSSAI stated that use of potassium bromate as an additive in any food is not allowed under any circumstances.",
+    "quote": "The recent directive issued by the Food Safety and Standards Authority of India (FSSAI) read, “It is to again clarify that use of potassium bromate as an additive in any food is not allowed under any circumstances.”",
+    "source_url": "https://fssai.gov.in/upload/media/5a9e6ec79cd7eFSSAI_News_Potassium_FNB_21_02_2018.pdf",
+    "fact": "India's FSSAI clarified that potassium bromate is not allowed as an additive in any food under any circumstances."
+   }
+  }
+ },
+ {
+  "id": "brominated-vegetable-oil",
+  "name": "Brominated vegetable oil (BVO)",
+  "codes": [
+   "E443"
+  ],
+  "synonyms": [
+   "brominated vegetable oil"
+  ],
+  "category": "stabiliser",
+  "regions": {
+   "EU": {
+    "status": "banned",
+    "since": null,
+    "reason": "The page states that brominated vegetable oil is banned as a food additive in Europe under Regulation (EC) No 1333/2008 and does not appear on the permitted additive lists.",
+    "quote": "Brominated vegetable oil is banned as a food additive in Europe under Regulation (EC) No 1333/2008. Article 4 stipulates that only the additives listed in Annexes II and III may be used. Brominated vegetable oil does not appear on these lists. Article 5 prohibits the use or marketing of an unauthorised additive or of products containing such an additive.",
+    "source_url": "https://www.europarl.europa.eu/doceo/document/E-8-2015-013572_EN.html",
+    "fact": "Brominated vegetable oil (BVO) is banned as a food additive in the European Union under Regulation (EC) No 1333/2008."
+   },
+   "US": {
+    "status": "banned",
+    "since": "2024",
+    "reason": "The FDA concluded that the intended use of BVO in food is no longer considered safe after studies found the potential for adverse health effects in humans.",
+    "quote": "The FDA no longer allows for the use of brominated vegetable oil (BVO) in food. On July 3, 2024, the FDA revoked its food additive regulation. The agency concluded that the intended use of BVO in food is no longer considered safe after the results of studies conducted in collaboration with the National Institutes of Health (NIH) found the potential for adverse health effects in humans.",
+    "source_url": "https://www.fda.gov/food/food-additives-petitions/brominated-vegetable-oil-bvo",
+    "fact": "The FDA no longer allows brominated vegetable oil in United States food, concluding its intended use is unsafe after studies found potential adverse health effects in humans."
+   },
+   "IN": {
+    "status": "unknown"
+   }
+  }
+ },
+ {
+  "id": "azodicarbonamide",
+  "name": "Azodicarbonamide",
+  "codes": [
+   "E927a"
+  ],
+  "synonyms": [
+   "azodicarbonamide"
+  ],
+  "category": "flour treatment",
+  "regions": {
+   "EU": {
+    "status": "banned",
+    "since": null,
+    "reason": "Azodicarbonamide is not authorised as a food additive in the EU.",
+    "quote": "Azodicarbonamide is not authorised as a food additive in the EU.",
+    "source_url": "https://food.ec.europa.eu/system/files/2019-03/codex_ccfa_51_agenda_item-4b.pdf",
+    "fact": "Azodicarbonamide is not authorised as a food additive in the European Union."
+   },
+   "US": {
+    "status": "restricted",
+    "since": null,
+    "reason": "The page permits azodicarbonamide only for specified uses in cereal flour and bread baking, within stated maximum amounts.",
+    "quote": "The food additive azodicarbonamide may be safely used in food in accordance with the following prescribed conditions: (a) It is used or intended for use: (1) As an aging and bleaching ingredient in cereal flour in an amount not to exceed 2.05 grams per 100 pounds of flour (0.0045 percent; 45 parts per million). (2) As a dough conditioner in bread baking in a total amount not to exceed 0.0045 percent (45 parts per million) by weight of the flour used, including any quantity of azodicarbonamide added to flour in accordance with paragraph (a)(1) of this section.",
+    "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-172/subpart-I/section-172.806",
+    "fact": "In the United States, azodicarbonamide is permitted only for specified uses in cereal flour and bread baking within stated maximum amounts."
+   },
+   "IN": {
+    "status": "unknown"
+   }
+  }
+ },
+ {
+  "id": "erythrosine",
+  "name": "Erythrosine (Red 3)",
+  "codes": [
+   "E127"
+  ],
+  "synonyms": [
+   "erythrosine",
+   "erythrosin",
+   "red no. 3",
+   "fd&c red 3"
+  ],
+  "category": "colour",
+  "regions": {
+   "EU": {
+    "status": "restricted",
+    "since": null,
+    "reason": "The page lists E 127 among the colours that may not be sold directly to the consumer.",
+    "quote": "The colours E 123, E 127, E 160b, E 173 and E 180, may not be sold directly to the consumer.",
+    "source_url": "https://eur-lex.europa.eu/eli/reg/2011/1129/oj/eng",
+    "fact": "In the European Union, Erythrosine (E127) may not be sold directly to consumers."
+   },
+   "US": {
+    "status": "banned",
+    "since": "2027",
+    "reason": "The FDA is revoking the authorization for FD&C Red No. 3 in food based on the Delaney Clause after data showed it causes cancer in male laboratory rats exposed to high levels.",
+    "quote": "The FDA will no longer allow for the use of FD&C Red No. 3 in food and ingested drugs. On January 16, 2025, and August 5, 2026, the FDA issued orders to revoke these authorizations. Manufacturers who use FD&C Red No. 3 in food and ingested drugs will have until January 15, 2027 or January 18, 2028, respectively, to reformulate their products.",
+    "source_url": "https://www.fda.gov/industry/color-additives/fdc-red-no-3",
+    "fact": "The United States will no longer allow FD&C Red No. 3 in food and ingested drugs, with food manufacturers having until January 15, 2027, to reformulate."
+   },
+   "IN": {
+    "status": "unknown"
+   }
+  }
+ },
+ {
+  "id": "tartrazine",
+  "name": "Tartrazine (Yellow 5)",
+  "codes": [
+   "E102"
+  ],
+  "synonyms": [
+   "tartrazine",
+   "yellow 5",
+   "fd&c yellow 5"
+  ],
+  "category": "colour",
+  "regions": {
+   "EU": {
+    "status": "unknown"
+   },
+   "US": {
+    "status": "restricted",
+    "since": null,
+    "reason": "It may be safely used for coloring foods generally in amounts consistent with good manufacturing practice, except it may not be used to color foods with standards of identity unless added color is authorized by those standards.",
+    "quote": "FD&C Yellow No. 5 may be safely used for coloring foods (including dietary supplements) generally in amounts consistent with good manufacturing practice, except that it may not be used to color foods for which standards of identity have been promulgated under section 401 of the act unless added color is authorized by such standards.",
+    "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-74/subpart-A/section-74.705",
+    "fact": "In the United States, FD&C Yellow No. 5 may color foods in amounts consistent with good manufacturing practice, except foods with standards of identity unless authorized."
+   },
+   "IN": {
+    "status": "allowed",
+    "since": null,
+    "reason": null,
+    "quote": "3.2.1 Food Colours: Standards of various Food Colours with characteristics are specified in the table below: 1. Tartrazine Common Name Tartrazine Synonyms FD and C Yellow No.5, E.E.C. Serial No.E 102, L-Gebb 2, C.I. Food Yellow 4.",
+    "source_url": "https://fssai.gov.in/upload/uploadfiles/files/Chapter%203_Substances%20added%20to%20food%281%29.pdf"
+   }
+  }
+ },
+ {
+  "id": "quinoline-yellow",
+  "name": "Quinoline yellow",
+  "codes": [
+   "E104"
+  ],
+  "synonyms": [
+   "quinoline yellow"
+  ],
+  "category": "colour",
+  "regions": {
+   "EU": {
+    "status": "allowed",
+    "since": null,
+    "reason": "E 104 Quinoline Yellow appears in the page's table of food colours authorised for use in the EU, with EFSA's safety re-evaluation completed in 2009 and a refined exposure assessment completed in 2015.",
+    "quote": "The following table lists food colours authorised for use in the EU and the status of EFSA’s respective safety assessments.",
+    "source_url": "https://www.efsa.europa.eu/en/topics/topic/food-colours"
+   },
+   "US": {
+    "status": "unknown"
+   },
+   "IN": {
+    "status": "unknown"
+   }
+  }
+ },
+ {
+  "id": "sunset-yellow",
+  "name": "Sunset yellow FCF (Yellow 6)",
+  "codes": [
+   "E110"
+  ],
+  "synonyms": [
+   "sunset yellow",
+   "yellow 6",
+   "fd&c yellow 6"
+  ],
+  "category": "colour",
+  "regions": {
+   "EU": {
+    "status": "restricted",
+    "since": null,
+    "reason": "The page says Sunset yellow FCF (E 110) is authorised as a colour for use only in certain foodstuffs, and that its content of the impurity Sudan I must be restricted to below the limit of detection (0,5 mg/kg).",
+    "quote": "Sunset yellow FCF (E 110) is authorised under Directive 94/36/EC as a colour for use in certain foodstuffs. There is scientific evidence that under certain circumstances, Sudan I (1-(phenylazo)-2-naphthalenol) may be formed as an impurity during the production of sunset yellow. Sudan I is an unauthorised colour and an undesired substance in food. Its presence in sunset yellow should therefore be restricted to an amount below the limit of detection, i.e. 0,5 mg/kg.",
+    "source_url": "https://eur-lex.europa.eu/eli/dir/2006/33/oj/eng",
+    "fact": "In the European Union, Sunset yellow FCF (E110) is authorised only in certain foods, with its Sudan I impurity restricted below 0.5 mg/kg."
+   },
+   "US": {
+    "status": "restricted",
+    "since": null,
+    "reason": "The page states it may be safely used for coloring foods generally in amounts consistent with current good manufacturing practice, except it may not be used to color foods with standards of identity unless added color is authorized by those standards.",
+    "quote": "The color additive FD&C Yellow No. 6 may be safely used for coloring foods (including dietary supplements) generally in amounts consistent with current good manufacturing practice, except that it may not be used to color foods for which standards of identity have been promulgated under section 401 of the act unless added color is authorized by such standards.",
+    "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-74/subpart-A/section-74.706",
+    "fact": "In the United States, FD&C Yellow No. 6 is generally allowed at good manufacturing practice levels but not in standardized foods unless authorized."
+   },
+   "IN": {
+    "status": "unknown"
+   }
+  }
+ },
+ {
+  "id": "carmoisine",
+  "name": "Carmoisine (azorubine)",
+  "codes": [
+   "E122"
+  ],
+  "synonyms": [
+   "carmoisine",
+   "azorubine"
+  ],
+  "category": "colour",
+  "regions": {
+   "EU": {
+    "status": "unknown"
+   },
+   "US": {
+    "status": "unknown"
+   },
+   "IN": {
+    "status": "restricted",
+    "since": null,
+    "reason": "The page lists Carmoisine as a synthetic colour for biscuits at 100 ppm max (singly or in combination) and for specified foods at 100 ppm maximum.",
+    "quote": "| | 1 Ponceau 4R 2 Carmoisine 3 Erythrosine 4 Tartrazine 5 Sunset Yellow FCF 6 Indigo carmine 7 Brilliant blue FCF 8 Fast green FCF | - - - - - - - - | 100 ppm max (singly or in combination) |",
+    "source_url": "https://fssai.gov.in/upload/uploadfiles/files/appendix_a_and_b_revised(30-12-2011).pdf",
+    "fact": "India limits Carmoisine, a synthetic food colour, to 100 ppm maximum in specified foods."
+   }
+  }
+ },
+ {
+  "id": "ponceau-4r",
+  "name": "Ponceau 4R",
+  "codes": [
+   "E124"
+  ],
+  "synonyms": [
+   "ponceau 4r",
+   "ponceau"
+  ],
+  "category": "colour",
+  "regions": {
+   "EU": {
+    "status": "unknown"
+   },
+   "US": {
+    "status": "banned",
+    "since": null,
+    "reason": "The page describes Ponceau 4R as an unapproved color additive.",
+    "quote": "The FDA also has reported recalls for undeclared FD&C Red No. 40 and incorrectly declared FD&C Yellow No. 6 in bottled food color and for presence of the unapproved color additive Ponceau 4R in strawberry filling.",
+    "source_url": "https://www.fda.gov/food/color-additives-information-consumers/color-additives-foods",
+    "fact": "In the United States, the FDA reported recalls for strawberry filling containing Ponceau 4R, an unapproved color additive."
+   },
+   "IN": {
+    "status": "restricted",
+    "since": null,
+    "reason": "Ponceau 4R is listed for specified foods only, with a 100 ppm maximum singly or in combination.",
+    "quote": "1 Ponceau 4R 2 Carmoisine 3 Erythrosine 4 Tartrazine 5 Sunset Yellow FCF 6 Indigo carmine 7 Brilliant blue FCF 8 Fast green FCF | - - - - - - - - | 100 ppm max (singly or in combination)",
+    "source_url": "https://fssai.gov.in/upload/uploadfiles/files/appendix_a_and_b_revised(30-12-2011).pdf",
+    "fact": "In India, Ponceau 4R is listed with a 100 ppm maximum, singly or in combination."
+   }
+  }
+ },
+ {
+  "id": "allura-red",
+  "name": "Allura red AC (Red 40)",
+  "codes": [
+   "E129"
+  ],
+  "synonyms": [
+   "allura red",
+   "red 40",
+   "fd&c red 40"
+  ],
+  "category": "colour",
+  "regions": {
+   "EU": {
+    "status": "unknown"
+   },
+   "US": {
+    "status": "restricted",
+    "since": null,
+    "reason": "The page states it may be safely used for coloring foods generally in amounts consistent with good manufacturing practice, except it may not be used in foods with standards of identity unless added color is authorized.",
+    "quote": "FD&C Red No. 40 may be safely used for coloring foods (including dietary supplements) generally in amounts consistent with good manufacturing practice except that it may not be used to color foods for which standards of identity have been promulgated under section 401 of the act unless added color is authorized by such standards.",
+    "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-A/part-74/subpart-A/section-74.340",
+    "fact": "In the United States, Allura red AC (Red 40) may color foods generally but is barred from foods with standards of identity unless added color is authorized."
+   },
+   "IN": {
+    "status": "unknown"
+   }
+  }
+ },
+ {
+  "id": "amaranth",
+  "name": "Amaranth (Red 2)",
+  "codes": [
+   "E123"
+  ],
+  "synonyms": [
+   "amaranth dye",
+   "red no. 2"
+  ],
+  "category": "colour",
+  "regions": {
+   "EU": {
+    "status": "restricted",
+    "since": null,
+    "reason": "The page refers to maximum permitted levels of use for Amaranth in Americano and aperitif wine drinks.",
+    "quote": "The Panel notes that anticipated exposure to these uses have been made with the maximum permitted levels of use for Americano although no usage value for this beverage was provided by industry, and with the maximum reported levels of use for aperitif wine drinks, which were reported by Industry to be at the same level as the maximum permitted level.",
+    "source_url": "https://www.efsa.europa.eu/en/efsajournal/pub/1649",
+    "fact": "In the European Union, exposure to Amaranth (Red 2) (E123) was assessed using maximum permitted levels in Americano and maximum reported levels in aperitif wine drinks."
+   },
+   "US": {
+    "status": "unknown"
+   },
+   "IN": {
+    "status": "unknown"
+   }
+  }
+ },
+ {
+  "id": "red-2g",
+  "name": "Red 2G",
+  "codes": [
+   "E128"
+  ],
+  "synonyms": [
+   "red 2g"
+  ],
+  "category": "colour",
+  "regions": {
+   "EU": {
+    "status": "banned",
+    "since": "2007",
+    "reason": "The page states that EFSA withdrew the ADI for E 128 Red 2G after considering it of safety concern, and the Commission suspended its use because it is likely to constitute a serious risk to human health.",
+    "quote": "1. The use of the colour E 128 Red 2G in food, as referred to in Annex IV to Directive 94/36/EC, is suspended. 2. The placing on the market of food containing the colour E 128 Red 2G is suspended. 3. The import of food containing the colour E 128 Red 2G is suspended.",
+    "source_url": "https://eur-lex.europa.eu/eli/reg/2007/884/oj",
+    "fact": "The European Union suspended the use, sale, and import of food colour Red 2G (E128)."
+   },
+   "US": {
+    "status": "unknown"
+   },
+   "IN": {
+    "status": "unknown"
+   }
+  }
+ },
+ {
+  "id": "rhodamine-b",
+  "name": "Rhodamine B",
+  "codes": [],
+  "synonyms": [
+   "rhodamine b",
+   "rhodamine"
+  ],
+  "category": "illegal dye",
+  "regions": {
+   "EU": {
+    "status": "unknown"
+   },
+   "US": {
+    "status": "banned",
+    "since": null,
+    "reason": "The page states that there is no regulation listing Rhodamine B as safe for use in coloring any food.",
+    "quote": "There is no regulation listing Rhodamine B as safe for use in coloring any food.",
+    "source_url": "https://www.fda.gov/media/75664/download",
+    "fact": "Rhodamine B is banned in the United States because no regulation lists it as safe for use in coloring any food."
+   },
+   "IN": {
+    "status": "banned",
+    "since": null,
+    "reason": "The page lists Rhodamine B among non-permitted synthetic colours.",
+    "quote": "Various foods and beverages which are easily available in the market may contain some non-permitted synthetic colours viz (Fast red, Rhodamine B, Metanil yellow, Bromo-cresol purple, Green S, Sudan 1, Sudan 2, Sudan 3 and Sudan 4) as well as the overuse of permitted synthetic colours.",
+    "source_url": "https://fssai.gov.in/upload/media/FSSAI_News_Colour_Kashmir_28_12_2020.pdf",
+    "fact": "Rhodamine B is banned in India as a non-permitted synthetic colour."
+   }
+  }
+ },
+ {
+  "id": "metanil-yellow",
+  "name": "Metanil yellow",
+  "codes": [],
+  "synonyms": [
+   "metanil yellow"
+  ],
+  "category": "illegal dye",
+  "regions": {
+   "EU": {
+    "status": "unknown"
+   },
+   "US": {
+    "status": "unknown"
+   },
+   "IN": {
+    "status": "banned",
+    "since": null,
+    "reason": "Metanil yellow is listed as a non-permitted synthetic colour.",
+    "quote": "Various foods and beverages which are easily available in the market may contain some non-permitted synthetic colours viz (Fast red, Rhodamine B, Metanil yellow, Bromo-cresol purple, Green S, Sudan 1, Sudan 2, Sudan 3 and Sudan 4) as well as the overuse of permitted synthetic colours.",
+    "source_url": "https://fssai.gov.in/upload/media/FSSAI_News_Colour_Kashmir_28_12_2020.pdf",
+    "fact": "Metanil yellow is a non-permitted synthetic colour in India."
+   }
+  }
+ },
+ {
+  "id": "sudan-dyes",
+  "name": "Sudan dyes",
+  "codes": [],
+  "synonyms": [
+   "sudan i",
+   "sudan red",
+   "sudan dye"
+  ],
+  "category": "illegal dye",
+  "regions": {
+   "EU": {
+    "status": "banned",
+    "since": null,
+    "reason": "These industrial dyes, including the Sudan dyes, are not authorised as food colours under EU Directive 94/36/EC on colours for use in foodstuffs.",
+    "quote": "* These industrial dyes are not authorised as food colours according to EU Directive 94/36/EC on colours for use in foodstuffs.",
+    "source_url": "https://www.efsa.europa.eu/en/news/efsa-reviews-toxicological-data-illegal-dyes-food",
+    "fact": "Sudan dyes are banned as food colours in the European Union under EU Directive 94/36/EC."
+   },
+   "US": {
+    "status": "banned",
+    "since": "1919",
+    "reason": "The page states Sudan I was delisted prior to the 1938 Food, Drug and Cosmetic Act and lists the limitation as unsatisfactory color.",
+    "quote": "Delisted prior to 1938 Food, Drug and Cosmetic Act. Unsatisfactory color.",
+    "source_url": "https://www.hfpappexternal.fda.gov/scripts/fdcc/index.cfm?id=SudanI&set=ColorAdditives",
+    "fact": "Sudan I was delisted as a color additive in the United States before the 1938 Food, Drug and Cosmetic Act because its color was unsatisfactory."
+   },
+   "IN": {
+    "status": "banned",
+    "since": null,
+    "reason": "Sudan 1, Sudan 2, Sudan 3 and Sudan 4 are listed as non-permitted synthetic colours.",
+    "quote": "Various foods and beverages which are easily available in the market may contain some non-permitted synthetic colours viz (Fast red, Rhodamine B, Metanil yellow, Bromo-cresol purple, Green S, Sudan 1, Sudan 2, Sudan 3 and Sudan 4) as well as the overuse of permitted synthetic colours.",
+    "source_url": "https://fssai.gov.in/upload/media/FSSAI_News_Colour_Kashmir_28_12_2020.pdf",
+    "fact": "India bans Sudan 1, 2, 3 and 4 as non-permitted synthetic colours in foods and beverages."
+   }
+  }
+ },
+ {
+  "id": "propylparaben",
+  "name": "Propylparaben",
+  "codes": [
+   "E216"
+  ],
+  "synonyms": [
+   "propylparaben",
+   "propyl paraben",
+   "propyl p-hydroxybenzoate"
+  ],
+  "category": "preservative",
+  "exclude_sources": [
+   "https://www.efsa.europa.eu/en/news/efsa-advises-safety-paraben-usage-food"
+  ],
+  "regions": {
+   "EU": {
+    "status": "banned",
+    "since": null,
+    "reason": "The page states that E 216 propyl p-hydroxybenzoate is no longer permitted for use as a food additive, so its purity criteria are being withdrawn.",
+    "quote": "It is appropriate to withdraw the purity criteria for E 216 propyl p-hydroxybenzoate and E 217 sodium propyl p-hydroxybenzoate which are no longer permitted for use as food additives.",
+    "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32006L0129&from=LT",
+    "fact": "The European Union no longer permits propylparaben (E216) as a food additive, so its purity criteria are being withdrawn."
+   },
+   "US": {
+    "status": "restricted",
+    "since": null,
+    "reason": "The page permits propylparaben in food only at levels not to exceed good manufacturing practices, with a maximum level of 0.1 percent in food.",
+    "quote": "(d) The ingredient is used in food at levels not to exceed good manufacturing practices. Current good manufacturing practice results in a maximum level of 0.1 percent in food.",
+    "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-184/subpart-B/section-184.1670",
+    "fact": "In the United States, propylparaben is permitted in food only up to 0.1 percent, the maximum level current good manufacturing practice produces."
+   },
+   "IN": {
+    "status": "unknown"
+   }
+  }
+ },
+ {
+  "id": "bha",
+  "name": "Butylated hydroxyanisole (BHA)",
+  "codes": [
+   "E320"
+  ],
+  "synonyms": [
+   "butylated hydroxyanisole",
+   "bha"
+  ],
+  "category": "antioxidant",
+  "regions": {
+   "EU": {
+    "status": "allowed",
+    "since": null,
+    "reason": "The page states that butylated hydroxyanisole is authorised as an antioxidant for use in food at comparable use levels.",
+    "quote": "The Authority also concluded that since butylated hydroxyanisole is authorised as an antioxidant for use in food at comparable use levels, no studies are required to demonstrate the efficacy of butylated hydroxyanisole as an antioxidant in feed for cats.",
+    "source_url": "https://eur-lex.europa.eu/eli/reg_impl/2022/654/oj"
+   },
+   "US": {
+    "status": "restricted",
+    "since": null,
+    "reason": "The page permits BHA for use in or on specified foods, subject to listed limitations in parts per million.",
+    "quote": "The food additive BHA (butylated hydroxyanisole) alone or in combination with other antioxidants permitted in food for human consumption in this subpart B may be safely used in or on specified foods, as follows:",
+    "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-172/subpart-B/section-172.110",
+    "fact": "In the United States, BHA (butylated hydroxyanisole) may be safely used in or on specified foods, as follows."
+   },
+   "IN": {
+    "status": "unknown"
+   }
+  }
+ },
+ {
+  "id": "bht",
+  "name": "Butylated hydroxytoluene (BHT)",
+  "codes": [
+   "E321"
+  ],
+  "synonyms": [
+   "butylated hydroxytoluene",
+   "bht"
+  ],
+  "category": "antioxidant",
+  "regions": {
+   "EU": {
+    "status": "restricted",
+    "since": "2011",
+    "reason": "The page lists E 321 only for use in emulsifiers containing fatty acids, with maximum levels in the preparation and final product.",
+    "quote": "E 320 Butylated hydroxyanisole (BHA) 20 mg/kg singly or in combination (expressed on fat) in the preparation, 0,4 mg/kg in final product (singly or in combination) Emulsifiers containing fatty acids E 321 Butylated hydroxytoluene (BHT)",
+    "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX%3A32011R1130",
+    "fact": "In the European Union, Butylated hydroxytoluene (BHT, E321) is listed for use in emulsifiers containing fatty acids."
+   },
+   "US": {
+    "status": "restricted",
+    "since": null,
+    "reason": "BHT is permitted as a food additive only in or on specified foods and only up to the listed limits for total BHA and BHT.",
+    "quote": "The food additive BHT (butylated hydroxytoluene), alone or in combination with other antioxidants permitted in this subpart B may be safely used in or on specified foods, as follows:",
+    "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-172/subpart-B/section-172.115",
+    "fact": "In the United States, BHT (butylated hydroxytoluene) may be safely used in or on specified foods, alone or with other permitted antioxidants."
+   },
+   "IN": {
+    "status": "unknown"
+   }
+  }
+ },
+ {
+  "id": "tbhq",
+  "name": "TBHQ",
+  "codes": [
+   "E319"
+  ],
+  "synonyms": [
+   "tertiary butylhydroquinone",
+   "tbhq"
+  ],
+  "category": "antioxidant",
+  "regions": {
+   "EU": {
+    "status": "restricted",
+    "since": "2018",
+    "reason": "TBHQ (E 319) stays on the Union list of approved additives but, under this Regulation, is only permitted in specified food categories and at specified maximum levels (the Regulation deleted only octyl gallate E 311 and dodecyl gallate E 312).",
+    "quote": "(b) in Part C, in Table 5: Other additives that may be regulated combined, point (k) ‘E 310-320: Gallates, TBHQ and BHA’ is replaced by the following: ‘(k) E-number Name E 310 Propyl gallate E 319 Tertiary-butyl hydroquinone (TBHQ) E 320 Butylated hydroxyanisole (BHA)’ | E 310–320: Propyl gallate, TBHQ and BHA | | --- | (c) Part E is amended as follows: 1. In category 01.5 (Dehydrated milk as defined by Directive 2001/114/EC), the entry concerning food additives E 310-320 (Gallates, TBHQ and BHA) is replaced by the following: ‘E 310-320 Propyl gallate, TBHQ and BHA 200 (1) only milk powder for vending machines’",
+    "source_url": "https://eur-lex.europa.eu/eli/reg/2018/1481/oj",
+    "fact": "The European Union permits TBHQ (E319) only in specified food categories and at specified maximum levels under this regulation."
+   },
+   "US": {
+    "status": "allowed",
+    "since": null,
+    "reason": null,
+    "quote": "Food additive and GRAS regulations (21 CFR Parts 170-186)*: | 172.185 177.2420",
+    "source_url": "https://www.hfpappexternal.fda.gov/scripts/fdcc/index.cfm?id=TERTBUTYLHYDROQUINONE&set=FoodSubstances"
+   },
+   "IN": {
+    "status": "unknown"
+   }
+  }
+ },
+ {
+  "id": "cyclamate",
+  "name": "Cyclamate",
+  "codes": [
+   "E952"
+  ],
+  "synonyms": [
+   "cyclamate",
+   "sodium cyclamate"
+  ],
+  "category": "sweetener",
+  "regions": {
+   "EU": {
+    "status": "restricted",
+    "since": null,
+    "reason": "The Commission does not consider a complete ban justified but is examining how to ensure cyclamate intake does not exceed the new ADI, for example by amendments to authorised limits for its use.",
+    "quote": "Therefore, the Commission does not consider a complete ban of cyclamate as justified. The Commission is however examining how to ensure that the intake of cyclamate does not exceed the new ADI, for example by amendments to authorised limits for its use and the authorisation of alternatives.",
+    "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX%3A92002E000051",
+    "fact": "In the European Union, cyclamate is restricted; the Commission does not consider a complete ban justified and is examining how to keep intake within the new ADI."
+   },
+   "US": {
+    "status": "banned",
+    "since": null,
+    "reason": "The page classifies sodium cyclamate (E-952(IV)) under 21 CFR Part 189, Substances Prohibited From Use in Human Food, specifically the section on cyclamate and its derivatives.",
+    "quote": "PART 189 -- SUBSTANCES PROHIBITED FROM USE IN HUMAN FOOD SUBPART C--SUBSTANCES GENERALLY PROHIBITED FROM DIRECT ADDITION OR USE AS HUMAN FOOD SEC. 189.135 CYCLAMATE AND ITS DERIVATIVES",
+    "source_url": "https://precision.fda.gov/ginas/app/ui/substances/5b1f2b3f-da12-4877-8921-84a1cf2d6f3d",
+    "fact": "United States regulations list cyclamate and its derivatives as substances prohibited from use in human food."
+   },
+   "IN": {
+    "status": "banned",
+    "since": null,
+    "reason": "The product was rejected because it contained the non-permitted artificial sweetener Sodium Cyclamate.",
+    "quote": "Labelling Deficiencies: Batch No, Mandatory Declaration for artificial sweetener, Misleading product name Presence of non-permitted artificial sweetener: Sodium Cyclamate",
+    "source_url": "https://fira.fssai.gov.in/view_details.php?rid=NCC202400109014",
+    "fact": "India does not permit sodium cyclamate as an artificial sweetener, and a product containing it was rejected for that reason."
+   }
+  }
+ },
+ {
+  "id": "saccharin",
+  "name": "Saccharin",
+  "codes": [
+   "E954"
+  ],
+  "synonyms": [
+   "saccharin"
+  ],
+  "category": "sweetener",
+  "regions": {
+   "EU": {
+    "status": "restricted",
+    "since": null,
+    "reason": "The page lists E 954 (Saccharin and its Na, K and Ca salts) as authorised only in food category 14.2.3 (certain fermented beverages) at a maximum level of 80, and not in the named Polish quality ciders, perries, frozen ciders and frozen perries.",
+    "quote": "E 954 Saccharin and its Na, K and Ca salts 80 (52) excluding cydr jakościowy, perry jakościowe, cydr lodowy, perry lodowe",
+    "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ%3AL_202400374",
+    "fact": "The European Union permits saccharin (E954) at level 80 in certain foods but excludes Polish quality ciders, perries, frozen ciders and frozen perries."
+   },
+   "US": {
+    "status": "restricted",
+    "since": null,
+    "reason": "The page states saccharin is currently approved for use under certain conditions in specified beverages, mixes, cooking or table use, and processed foods.",
+    "quote": "The FDA has regulated saccharin as a food additive since 1977. First discovered and used in 1879, saccharin is currently approved for use, under certain conditions, in beverages, fruit juice drinks, and bases or mixes when prepared for consumption per directions, as a sugar substitute for cooking or table use, and in processed foods. Saccharin is also listed for use for certain technological purposes.",
+    "source_url": "https://www.fda.gov/food/food-additives-petitions/aspartame-and-other-sweeteners-food",
+    "fact": "The United States regulates saccharin as a food additive approved for use under certain conditions in specified foods and drinks."
+   },
+   "IN": {
+    "status": "unknown"
+   }
+  }
+ },
+ {
+  "id": "aspartame",
+  "name": "Aspartame",
+  "codes": [
+   "E951"
+  ],
+  "synonyms": [
+   "aspartame"
+  ],
+  "category": "sweetener",
+  "regions": {
+   "EU": {
+    "status": "allowed",
+    "since": null,
+    "reason": "The page states that aspartame is authorised as a food additive to sweeten a variety of foods and beverages in Europe.",
+    "quote": "In Europe, aspartame is authorised to be used as a food additive to sweeten a variety of foods and beverages such as drinks, desserts, sweets, dairy products, chewing gum, low-calorie and weight control products, and as a table-top sweetener.",
+    "source_url": "https://www.efsa.europa.eu/en/topics/topic/aspartame"
+   },
+   "US": {
+    "status": "restricted",
+    "since": null,
+    "reason": "The page says people with PKU should avoid or restrict aspartame and product labels must include a statement that the product contains phenylalanine.",
+    "quote": "Consumers can identify whether a product has aspartame by looking for it by name in the ingredient list on the product label, which must include a statement to inform people with PKU that the product contains phenylalanine.",
+    "source_url": "https://www.fda.gov/food/food-additives-petitions/aspartame-and-other-sweeteners-food",
+    "fact": "In the United States, product labels must tell people with PKU that a product contains phenylalanine when it contains aspartame."
+   },
+   "IN": {
+    "status": "restricted",
+    "since": null,
+    "reason": "FSSAI has laid down standards and limits for use of non-caloric sweeteners in various food products based on risk assessment and Acceptable Daily Intake (ADI).",
+    "quote": "Food Safety and Standards Authority of India (FSSAI) has already laid down the standards for various artificial sweeteners in the Food Safety and Standards (Food Products Standards and Food Additives) Regulation, 2011. These standards for non-caloric sweeteners and limits for use of such non-caloric sweeteners in various food products have been laid down on the basis of risk assessment and Acceptable Daily Intake (ADI) established by Joint FAO/WHO Expert Committee on Food Additives (JECFA) and the limits are in harmonization with Codex Alimentarius Commission.",
+    "source_url": "https://pib.gov.in/PressReleaseIframePage.aspx?PRID=1946711",
+    "fact": "India's FSSAI restricts aspartame by setting food-product standards and limits for non-caloric sweeteners based on risk assessment and Acceptable Daily Intake."
+   }
+  }
+ },
+ {
+  "id": "acesulfame-k",
+  "name": "Acesulfame K",
+  "codes": [
+   "E950"
+  ],
+  "synonyms": [
+   "acesulfame k",
+   "acesulfame potassium"
+  ],
+  "category": "sweetener",
+  "regions": {
+   "EU": {
+    "status": "allowed",
+    "since": null,
+    "reason": "The page states that acesulfame K (E 950) is authorised for use in the European Union in accordance with Regulation (EC) No 1333/2008.",
+    "quote": "It is authorised for use in the European Union (EU) in accordance with Regulation (EC) No 1333/2008.",
+    "source_url": "https://www.efsa.europa.eu/en/efsajournal/pub/9317"
+   },
+   "US": {
+    "status": "restricted",
+    "since": null,
+    "reason": "The page permits acesulfame potassium as a general-purpose sweetener and flavor enhancer in foods generally, but not in meat and poultry, and only up to the amount reasonably required under good manufacturing practice.",
+    "quote": "Acesulfame potassium (CAS Reg. No. 55589-62-3), also known as acesulfame K, may be safely used as a general-purpose sweetener and flavor enhancer in foods generally, except in meat and poultry, in accordance with current good manufacturing practice and in an amount not to exceed that reasonably required to accomplish the intended technical effect in foods for which standards of identity established under section 401 of the Federal Food, Drug, and Cosmetic Act do not preclude such use, under the following conditions:",
+    "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-172/subpart-I/section-172.800",
+    "fact": "In the United States, acesulfame K is permitted as a general-purpose sweetener and flavor enhancer in foods generally, except meat and poultry."
+   },
+   "IN": {
+    "status": "unknown"
+   }
+  }
+ },
+ {
+  "id": "sucralose",
+  "name": "Sucralose",
+  "codes": [
+   "E955"
+  ],
+  "synonyms": [
+   "sucralose"
+  ],
+  "category": "sweetener",
+  "regions": {
+   "EU": {
+    "status": "restricted",
+    "since": null,
+    "reason": "The page states E 955 is authorised for use in a range of reduced-sugar and sugar-free foods and beverages, while EFSA could not confirm the safety of additional uses.",
+    "quote": "E 955 is a sweetener, around 600 times sweeter than sugar, that is authorised for use in a range of reduced-sugar and sugar-free foods and beverages.",
+    "source_url": "https://www.efsa.europa.eu/en/news/efsa-finds-sucralose-safe-when-used-currently-authorised-cannot-confirm-safety-extending-its",
+    "fact": "Sucralose (E955), about 600 times sweeter than sugar, is authorized in the European Union for certain reduced-sugar and sugar-free foods and beverages."
+   },
+   "US": {
+    "status": "allowed",
+    "since": null,
+    "reason": "The page states the additive may be used as a sweetener in foods generally in accordance with current good manufacturing practice.",
+    "quote": "(c) The additive may be used as a sweetener in foods generally, in accordance with current good manufacturing practice in an amount not to exceed that reasonably required to accomplish the intended effect.",
+    "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-172/subpart-I/section-172.831"
+   },
+   "IN": {
+    "status": "allowed",
+    "since": null,
+    "reason": "Sucralose is a permitted sweetener as per FSS (FPS & FA) Regulations, 2011 and it does not require any warning statement now.",
+    "quote": "Sucralose is a permitted sweetener as per FSS (FPS & FA) Regulations, 2011 and it does not require any warning statement now.",
+    "source_url": "https://fssai.gov.in/upload/uploadfiles/files/FAQ_Labelling_Display_01_11_2023.pdf"
+   }
+  }
+ },
+ {
+  "id": "msg",
+  "name": "Monosodium glutamate (MSG)",
+  "codes": [
+   "E621"
+  ],
+  "synonyms": [
+   "monosodium glutamate"
+  ],
+  "category": "flavour enhancer",
+  "regions": {
+   "EU": {
+    "status": "restricted",
+    "since": null,
+    "reason": "Monosodium glutamate (E 621) is authorised for use in foodstuffs in general with a maximum level of 10 gram per kilogram (g/kg).",
+    "quote": "Monosodium glutamate (E 621) is authorised according to the Community legislation for use in foodstuffs in general with a maximum level of 10 gram per kilogram (g/kg); disodium and dipotassium inosinate (E 631 and E 632) are authorised for use in seasonings and condiments according to good manufacturing practice.",
+    "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX%3A92001E000119",
+    "fact": "The European Union authorises monosodium glutamate (E621) in foodstuffs generally, with a maximum level of 10 grams per kilogram."
+   },
+   "US": {
+    "status": "allowed",
+    "since": null,
+    "reason": "FDA considers the addition of MSG to foods to be “generally recognized as safe” (GRAS).",
+    "quote": "FDA considers the addition of MSG to foods to be “generally recognized as safe” (GRAS).",
+    "source_url": "https://www.fda.gov/food/food-additives-petitions/questions-and-answers-monosodium-glutamate-msg"
+   },
+   "IN": {
+    "status": "restricted",
+    "since": null,
+    "reason": "The page states MSG may be added to specified foods as per Appendix A, subject to GMP level and proper declaration.",
+    "quote": "Under Regulation 3.1.11 of the Food Safety and Standards (Food Product Standards and Food Additives), Regulations, 2011, Monosodium Glutamate (MSG), a flavour enhancer bearing INS number 621, may be added to specified foods as per the provisions of Appendix A, subject to Good Manufacturing Practice (GMP) level and under proper declaration as provided in 2.4.5 (18) of the Food Safety and Standards (Packaging and Labelling) Regulations, 2011.",
+    "source_url": "https://fssai.gov.in/upload/advisories/2018/02/5a968c7d2a5ee138.pdf",
+    "fact": "In India, MSG (E621) may be added to specified foods under Good Manufacturing Practice levels and with proper declaration."
+   }
+  }
+ },
+ {
+  "id": "sodium-benzoate",
+  "name": "Sodium benzoate",
+  "codes": [
+   "E211"
+  ],
+  "synonyms": [
+   "sodium benzoate"
+  ],
+  "category": "preservative",
+  "regions": {
+   "EU": {
+    "status": "unknown"
+   },
+   "US": {
+    "status": "restricted",
+    "since": null,
+    "reason": "The page permits its use in food only at levels not to exceed good manufacturing practice, with current usage resulting in a maximum level of 0.1 percent.",
+    "quote": "The ingredient is used in food at levels not to exceed good manufacturing practice. Current usage results in a maximum level of 0.1 percent in food.",
+    "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-184/subpart-B/section-184.1733",
+    "fact": "In the United States, sodium benzoate is allowed in food only up to good manufacturing practice, with current use at a maximum of 0.1 percent."
+   },
+   "IN": {
+    "status": "unknown"
+   }
+  }
+ },
+ {
+  "id": "sodium-nitrite",
+  "name": "Sodium nitrite",
+  "codes": [
+   "E250"
+  ],
+  "synonyms": [
+   "sodium nitrite"
+  ],
+  "category": "preservative",
+  "regions": {
+   "EU": {
+    "status": "unknown"
+   },
+   "US": {
+    "status": "restricted",
+    "since": null,
+    "reason": "The page states that sodium nitrite may be safely used only in or on specified foods under prescribed conditions and concentration limits.",
+    "quote": "The food additive sodium nitrite may be safely used in or on specified foods in accordance with the following prescribed conditions: (a) It is used or intended for use as follows: (1) As a color fixative in smoked cured tunafish products so that the level of sodium nitrite does not exceed 10 parts per million (0.001 percent) in the finished product.",
+    "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-172/subpart-B/section-172.175",
+    "fact": "In the United States, sodium nitrite is allowed in specified foods only under prescribed conditions and concentration limits."
+   },
+   "IN": {
+    "status": "unknown"
+   }
+  }
+ },
+ {
+  "id": "carrageenan",
+  "name": "Carrageenan",
+  "codes": [
+   "E407"
+  ],
+  "synonyms": [
+   "carrageenan"
+  ],
+  "category": "thickener",
+  "regions": {
+   "EU": {
+    "status": "unknown"
+   },
+   "US": {
+    "status": "allowed",
+    "since": null,
+    "reason": "The page states that the food additive carrageenan may be safely used in food in accordance with the prescribed conditions listed.",
+    "quote": "The food additive carrageenan may be safely used in food in accordance with the following prescribed conditions: (a) The food additive is the refined hydrocolloid prepared by aqueous extraction from the following members of the families Gigartinaceae and Solieriaceae of the class Rodophyceae (red seaweed):",
+    "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-172/subpart-G/section-172.620"
+   },
+   "IN": {
+    "status": "restricted",
+    "since": null,
+    "reason": "The page lists Carrageenan (INS 407) as a food additive permitted in infant formula only at a maximum level of 0.03 gm in regular milk and soy based liquid infant formula.",
+    "quote": "Carrageenan Emulsifiers Lecithin Mono- and diglycerides Citric and fatty acid esters of glycerol Acidity Regulators Sodium hydroxide | 1440 407 322 471 472c 524 | acid based infant formula only 0.03 gm (in regular milk and soy based liquid infant formula only)",
+    "source_url": "https://fssai.gov.in/docs/food-law/regulations/Comp_IFR_VERSION-II_04_01_2024.pdf",
+    "fact": "India restricts carrageenan (E407) in infant formula to a maximum of 0.03 gm in regular milk and soy-based liquid formula."
+   }
+  }
+ },
+ {
+  "id": "caramel-iv",
+  "name": "Sulphite ammonia caramel",
+  "codes": [
+   "E150d"
+  ],
+  "synonyms": [
+   "sulphite ammonia caramel",
+   "caramel colour iv"
+  ],
+  "category": "colour",
+  "regions": {
+   "EU": {
+    "status": "unknown"
+   },
+   "US": {
+    "status": "unknown"
+   },
+   "IN": {
+    "status": "unknown"
+   }
+  }
+ },
+ {
+  "id": "phosphoric-acid",
+  "name": "Phosphoric acid",
+  "codes": [
+   "E338"
+  ],
+  "synonyms": [
+   "phosphoric acid"
+  ],
+  "category": "acidity regulator",
+  "regions": {
+   "EU": {
+    "status": "restricted",
+    "since": null,
+    "reason": "The page replaces the entry for E 338-452 in food category 08.2 so that its use is limited to breakfast sausages and the listed meat preparations.",
+    "quote": "In Part E of Annex II to Regulation (EC) No 1333/2008, in food category 08.2 ‘Meat preparations as defined by Regulation (EC) No 853/2004’, the entry for phosphoric acid – phosphates – di – tri – and polyphosphates (E 338-452) is replaced by the following: E 338-452 Phosphoric acid — phosphates — di — tri — and polyphosphates (1) (4) only breakfast sausages: in this product, the meat is minced in such a way so that the muscle and fat tissue are completely dispersed, so that fibre makes an emulsion with the fat, giving the product its typical appearance; Finnish grey salted Christmas ham, burger meat with a minimum vegetable and/or cereal content of 4 % mixed within the meat, Kasseler, Bräte, Surfleisch, toorvorst, šašlõkk, ahjupraad, Bílá klobása, Vinná klobása, Sváteční klobása and Syrová klobása",
+    "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=PI_COM%3AC%282017%293223",
+    "fact": "In the European Union, phosphoric acid (E338) is restricted in meat preparations to breakfast sausages and certain listed products."
+   },
+   "US": {
+    "status": "allowed",
+    "since": null,
+    "reason": "The page states that phosphoric acid is generally recognized as safe when used in accordance with good manufacturing practice.",
+    "quote": "This substance is generally recognized as safe when used in accordance with good manufacturing practice.",
+    "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-182/subpart-B/section-182.1073"
+   },
+   "IN": {
+    "status": "restricted",
+    "since": null,
+    "reason": "The page lists phosphoric acid (INS 338) as a processing aid only for sugar, with residual level GMP.",
+    "quote": "15. | Phosphoric acid (INS 338) | Sugar | GMP]",
+    "source_url": "https://fssai.gov.in/upload/uploadfiles/files/Appendix%20C(1).pdf",
+    "fact": "India lists phosphoric acid (INS 338) as a processing aid for sugar only, with residual level GMP."
+   }
+  }
+ },
+ {
+  "id": "trans-fat",
+  "name": "Trans fats (partially hydrogenated oils)",
+  "codes": [],
+  "synonyms": [
+   "partially hydrogenated",
+   "hydrogenated vegetable oil",
+   "vanaspati",
+   "interesterified"
+  ],
+  "category": "fat",
+  "regions": {
+   "EU": {
+    "status": "restricted",
+    "since": "2019",
+    "reason": "The page lists trans fat other than trans fat naturally occurring in fat of animal origin as a restricted substance with a maximum of 2 grams per 100 grams of fat in food intended for the final consumer and food intended for supply to retail.",
+    "quote": "The content of trans fat, other than trans fat naturally occurring in fat of animal origin, in food intended for the final consumer and food intended for supply to retail, shall not exceed 2 grams per 100 grams of fat.",
+    "source_url": "https://eur-lex.europa.eu/eli/reg/2019/649/oj",
+    "fact": "In the European Union, trans fat other than naturally occurring animal fat in food for consumers and retail must not exceed 2 grams per 100 grams of fat."
+   },
+   "US": {
+    "status": "banned",
+    "since": "2018",
+    "reason": "FDA determined that PHOs are no longer GRAS, so for most uses manufacturers could not add PHOs to foods after June 18, 2018, with final compliance extended to January 1, 2021.",
+    "quote": "In 2015, the FDA took the significant step of determining that PHOs, then the major source of artificial trans fat in the food supply, are no longer “Generally Recognized as Safe,” or GRAS. For the majority of uses of PHOs, June 18, 2018, was the date after which manufacturers could not add PHOs to foods. However, to allow for an orderly transition in the marketplace, FDA allowed more time for products to work their way through distribution by extending the final compliance date to January 1, 2021.",
+    "source_url": "https://www.fda.gov/food/food-additives-petitions/trans-fat",
+    "fact": "United States FDA found partially hydrogenated oils, a trans fat source, no longer Generally Recognized as Safe, so manufacturers could not add them to most foods after June 2018."
+   },
+   "IN": {
+    "status": "restricted",
+    "since": null,
+    "reason": "The page requires foods using hydrogenated vegetable fats or bakery shortening to declare on the label that they contain trans fats.",
+    "quote": "The food, in which hydrogenated vegetable fats or bakery shortening is used shall declare on the label that ‘hydrogenated vegetable fats or bakery shortening used- contains trans fats;",
+    "source_url": "https://www.fssai.gov.in/upload/uploadfiles/files/FSSAI-regulations.pdf",
+    "fact": "India requires foods made with hydrogenated vegetable fats or bakery shortening to label that they contain trans fats."
+   }
+  }
+ },
+ {
+  "id": "ethylene-oxide",
+  "name": "Ethylene oxide",
+  "codes": [],
+  "synonyms": [
+   "ethylene oxide"
+  ],
+  "category": "contaminant",
+  "regions": {
+   "EU": {
+    "status": "banned",
+    "since": "2022",
+    "reason": "The page states that, to ensure a high level of protection of human health, the presence of ethylene oxide, irrespective of its origin, is not authorised for all food additives.",
+    "quote": "In order to avoid those difficulties and to ensure a high level of protection of human health, it is therefore appropriate to lay down that the presence of ethylene oxide, irrespective of its origin, is not authorised for all food additives.",
+    "source_url": "https://eur-lex.europa.eu/eli/reg/2022/1396/oj/eng",
+    "fact": "The European Union does not authorise ethylene oxide in any food additives to protect human health."
+   },
+   "US": {
+    "status": "unknown"
+   },
+   "IN": {
+    "status": "unknown"
+   }
+  }
+ },
+ {
+  "id": "konjac-jelly",
+  "name": "Konjac in jelly confectionery",
+  "codes": [
+   "E425"
+  ],
+  "synonyms": [
+   "konjac",
+   "glucomannan"
+  ],
+  "category": "thickener",
+  "regions": {
+   "EU": {
+    "status": "banned",
+    "since": "2002",
+    "reason": "Jelly confectionery containing E 425 konjac constitutes a life-threatening risk, having caused the death of several children in third countries through choking.",
+    "quote": "1. The placing on the market of jelly confectionery, including jelly mini-cups, containing E 425: Konjac: (i) Konjac gum (ii) Konjac glucomannane is suspended. 2. The use of E 425: Konjac: (i) Konjac gum (ii) Konjac glucomannane in jelly confectionery, including jelly mini-cups, is suspended.",
+    "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX%3A32002D0247",
+    "fact": "The European Union suspended the market placement and use of E425 konjac in jelly confectionery, including jelly mini-cups."
+   },
+   "US": {
+    "status": "banned",
+    "since": null,
+    "reason": "Small konjac powder jelly cups are under FDA import alert 33-15 and are not permitted for entry into the United States because small jelly cups containing konjac powder have previously been implicated in choking deaths of children.",
+    "quote": "Small jelly cups containing konjac powder have previously been implicated in choking deaths of children. Small konjac powder jelly cups are presently under FDA import alert 33-15 and are not permitted for entry into the United States.",
+    "source_url": "https://www.fda.gov/safety/recalls-market-withdrawals-safety-alerts/rong-shing-trading-ny-inc-brooklyn-ny-recalling-its-211oz-600g-xi-zhi-liang-fruit-jelly-cup",
+    "fact": "Small konjac powder jelly cups are not permitted for entry into the United States because they have been implicated in choking deaths of children."
+   },
+   "IN": {
+    "status": "unknown"
+   }
+  }
+ }
+]

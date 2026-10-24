@@ -43,18 +43,31 @@ export interface ClaimFinding {
   source_verified: boolean
 }
 
-export interface AdditiveStatus {
-  allowed: boolean | null
-  note: string
+/** A substance's status in one region; anything but "unknown" is backed by a verified quote. */
+export interface RegionStatus {
+  status: 'banned' | 'restricted' | 'allowed' | 'unknown'
+  since: string | null
+  reason: string | null
+  quote: string | null
   source_url: string | null
 }
 
 export interface AdditiveFinding {
+  id: string
   code: string
   name: string
-  status: Record<Region, AdditiveStatus>
+  category: string
+  matched: string
+  status: Record<Region, RegionStatus>
   flagged: boolean
   message: string
+}
+
+export interface Fact {
+  text: string
+  source_url: string
+  substance: string
+  region: Region
 }
 
 export interface Counterpart {
@@ -102,7 +115,8 @@ export interface AgentResult {
 export interface Job {
   id: string
   status: 'queued' | 'running' | 'done' | 'failed'
-  steps: Step[]
+  stage: 'queued' | 'reading' | 'matching' | 'searching' | 'checking' | 'done' | 'failed'
+  steps: Step[] // logged for observability; the UI shows `stage` instead
   result: { result: AgentResult; verdict: Verdict | null } | null
   error: string | null
 }
@@ -153,6 +167,7 @@ export const api = {
     request<Verdict>(`/products/${encodeURIComponent(key)}/counterpart?region=${region}`),
   identify: (photo: Blob) => request<{ job_id: string; poll_url: string }>('/identify', { method: 'POST', body: form([photo]) }),
   job: (id: string) => request<Job>(`/jobs/${id}`),
+  facts: () => request<Fact[]>('/facts'),
   extractLabel: (photos: Blob[], barcode?: string) =>
     request<LabelResult>('/labels/extract', { method: 'POST', body: form(photos, barcode ? { barcode } : {}) }),
   confirm: (product: Product) =>

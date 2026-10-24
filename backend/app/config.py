@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     appwrite_database_id: str = "better_fssai"
     appwrite_products_table: str = "products"
     appwrite_counterparts_table: str = "counterparts"
+    appwrite_scan_logs_table: str = "scan_logs"
 
     off_user_agent: str = "better-fssai/0.1 (hackathon project)"
 

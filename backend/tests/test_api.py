@@ -160,11 +160,16 @@ def test_identify_runs_as_background_job(client, monkeypatch):
 
     running = poll(client, url, until=("running",))
     assert [s["tool"] for s in running["steps"]] == ["read_pack"] and running["result"] is None
+    assert running["stage"] == "matching"
 
     client.portal.call(gate.set)
     done = poll(client, url)
-    assert done["status"] == "done" and done["result"]["result"]["status"] == "web"
+    assert done["status"] == "done" and done["stage"] == "done" and done["result"]["result"]["status"] == "web"
     assert done["result"]["verdict"]["headline"]
+
+    # The full trace is stored for observability.
+    [log] = client.app.state.products.store.scan_logs
+    assert log["job_id"] == done["id"] and log["outcome"] == "web" and log["steps"][0]["tool"] == "read_pack"
 
 
 def test_failed_job_reports_error(client, monkeypatch):

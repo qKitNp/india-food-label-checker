@@ -1,6 +1,8 @@
+import pytest
+
 from app import additive_codes, sanity, verdict
 from app.models import Counterpart, Nutrition, Product
-from app.rules import additives, claims
+from app.rules import claims, substances
 from app.sources.counterpart import grounded
 from app.sources.off import parse
 
@@ -93,21 +95,44 @@ class TestClaims:
         assert c.passes is None
 
 
-class TestAdditives:
-    def test_flags_eu_ban(self):
-        [f] = additives.evaluate(product(additives=["E171"]))
-        assert f.flagged and "not permitted in the EU" in f.message
+SUBSTANCES = [
+    {"id": "titanium-dioxide", "name": "Titanium dioxide", "codes": ["E171"], "synonyms": ["titanium dioxide"],
+     "category": "colour", "regions": {
+         "EU": {"status": "banned", "since": "2022", "reason": "Genotoxicity concerns.",
+                "quote": "...", "source_url": "https://eur-lex.europa.eu/x"},
+         "US": {"status": "restricted", "quote": "...", "source_url": "https://ecfr.gov/x"},
+         "IN": {"status": "unknown"}}},
+    {"id": "trans-fat", "name": "Trans fats", "codes": [], "synonyms": ["vanaspati", "partially hydrogenated"],
+     "category": "fat", "regions": {}},
+    {"id": "phosphoric-acid", "name": "Phosphoric acid", "codes": ["E338"], "synonyms": ["phosphoric acid"],
+     "category": "acidity regulator", "regions": {"EU": {"status": "allowed", "quote": "...", "source_url": "u"}}},
+]
 
-    def test_eu_warning_colour(self):
-        [f] = additives.evaluate(product(additives=["E110"]))
-        assert f.flagged and "hyperactivity warning" in f.message
 
-    def test_ordinary_additive_not_flagged(self):
-        [f] = additives.evaluate(product(additives=["E338"]))
+class TestSubstances:
+    @pytest.fixture(autouse=True)
+    def table(self, monkeypatch):
+        monkeypatch.setattr(substances, "table", lambda: SUBSTANCES)
+
+    def test_banned_somewhere_is_flagged(self):
+        [f] = substances.evaluate(product(additives=["E171"]))
+        assert f.flagged and f.message == "Titanium dioxide: banned in the EU (from 2022)."
+        assert f.status["IN"].status == "unknown" and f.matched == "E171"
+
+    def test_matches_by_name_without_code(self):
+        [f] = substances.evaluate(product(ingredients_text="Wheat flour, Vanaspati, salt"))
+        assert f.id == "trans-fat" and f.matched == "vanaspati" and not f.flagged
+
+    def test_name_match_needs_whole_words(self):
+        # "phosphoric acidity" must not count as "phosphoric acid"
+        assert substances.evaluate(product(ingredients_text="contains phosphoric acidity regulator")) == []
+
+    def test_allowed_is_not_flagged(self):
+        [f] = substances.evaluate(product(additives=["E338"]))
         assert not f.flagged
 
-    def test_unknown_code_skipped(self):
-        assert additives.evaluate(product(additives=["E9999"])) == []
+    def test_unlisted_code_is_skipped(self):
+        assert substances.evaluate(product(additives=["E9999"])) == []
 
 
 class TestVerdict:
@@ -129,3 +154,13 @@ def test_grounding():
     assert grounded("carbonated water, colour (caramel e150d), phosphoric acid", page)
     assert not grounded("carbonated water, sugar, colour (caramel e150d)", page)
     assert not grounded("water", page)
+
+
+def test_facts_come_with_sources(monkeypatch):
+    table = [{**SUBSTANCES[0], "regions": {
+        "EU": {**SUBSTANCES[0]["regions"]["EU"], "fact": "The EU banned titanium dioxide in food in 2022."},
+        "US": {**SUBSTANCES[0]["regions"]["US"], "fact": "The US limits titanium dioxide to 1% of food weight."}}}]
+    monkeypatch.setattr(substances, "table", lambda: table)
+    assert substances.facts() == [{"text": "The EU banned titanium dioxide in food in 2022.",
+                                   "source_url": "https://eur-lex.europa.eu/x",
+                                   "substance": "Titanium dioxide", "region": "EU"}]

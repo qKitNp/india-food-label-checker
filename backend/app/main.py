@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 from typing import Annotated
 
@@ -11,11 +12,21 @@ from pydantic import BaseModel, model_validator
 from app import additive_codes, agent, llm, verdict
 from app.catalog import Embedder
 from app.config import get_settings
+from app.rules import substances
 from app.jobs import IdentifyResponse, Job, JobStore
 from app.models import Product, Region, Verdict
 from app.services import ProductService
 from app.sources import counterpart, label
 from app.store import make_store
+
+# One JSON line per finished scan (full agent trace), picked up by journald on the server.
+_scan_log = logging.getLogger("scans")
+if not _scan_log.handlers:
+    _handler = logging.StreamHandler()
+    _handler.setFormatter(logging.Formatter("scan %(message)s"))
+    _scan_log.addHandler(_handler)
+    _scan_log.setLevel(logging.INFO)
+    _scan_log.propagate = False
 
 # Below this similarity, a spoken product name is treated as not found. Correct matches
 # scored ~0.77-0.81 in testing; this cut-off hasn't been tuned against unrelated products yet.
@@ -35,7 +46,7 @@ async def lifespan(app: FastAPI):
     app.state.products = ProductService(store, http, embedder, settings.image_weight)
     await app.state.products.load_index()
     app.state.exa = Exa(settings.exa_api_key) if settings.exa_api_key else None
-    app.state.jobs = JobStore()
+    app.state.jobs = JobStore(on_finish=store.save_scan_log)
     yield
     await http.aclose()
     for closeable in (store, embedder):
@@ -75,6 +86,12 @@ async def read_images(images: list[UploadFile]) -> list[tuple[bytes, str]]:
     if not images:
         raise HTTPException(400, "Send at least one image")
     return [(await f.read(), f.content_type or "image/jpeg") for f in images]
+
+
+@app.get("/facts")
+async def get_facts() -> list[dict]:
+    """Facts about additives and their regulation, each with the source it came from."""
+    return substances.facts()
 
 
 @app.get("/health")

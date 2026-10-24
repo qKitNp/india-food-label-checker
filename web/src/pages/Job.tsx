@@ -1,50 +1,22 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { api, ApiError, type Job, type Step } from '../api'
+import { api, ApiError, type Fact, type Job } from '../api'
 import { Card, ErrorNote, Page, Spinner, buttonClass } from '../ui'
 
 const POLL_MS = 1500
+const FACT_MS = 7000
 
-function domain(url: unknown) {
-  try {
-    return new URL(String(url)).hostname.replace(/^www\./, '')
-  } catch {
-    return 'a page'
-  }
-}
+// The agent's individual steps are logged server-side; here we only show coarse progress.
+const STAGES: { key: Job['stage'][]; label: string }[] = [
+  { key: ['queued', 'reading'], label: 'Reading the pack' },
+  { key: ['matching'], label: 'Checking products we know' },
+  { key: ['searching'], label: 'Looking up the ingredients' },
+  { key: ['checking'], label: 'Checking the source' },
+]
 
-/** Turn an agent step into a plain sentence. */
-function describe(step: Step): { text: string; tone?: 'good' | 'bad' } {
-  const a = step.args
-  switch (step.tool) {
-    case 'read_pack': {
-      try {
-        const ident = JSON.parse(step.result)
-        const name = [ident.brand, ident.product_name].filter(Boolean).join(' ')
-        return { text: name ? `Read the pack: ${name}` : 'Read the pack' }
-      } catch {
-        return { text: 'Read the pack' }
-      }
-    }
-    case 'search_catalog':
-      return { text: a.with_photo ? 'Compared it with products we know, by name and pack photo' : 'Searched products we know' }
-    case 'get_catalog_product':
-      return { text: 'Looked closely at a possible match' }
-    case 'use_catalog_product':
-      return { text: 'Matched a product we already know', tone: 'good' }
-    case 'web_search':
-      return { text: `Searched the web for "${String(a.query ?? '')}"` }
-    case 'read_page':
-      return { text: `Read ${domain(a.url)}` }
-    case 'submit_product':
-      return step.result.startsWith('Accepted')
-        ? { text: `Found the ingredients on ${domain(a.source_url)} and checked the quote`, tone: 'good' }
-        : { text: `Rejected a source: ${step.result.replace(/^Rejected:\s*/, '')}`, tone: 'bad' }
-    case 'give_up':
-      return { text: "Couldn't find reliable ingredients", tone: 'bad' }
-    default:
-      return { text: step.tool }
-  }
+function stageIndex(stage: Job['stage'] | undefined) {
+  const i = STAGES.findIndex((s) => stage && s.key.includes(stage))
+  return i === -1 ? 0 : i
 }
 
 export default function JobPage() {
@@ -86,43 +58,37 @@ export default function JobPage() {
 
   const finished = job?.status === 'done' || job?.status === 'failed'
   const outcome = job?.result?.result
+  const current = stageIndex(job?.stage)
 
   return (
     <Page>
       <div className="rise text-center">
         <span className="eyebrow">Checking</span>
         <h1 className="mt-3 font-serif text-[1.75rem] font-medium tracking-tight">
-          {finished ? 'Done looking' : 'Finding the ingredients'}
+          {finished ? 'Done looking' : STAGES[current].label}
         </h1>
-        {!finished && <p className="mt-2 text-sm text-muted">New products can take up to a minute while we search the web.</p>}
+        {!finished && (
+          <p className="mt-2 text-sm text-muted">New products can take up to a minute while we look them up.</p>
+        )}
       </div>
 
-      <Card className="rise mt-6">
-        <ol className="space-y-3">
-          {(job?.steps ?? []).map((step, i) => {
-            const { text, tone } = describe(step)
-            return (
-              <li key={i} className="rise flex gap-3 text-[15px]">
-                <span
-                  className={`mt-1.5 size-2 shrink-0 rounded-full ${tone === 'bad' ? 'bg-bad' : tone === 'good' ? 'bg-good' : 'bg-accent'}`}
-                />
-                <span className={tone === 'bad' ? 'text-muted' : 'text-ink-2'}>{text}</span>
-              </li>
-            )
-          })}
-          {!finished && (
-            <li className="flex items-center gap-3 text-[15px] text-faint">
-              <Spinner className="text-accent" />
-              {job?.steps.length ? 'Working…' : 'Reading the pack…'}
-            </li>
-          )}
-        </ol>
-      </Card>
+      {!finished && (
+        <div className="rise mx-auto mt-6 flex max-w-xs items-center gap-1.5" aria-hidden="true">
+          {STAGES.map((s, i) => (
+            <span
+              key={s.label}
+              className={`h-1.5 flex-1 rounded-full transition-colors duration-500 ${i < current ? 'bg-accent' : i === current ? 'animate-pulse bg-accent/60' : 'bg-line'}`}
+            />
+          ))}
+        </div>
+      )}
+
+      {!finished && <Facts />}
 
       {error && <div className="mt-4"><ErrorNote>{error}</ErrorNote></div>}
 
       {job?.status === 'failed' && (
-        <div className="mt-4"><ErrorNote>Something went wrong while checking this product. {job.error}</ErrorNote></div>
+        <div className="mt-6"><ErrorNote>Something went wrong while checking this product. Please try again.</ErrorNote></div>
       )}
 
       {outcome?.status === 'not_food' && (
@@ -144,5 +110,62 @@ export default function JobPage() {
         </div>
       )}
     </Page>
+  )
+}
+
+function shuffle<T>(items: T[]): T[] {
+  const out = [...items]
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[out[i], out[j]] = [out[j], out[i]]
+  }
+  return out
+}
+
+function domain(url: string) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return url
+  }
+}
+
+/** Rotating facts about additives, each from a source we checked. Tap for the next one. */
+function Facts() {
+  const [facts, setFacts] = useState<Fact[]>([])
+  const [index, setIndex] = useState(0)
+
+  useEffect(() => {
+    api.facts().then((f) => setFacts(shuffle(f)), () => setFacts([]))
+  }, [])
+
+  useEffect(() => {
+    if (facts.length < 2) return
+    const timer = window.setInterval(() => setIndex((i) => (i + 1) % facts.length), FACT_MS)
+    return () => window.clearInterval(timer)
+  }, [facts.length])
+
+  if (!facts.length) {
+    return (
+      <div className="mt-10 flex justify-center text-accent"><Spinner /></div>
+    )
+  }
+  const fact = facts[index]
+  return (
+    <Card className="rise mt-8">
+      <p className="text-xs font-medium tracking-wide text-accent-deep uppercase">Did you know</p>
+      <button
+        type="button"
+        onClick={() => setIndex((i) => (i + 1) % facts.length)}
+        className="mt-2 block w-full text-left"
+        aria-label="Next fact"
+      >
+        <p key={index} className="rise min-h-[4.5rem] font-serif text-lg leading-snug font-medium text-ink">{fact.text}</p>
+      </button>
+      <div className="mt-3 flex items-center justify-between gap-3 text-xs text-faint">
+        <a href={fact.source_url} target="_blank" rel="noreferrer" className="truncate underline">Source: {domain(fact.source_url)}</a>
+        <span className="shrink-0">{index + 1} / {facts.length}</span>
+      </div>
+    </Card>
   )
 }

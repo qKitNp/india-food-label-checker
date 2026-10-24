@@ -2,7 +2,7 @@ from urllib.parse import urlparse
 
 from app import additive_codes, sanity
 from app.models import Counterpart, Product, Verdict
-from app.rules import additives, claims
+from app.rules import claims, substances
 
 UNRELIABLE = "This product's online data looks unreliable. Scan the back label to check it."
 
@@ -18,7 +18,7 @@ def build(product: Product, counterpart: Counterpart | None = None) -> Verdict:
         product = product.model_copy(update={"additives": [*product.additives, *missing]})
     contradictions = sanity.check(product)
     claim_findings = claims.evaluate(product)
-    additive_findings = additives.evaluate(product)
+    additive_findings = substances.evaluate(product)
 
     headline: list[str] = []
     if contradictions and not product.verified:

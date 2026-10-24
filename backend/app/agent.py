@@ -13,6 +13,7 @@ import difflib
 import json
 import logging
 import re
+import time
 from typing import Literal
 
 import litellm
@@ -116,6 +117,7 @@ class Step(BaseModel):
     tool: str
     args: dict
     result: str
+    ms: int | None = None  # how long the step took, for observability
 
 
 class AgentResult(BaseModel):
@@ -230,9 +232,10 @@ class _Run:
     async def loop(self, ident: Identification) -> AgentResult:
         query = " ".join(x for x in (ident.brand, ident.product_name) if x)
         trace = self.steps
+        started = time.perf_counter()
         candidates = await self.candidates(query, use_photo=True)
         trace.append(Step(tool="search_catalog", args={"query": query, "with_photo": self.image_vector is not None},
-                          result=candidates))
+                          result=candidates, ms=_ms(started)))
         messages = [
             {"role": "system", "content": SYSTEM},
             {"role": "user", "content": f"Product seen on the front of the pack: {ident.model_dump_json()}\n"
@@ -249,13 +252,14 @@ class _Run:
                 messages.append({"role": "user", "content": "Respond with a tool call."})
                 continue
             for tc in message.tool_calls:
+                started = time.perf_counter()
                 try:
                     args = json.loads(tc.function.arguments or "{}")
                     result = await self.call(tc.function.name, args, ident)
                 except Exception as e:  # report tool errors back to the model instead of failing the run
                     log.warning("Tool %s failed: %s", tc.function.name, e)
                     args, result = {}, f"Tool error: {e}"
-                trace.append(Step(tool=tc.function.name, args=args, result=result[:500]))
+                trace.append(Step(tool=tc.function.name, args=args, result=result[:500], ms=_ms(started)))
                 messages.append({"role": "tool", "tool_call_id": tc.id, "content": result})
             if self.final:
                 self.final.trace = list(trace)
@@ -273,8 +277,10 @@ async def find_from_front(settings: Settings, products: ProductService, exa: Exa
     steps = steps if steps is not None else []
     photo = llm.shrink(images[0][0])
     # Reading the pack (~5 s) and embedding the photo (~3 s on 2 vCPUs) run side by side.
+    started = time.perf_counter()
     ident, image_vector = await asyncio.gather(identify(settings, images), _embed_or_none(products, photo))
-    steps.append(Step(tool="read_pack", args={}, result=ident.model_dump_json()))
+    steps.append(Step(tool="read_pack", args={"photo_embedded": image_vector is not None},
+                      result=ident.model_dump_json(), ms=_ms(started)))
     if not ident.is_packaged_food:
         return AgentResult(status="not_food", identification=ident, trace=list(steps))
 
@@ -295,6 +301,10 @@ async def find_from_front(settings: Settings, products: ProductService, exa: Exa
     if result.product and (result.status == "web" or not result.product.image_file_id):
         result.product = await products.save(result.product, image=photo, image_vector=image_vector)
     return result
+
+
+def _ms(started: float) -> int:
+    return round((time.perf_counter() - started) * 1000)
 
 
 async def _embed_or_none(products: ProductService, photo: bytes) -> np.ndarray | None:
