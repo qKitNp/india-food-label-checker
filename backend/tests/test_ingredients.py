@@ -59,3 +59,9 @@ def test_flags_sub_ingredients():
 
 def test_empty():
     assert ingredients.parse(None) == [] and ingredients.parse("") == []
+
+
+def test_section_label_with_stray_quote():
+    items = ingredients.parse('Noodles: Wheat flour, Salt. Masala Tastemaker": Mixed Spices (26.2%), Sugar')
+    assert [(i.section, i.name) for i in items] == [
+        ("Noodles", "Wheat flour"), ("Noodles", "Salt"), ("Masala Tastemaker", "Mixed Spices"), ("Masala Tastemaker", "Sugar")]

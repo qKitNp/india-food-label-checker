@@ -63,7 +63,8 @@ def _only_codes(group: str) -> bool:
     return bool(parts) and all(additive_codes.normalise(p) for p in parts)
 
 
-_SECTION = re.compile(r"^\s*([A-Za-z][A-Za-z '&-]{1,30}?)\s*:\s*(?=\S)")
+# 'Noodles:' or 'Masala Tastemaker":' (stray quotes are common in retailer copies of labels)
+_SECTION = re.compile(r"^\s*([A-Za-z][A-Za-z '&\"“”’-]{1,30}?)\s*[\"“”’]?\s*:\s*(?=\S)")
 
 
 def _parse_item(text: str, depth: int = 0) -> Ingredient:
@@ -93,7 +94,7 @@ def parse(text: str | None) -> list[Ingredient]:
     items, section = [], None
     for part in split_top(text):
         if m := _SECTION.match(part):
-            section = m.group(1).strip()
+            section = m.group(1).strip(" \"“”’")
             part = part[m.end():]
         item = _parse_item(part)
         item.section = section
