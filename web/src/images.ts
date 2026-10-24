@@ -3,6 +3,13 @@
 
 const MAX_SIDE = 1600
 
+/** A photo the browser can't decode (e.g. an iPhone HEIC file in Chrome) or a non-image file. */
+export class UnreadablePhoto extends Error {
+  constructor() {
+    super("We can't read that file. Take a photo with the camera, or choose a JPEG or PNG image.")
+  }
+}
+
 export async function toJpeg(source: Blob | HTMLVideoElement, maxSide = MAX_SIDE): Promise<Blob> {
   let width: number
   let height: number
@@ -13,7 +20,13 @@ export async function toJpeg(source: Blob | HTMLVideoElement, maxSide = MAX_SIDE
     height = source.videoHeight
     draw = (ctx, w, h) => ctx.drawImage(source, 0, 0, w, h)
   } else {
-    const bitmap = await createImageBitmap(source, { imageOrientation: 'from-image' })
+    if (source.type && !source.type.startsWith('image/')) throw new UnreadablePhoto()
+    let bitmap: ImageBitmap
+    try {
+      bitmap = await createImageBitmap(source, { imageOrientation: 'from-image' })
+    } catch {
+      throw new UnreadablePhoto()
+    }
     width = bitmap.width
     height = bitmap.height
     draw = (ctx, w, h) => ctx.drawImage(bitmap, 0, 0, w, h)

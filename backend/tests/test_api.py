@@ -19,10 +19,13 @@ from tests.test_rules import OFF_COKE_ZERO_IN
 OFF_URL = "https://world.openfoodfacts.org/api/v2/product/{}.json"
 
 
-def jpeg() -> bytes:
+def jpeg(size=(64, 64), fmt="JPEG") -> bytes:
     out = io.BytesIO()
-    Image.new("RGB", (64, 64), "orange").save(out, "JPEG")
+    Image.new("RGB", size, "orange").save(out, fmt)
     return out.getvalue()
+
+
+PHOTO = jpeg()
 
 
 class FakeEmbedder:
@@ -123,10 +126,10 @@ def test_voice_lookup_needs_input(client):
 
 def test_label_extract(client, monkeypatch):
     async def fake(settings, schema, prompt, images=None):
-        assert images == [(b"x", "image/jpeg")]
+        assert images == [(PHOTO, "image/jpeg")]
         return schema(name="Coke Zero", ingredients_text="Water, colour (150d), INS 951", is_liquid=True)
     monkeypatch.setattr(llm, "complete_json", fake)
-    r = client.post("/labels/extract", files={"images": ("a.jpg", b"x", "image/jpeg")}, data={"barcode": "1"})
+    r = client.post("/labels/extract", files={"images": ("a.jpg", PHOTO, "image/jpeg")}, data={"barcode": "1"})
     assert r.status_code == 200
     p = r.json()["product"]
     assert p["additives"] == ["E150d", "E951"] and p["verified"] is False and p["barcode"] == "1"
@@ -194,5 +197,41 @@ def test_llm_failure_is_502(client, monkeypatch):
     async def fail(*args, **kwargs):
         raise llm.LLMError("deepseek/deepseek-flash failed: timeout")
     monkeypatch.setattr(llm, "complete_json", fail)
-    r = client.post("/labels/extract", files={"images": ("a.jpg", b"x", "image/jpeg")})
+    r = client.post("/labels/extract", files={"images": ("a.jpg", PHOTO, "image/jpeg")})
     assert r.status_code == 502
+
+
+class TestUploadLimits:
+    def post(self, client, files):
+        return client.post("/labels/extract", files=[("images", f) for f in files])
+
+    def test_png_and_webp_accepted_formats(self, client, monkeypatch):
+        async def fake(settings, schema, prompt, images=None):
+            return schema(name="x")
+        monkeypatch.setattr(llm, "complete_json", fake)
+        for fmt in ("PNG", "WEBP"):
+            assert self.post(client, [("a", jpeg(fmt=fmt), "image/" + fmt.lower())]).status_code == 200
+
+    def test_other_formats_rejected(self, client):
+        for fmt in ("GIF", "BMP", "TIFF"):
+            r = self.post(client, [("a", jpeg(fmt=fmt), "image/jpeg")])  # lying content type
+            assert r.status_code == 400 and "JPEG, PNG or WebP" in r.json()["detail"]
+
+    def test_too_many_images(self, client):
+        assert self.post(client, [("a.jpg", PHOTO, "image/jpeg")] * 5).status_code == 400
+
+    def test_too_large_file(self, client, monkeypatch):
+        import app.main as main
+        monkeypatch.setattr(main, "MAX_IMAGE_BYTES", len(PHOTO) - 1)
+        assert self.post(client, [("a.jpg", PHOTO, "image/jpeg")]).status_code == 413
+
+    def test_too_many_pixels(self, client, monkeypatch):
+        from PIL import Image
+        monkeypatch.setattr(Image, "MAX_IMAGE_PIXELS", 1000)
+        r = self.post(client, [("a.jpg", jpeg(size=(100, 100)), "image/jpeg")])
+        assert r.status_code == 400 and "megapixels" in r.json()["detail"]
+
+    def test_bad_second_image_rejected_before_job_starts(self, client):
+        r = client.post("/identify", files=[("images", ("a.jpg", PHOTO, "image/jpeg")),
+                                            ("images", ("b.jpg", b"not an image", "image/jpeg"))])
+        assert r.status_code == 400

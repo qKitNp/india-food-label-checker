@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api, ApiError, type Nutrition, type Product } from '../api'
-import { toJpeg } from '../images'
+import { toJpeg, UnreadablePhoto } from '../images'
 import { Button, Card, ErrorNote, Page, SectionTitle, Spinner } from '../ui'
 
 const FIELDS: [keyof Nutrition, string][] = [
@@ -36,7 +36,7 @@ export default function LabelPage() {
       setLegible(result.legible)
       setStage('review')
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Couldn't read the photo. Try a sharper, closer one.")
+      setError(e instanceof ApiError || e instanceof UnreadablePhoto ? e.message : "Couldn't read the photo. Try a sharper, closer one.")
       setStage('pick')
     }
   }

@@ -41,11 +41,38 @@ def export_keys(settings: Settings) -> None:
             os.environ.setdefault(var, value)
 
 
+# Uploads: the app always sends JPEG; PNG and WebP are accepted for direct API use. Limiting
+# formats keeps Pillow's rarely used parsers (TIFF, PSD, ...) away from untrusted input.
+IMAGE_FORMATS = ("JPEG", "PNG", "WEBP")
+# A decoded image costs ~3 bytes per pixel; 60 MP covers phone cameras (~180 MB decoded).
+Image.MAX_IMAGE_PIXELS = 60_000_000
+
+
+def _open(data: bytes) -> Image.Image:
+    try:
+        return Image.open(io.BytesIO(data), formats=IMAGE_FORMATS)
+    except Image.DecompressionBombError as e:
+        raise InvalidImage("Image is too large (over 60 megapixels)") from e
+    except OSError as e:  # UnidentifiedImageError is an OSError
+        raise InvalidImage("Not a JPEG, PNG or WebP image") from e
+
+
+def check_image(data: bytes) -> None:
+    """Cheap check before doing any work: a supported format, within the pixel limit, not corrupt."""
+    image = _open(data)
+    if image.width * image.height > Image.MAX_IMAGE_PIXELS:
+        raise InvalidImage("Image is too large (over 60 megapixels)")
+    try:
+        image.verify()
+    except Exception as e:
+        raise InvalidImage("The image file is damaged") from e
+
+
 def shrink(data: bytes) -> bytes:
     """Upright, downscaled JPEG."""
     try:
-        image = ImageOps.exif_transpose(Image.open(io.BytesIO(data))).convert("RGB")
-    except (OSError, Image.DecompressionBombError) as e:  # UnidentifiedImageError is an OSError
+        image = ImageOps.exif_transpose(_open(data)).convert("RGB")
+    except (OSError, Image.DecompressionBombError) as e:
         raise InvalidImage("Not a readable image") from e
     image.thumbnail((MAX_IMAGE_SIDE, MAX_IMAGE_SIDE))
     out = io.BytesIO()

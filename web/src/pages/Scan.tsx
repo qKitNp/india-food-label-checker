@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api, ApiError } from '../api'
-import { toJpeg } from '../images'
+import { toJpeg, UnreadablePhoto } from '../images'
 import { Button, ErrorNote, Page, Spinner } from '../ui'
 import { CameraIcon } from './Home'
 
@@ -84,7 +84,7 @@ export default function Scan() {
       const { job_id } = await api.identify(await toJpeg(photo))
       navigate(`/job/${job_id}`)
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Something went wrong. Try again.')
+      setError(e instanceof ApiError || e instanceof UnreadablePhoto ? e.message : 'Something went wrong. Try again.')
       setBusy(false)
     }
   }

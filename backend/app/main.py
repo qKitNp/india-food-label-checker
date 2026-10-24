@@ -113,10 +113,24 @@ async def lookup(svc: ProductService, key: str) -> Product | None:
         raise HTTPException(502, f"Open Food Facts lookup failed: {e}") from e
 
 
+MAX_IMAGES = 4
+MAX_IMAGE_BYTES = 10 * 1024 * 1024  # the app sends ~0.2-0.4 MB after shrinking on the phone
+
+
 async def read_images(images: list[UploadFile]) -> list[tuple[bytes, str]]:
+    """Read and check every upload before any work starts."""
     if not images:
         raise HTTPException(400, "Send at least one image")
-    return [(await f.read(), f.content_type or "image/jpeg") for f in images]
+    if len(images) > MAX_IMAGES:
+        raise HTTPException(400, f"Send at most {MAX_IMAGES} images")
+    files = []
+    for f in images:
+        data = await f.read(MAX_IMAGE_BYTES + 1)  # never read more than the limit into memory
+        if len(data) > MAX_IMAGE_BYTES:
+            raise HTTPException(413, f"Each image must be under {MAX_IMAGE_BYTES // (1024 * 1024)} MB")
+        llm.check_image(data)  # InvalidImage -> 400
+        files.append((data, f.content_type or "image/jpeg"))
+    return files
 
 
 @app.get("/tips")
@@ -152,8 +166,7 @@ async def identify(
 ) -> JobStarted:
     """Front of pack -> our catalog, or an agent web search for the ingredients.
     Runs in the background (it can take over a minute); poll GET /jobs/{job_id}."""
-    files = await read_images(images)
-    llm.shrink(files[0][0])  # reject unreadable images now, not inside the job
+    files = await read_images(images)  # rejects bad uploads now, not inside the job
 
     async def work(steps: list[agent.Step]) -> IdentifyResponse:
         result = await agent.find_from_front(request.app.state.settings, svc, request.app.state.exa, files, steps)
