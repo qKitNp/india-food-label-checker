@@ -10,6 +10,7 @@ _IN_TEXT = re.compile(r"(?:\bE|\bINS)\s*-?\s*(\d{3,4}[a-z]{0,2})\b|\(([^()]*)\)"
 _SEPARATORS = re.compile(r"\s*(?:,|&|/|\band\b)\s*", re.IGNORECASE)
 # INS sub-numbers: "501(i)", "500 (ii)", "451(i)". The sub-number refers to a variant of the same
 # additive, and its nested brackets would break group matching, so drop it before parsing.
+MAX_INS = 1521  # highest INS number in use
 _SUB_NUMBER = re.compile(r"(\d{3,4}[a-z]?)\s*\((?:i{1,3}|iv|vi{0,3}|ix|x|\d)\)", re.IGNORECASE)
 
 
@@ -19,7 +20,13 @@ def normalise(code: str) -> str | None:
     m = _CODE.match(code)
     if not m:
         return None
-    return f"E{m.group(1)}{m.group(2).lower()}"
+    number, suffix = m.group(1), m.group(2).lower()
+    # Sub-numbers written without brackets: "500ii", "170i" (letter suffixes only run a-g).
+    suffix = re.sub(r"[ivx]+$", "", suffix)
+    # "451(1)" with the brackets lost reads "4511"; INS numbers stop at 1521.
+    if len(number) == 4 and int(number) > MAX_INS and number[-1] in "123":
+        number = number[:3]
+    return f"E{number}{suffix}"
 
 
 def find_in_text(text: str) -> list[str]:

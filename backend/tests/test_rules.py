@@ -164,3 +164,12 @@ def test_facts_come_with_sources(monkeypatch):
     assert substances.facts() == [{"text": "The EU banned titanium dioxide in food in 2022.",
                                    "source_url": "https://eur-lex.europa.eu/x",
                                    "substance": "Titanium dioxide", "region": "EU"}]
+
+
+def test_normalise_sub_numbers_without_brackets():
+    # From a real Wai Wai listing: "500ii", "170i" and "4511" (451(1) with brackets lost).
+    assert additive_codes.find_in_text("Acidity regulators (INS 500ii, INS 170i), Humectant (INS 4511)") == [
+        "E500", "E170", "E451"]
+    # Real 4-digit codes and letter suffixes are kept.
+    assert additive_codes.normalise("1400") == "E1400" and additive_codes.normalise("150d") == "E150d"
+    assert additive_codes.normalise("472e") == "E472e"
