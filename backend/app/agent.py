@@ -32,7 +32,8 @@ log = logging.getLogger(__name__)
 IDENTIFY_PROMPT = """This is a photo of a packaged food product, probably sold in India.
 Identify it from what is visible. Do not guess details you can't see.
 - brand: e.g. "Kurkure", "Coca-Cola"
-- product_name: product including the variant/flavour exactly as printed, e.g. "Masala Munch", "Zero Sugar"
+- product_name: product including the variant/flavour exactly as printed, e.g. "Masala Munch", "Zero Sugar".
+  Leave out promotional text that isn't part of the name: "50 g extra", "new", "₹10 off", "value pack", pack size.
 - net_quantity: e.g. "90 g", "300 ml", if visible
 - barcode: the digits under the barcode, only if fully readable
 - is_packaged_food: false if this isn't a packaged food or drink"""
@@ -128,11 +129,20 @@ class AgentResult(BaseModel):
     trace: list[Step] = Field(default_factory=list)
 
 
+# Words that describe the product type, not the variant; retailer pages often drop them.
+GENERIC_WORDS = {
+    "flavour", "flavor", "flavoured", "flavored", "instant", "ready", "eat", "namkeen", "snack", "snacks",
+    "crunchy", "crispy", "pack", "new", "extra", "free", "the", "and", "with", "drink", "noodles", "chips",
+}
+
+
 def mentions_product(page: str, ident: Identification) -> bool:
-    """The page must name the brand and variant seen on the pack, allowing spelling drift
-    ("Chatka" / "Chataka"), so the agent can't submit a different variant's page."""
+    """The page must name the brand and the distinctive words of the variant seen on the pack,
+    allowing spelling drift ("Chatka" / "Chataka"), so the agent can't submit a different
+    variant's page. Generic words ("instant", "flavour") aren't required."""
     words = set(re.findall(r"[a-z]+", page[:4000].lower()))
-    wanted = re.findall(r"[a-z]{3,}", f"{ident.brand or ''} {ident.product_name or ''}".lower())
+    wanted = [w for w in re.findall(r"[a-z]{3,}", f"{ident.brand or ''} {ident.product_name or ''}".lower())
+              if w not in GENERIC_WORDS]
     return all(w in words or difflib.get_close_matches(w, words, n=1, cutoff=0.8) for w in wanted)
 
 
@@ -241,7 +251,10 @@ class _Run:
             {"role": "user", "content": f"Product seen on the front of the pack: {ident.model_dump_json()}\n"
                                         f"Catalog candidates: {candidates}"},
         ]
-        for _ in range(self.settings.agent_max_steps):
+        for turn in range(self.settings.agent_max_steps):
+            if turn == self.settings.agent_max_steps - 3:
+                messages.append({"role": "user", "content": "Only 3 steps left. If a page you read has the exact "
+                                 "product's ingredients, submit_product now; otherwise call give_up."})
             response = await litellm.acompletion(
                 model=self.settings.llm_model, fallbacks=self.settings.llm_fallbacks,
                 messages=messages, tools=TOOLS, tool_choice="auto", timeout=self.settings.llm_timeout,

@@ -41,13 +41,15 @@ class _Extraction(BaseModel):
     ingredients_quote: str
 
 
-def _norm(s: str) -> str:
-    return re.sub(r"\s+", " ", s).strip().lower()
+def _words(s: str) -> str:
+    """Lowercase words and numbers only, so a bulleted list on the page matches the same
+    list written with commas. Every word must still appear, in the same order."""
+    return " ".join(re.findall(r"[a-z0-9]+(?:\.[0-9]+)?", s.lower()))
 
 
 def grounded(quote: str, page_text: str) -> bool:
-    quote = _norm(quote)
-    return len(quote) >= 20 and quote in _norm(page_text)
+    quote = _words(quote)
+    return len(quote) >= 20 and f" {quote} " in f" {_words(page_text)} "
 
 
 def _rank(url: str, brand: str) -> int:

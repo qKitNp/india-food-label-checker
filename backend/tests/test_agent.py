@@ -8,6 +8,7 @@ from app.agent import Identification, _Run, number_on_page
 from app.config import Settings
 from app.models import Nutrition, Product
 from app.services import ProductService
+from app.sources.counterpart import grounded
 from app.store import MemoryStore, Vectors
 from tests.test_api import FakeEmbedder
 
@@ -156,3 +157,21 @@ def test_save_with_photo_stores_image_and_vector():
         [top] = await svc.similar(image_vector=(await FakeEmbedder().images([b"orange kurkure pack"]))[0], k=1)
         assert top.key == saved.key
     asyncio.run(go())
+
+
+def test_bulleted_ingredients_match_comma_separated_quote():
+    # Blinkit/Instamart list ingredients as bullets; the agent writes them with commas.
+    page = "Ingredients\n\n- Water\n- Mango Pulp (26.5%)\n- Sugar\n- Acidity Regulator (330)\n- Antioxidant (300)"
+    assert grounded("Water, Mango Pulp (26.5%), Sugar, Acidity Regulator (330), Antioxidant (300)", page)
+    # Still rejected: an invented ingredient, or a reordered list.
+    assert not grounded("Water, Mango Pulp (26.5%), Sugar, Colour (102), Acidity Regulator (330)", page)
+    assert not grounded("Sugar, Water, Mango Pulp (26.5%), Acidity Regulator (330), Antioxidant (300)", page)
+
+
+def test_variant_check_ignores_generic_words():
+    from app.agent import mentions_product
+    page = "Wai Wai Ready to Eat Veg Masala Flavoured Instant Noodles Pack of 6"
+    assert mentions_product("Buy Wai Wai Ready to Eat Veg Masala Noodles 70 g", Identification(
+        brand="Wai Wai", product_name="Veg Masala Flavour Instant Noodles"))
+    # A different variant is still rejected.
+    assert not mentions_product(page, Identification(brand="Wai Wai", product_name="Chicken Noodles"))
