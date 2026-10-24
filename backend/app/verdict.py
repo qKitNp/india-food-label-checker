@@ -1,6 +1,6 @@
 from urllib.parse import urlparse
 
-from app import additive_codes, research, sanity
+from app import additive_codes, ingredients, research, sanity
 from app.models import Counterpart, OtherAdditive, Product, Verdict
 from app.rules import claims, substances
 
@@ -43,10 +43,13 @@ def build(product: Product, counterpart: Counterpart | None = None) -> Verdict:
     matched = {a.matched for a in additive_findings} | {a.code for a in additive_findings}
     others = [OtherAdditive(code=c, name=research.name_for(c)) for c in product.additives if c not in matched]
 
+    items = ingredients.parse(product.ingredients_text)
+    ingredients.flag(items, additive_findings, {s["id"]: s["synonyms"] for s in substances.table()})
+
     return Verdict(
         product=product, data_issues=contradictions + sanity.missing(product),
         claims=claim_findings, additives=additive_findings, counterpart=counterpart, headline=headline,
-        other_additives=others,
+        other_additives=others, ingredients=items,
     )
 
 

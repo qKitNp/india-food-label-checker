@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
-import { api, ApiError, type AdditiveFinding, type ClaimFinding, type Nutrition, type OtherAdditive, type Region, type RegionStatus, type Verdict } from '../api'
+import { api, ApiError, type AdditiveFinding, type ClaimFinding, type Ingredient, type Nutrition, type OtherAdditive, type Region, type RegionStatus, type Verdict } from '../api'
 import { remember } from '../history'
 import { Button, Card, Chip, Cover, ErrorNote, Page, SectionTitle, Spinner, buttonClass, productTitle, shortBrand } from '../ui'
 
@@ -281,13 +281,50 @@ function NutritionCard({ nutrition, liquid }: { nutrition: Nutrition; liquid: bo
   )
 }
 
+function capitalise(text: string) {
+  return text.charAt(0).toUpperCase() + text.slice(1)
+}
+
 function Ingredients({ verdict }: { verdict: Verdict }) {
   const p = verdict.product
   if (!p.ingredients_text) return null
+  const items = verdict.ingredients
+  const anyFlagged = items.some((i) => i.flagged || i.sub.some((s) => s.flagged))
+  const sections = items.reduce<{ section: string | null; items: Ingredient[] }[]>((acc, item) => {
+    const last = acc[acc.length - 1]
+    if (last && last.section === item.section) last.items.push(item)
+    else acc.push({ section: item.section, items: [item] })
+    return acc
+  }, [])
+
   return (
     <Card className="rise mt-4">
-      <SectionTitle>Ingredients</SectionTitle>
-      <p className="text-[15px] leading-relaxed text-ink-2">{p.ingredients_text}</p>
+      <SectionTitle hint="largest first">Ingredients</SectionTitle>
+      {anyFlagged && (
+        <p className="-mt-1 mb-3 flex items-center gap-2 text-xs text-bad">
+          <span className="size-2 rounded-full bg-bad" /> Banned in at least one country (India, EU or US)
+        </p>
+      )}
+      {items.length === 0 ? (
+        <p className="text-[15px] leading-relaxed text-ink-2">{p.ingredients_text}</p>
+      ) : (
+        <div className="space-y-4">
+          {sections.map((group, g) => (
+            <div key={g}>
+              {group.section && (
+                <p className="mb-1.5 text-xs font-medium tracking-wide text-faint uppercase">{group.section}</p>
+              )}
+              <ul className="divide-y divide-line">
+                {group.items.map((item, i) => <IngredientRow key={i} item={item} />)}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+      <details className="mt-3">
+        <summary className="cursor-pointer text-xs text-faint">Show as written on the label</summary>
+        <p className="mt-2 text-sm leading-relaxed text-muted">{p.ingredients_text}</p>
+      </details>
       {p.evidence && (
         <p className="mt-3 text-xs text-faint">
           Quoted word for word from{' '}
@@ -301,6 +338,35 @@ function Ingredients({ verdict }: { verdict: Verdict }) {
         </p>
       )}
     </Card>
+  )
+}
+
+function IngredientRow({ item }: { item: Ingredient }) {
+  return (
+    <li className={`py-2.5 first:pt-0 last:pb-0 ${item.flagged ? '-mx-2 rounded-xl bg-bad-wash px-2 first:pt-2.5 last:pb-2.5' : ''}`}>
+      <div className="flex items-baseline justify-between gap-3">
+        <p className={`text-[15px] ${item.flagged ? 'font-medium text-bad' : 'text-ink'}`}>
+          {capitalise(item.name)}
+          {item.codes.length > 0 && <span className={`ml-1.5 text-xs ${item.flagged ? 'text-bad' : 'text-faint'}`}>{item.codes.join(' · ')}</span>}
+        </p>
+        {item.percent && <span className="shrink-0 rounded-full bg-wash px-2 py-0.5 text-xs font-medium text-muted">{item.percent}%</span>}
+      </div>
+      {item.flagged && item.flag_reason && <p className="mt-0.5 text-xs text-bad">{item.flag_reason}</p>}
+      {item.sub.length > 0 && (
+        <p className="mt-1 text-sm leading-relaxed text-muted">
+          {item.sub.map((s, i) => (
+            <span key={i}>
+              {i > 0 && <span className="text-line-strong"> · </span>}
+              <span className={s.flagged ? 'font-medium text-bad' : ''} title={s.flag_reason ?? undefined}>
+                {s.name}
+                {s.percent && ` ${s.percent}%`}
+                {s.codes.length > 0 && <span className="text-faint"> ({s.codes.join(', ')})</span>}
+              </span>
+            </span>
+          ))}
+        </p>
+      )}
+    </li>
   )
 }
 

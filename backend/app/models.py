@@ -92,6 +92,18 @@ class AdditiveFinding(BaseModel):
     researched_at: str | None = None
 
 
+class Ingredient(BaseModel):
+    """One entry of the ingredients list, for display."""
+
+    name: str
+    percent: str | None = None
+    codes: list[str] = Field(default_factory=list)
+    sub: list["Ingredient"] = Field(default_factory=list)
+    section: str | None = None  # e.g. "Noodles", "Masala Tastemaker" on multi-part packs
+    flagged: bool = False  # contains a substance banned in at least one region
+    flag_reason: str | None = None
+
+
 class OtherAdditive(BaseModel):
     """A code on the label that isn't in our researched list (yet)."""
 
@@ -119,3 +131,4 @@ class Verdict(BaseModel):
     counterpart: Counterpart | None = None
     headline: list[str]
     other_additives: list[OtherAdditive] = Field(default_factory=list)
+    ingredients: list[Ingredient] = Field(default_factory=list)

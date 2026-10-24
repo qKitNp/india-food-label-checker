@@ -66,6 +66,17 @@ export interface AdditiveFinding {
   researched_at: string | null
 }
 
+/** One entry of the ingredients list, parsed by the server. */
+export interface Ingredient {
+  name: string
+  percent: string | null
+  codes: string[]
+  sub: Ingredient[]
+  section: string | null
+  flagged: boolean // contains a substance banned in at least one country
+  flag_reason: string | null
+}
+
 /** A code on the label that isn't in our researched list yet. */
 export interface OtherAdditive {
   code: string
@@ -100,6 +111,7 @@ export interface Verdict {
   counterpart: Counterpart | null
   headline: string[]
   other_additives: OtherAdditive[]
+  ingredients: Ingredient[]
 }
 
 export interface Step {
