@@ -3,15 +3,26 @@ import pytest
 import respx
 from fastapi.testclient import TestClient
 
-import numpy as np
+import asyncio
+import io
+import time
 
-from app import llm
+import numpy as np
+from PIL import Image
+
+from app import agent, llm
 from app.config import get_settings
 from app.main import app
 from app.models import Nutrition, Product
 from tests.test_rules import OFF_COKE_ZERO_IN
 
 OFF_URL = "https://world.openfoodfacts.org/api/v2/product/{}.json"
+
+
+def jpeg() -> bytes:
+    out = io.BytesIO()
+    Image.new("RGB", (64, 64), "orange").save(out, "JPEG")
+    return out.getvalue()
 
 
 class FakeEmbedder:
@@ -119,6 +130,59 @@ def test_label_extract(client, monkeypatch):
     assert r.status_code == 200
     p = r.json()["product"]
     assert p["additives"] == ["E150d", "E951"] and p["verified"] is False and p["barcode"] == "1"
+
+
+def poll(client, url, until=("done", "failed"), timeout=5.0):
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        job = client.get(url).json()
+        if job["status"] in until:
+            return job
+        time.sleep(0.02)
+    raise AssertionError(f"job still {job['status']}")
+
+
+def test_identify_runs_as_background_job(client, monkeypatch):
+    gate = asyncio.Event()
+
+    async def fake_find(settings, products, exa, images, steps):
+        steps.append(agent.Step(tool="read_pack", args={}, result="Kurkure Masala Munch"))
+        await gate.wait()  # hold the job open so progress can be observed mid-run
+        product = Product(brand="Kurkure", name="Masala Munch", source="web",
+                          ingredients_text="Rice meal, corn meal, gram meal", nutrition=Nutrition(energy_kcal=550))
+        return agent.AgentResult(status="web", identification=agent.Identification(brand="Kurkure"),
+                                 product=product, trace=list(steps))
+    monkeypatch.setattr(agent, "find_from_front", fake_find)
+
+    r = client.post("/identify", files={"images": ("a.jpg", jpeg(), "image/jpeg")})
+    assert r.status_code == 202
+    url = r.json()["poll_url"]
+
+    running = poll(client, url, until=("running",))
+    assert [s["tool"] for s in running["steps"]] == ["read_pack"] and running["result"] is None
+
+    client.portal.call(gate.set)
+    done = poll(client, url)
+    assert done["status"] == "done" and done["result"]["result"]["status"] == "web"
+    assert done["result"]["verdict"]["headline"]
+
+
+def test_failed_job_reports_error(client, monkeypatch):
+    async def boom(*args, **kwargs):
+        raise llm.LLMError("deepseek/deepseek-flash failed: timeout")
+    monkeypatch.setattr(agent, "find_from_front", boom)
+    url = client.post("/identify", files={"images": ("a.jpg", jpeg(), "image/jpeg")}).json()["poll_url"]
+    job = poll(client, url)
+    assert job["status"] == "failed" and "timeout" in job["error"]
+
+
+def test_identify_rejects_unreadable_image_before_starting_job(client):
+    r = client.post("/identify", files={"images": ("a.jpg", b"not an image", "image/jpeg")})
+    assert r.status_code == 400
+
+
+def test_unknown_job_is_404(client):
+    assert client.get("/jobs/nope").status_code == 404
 
 
 def test_llm_failure_is_502(client, monkeypatch):

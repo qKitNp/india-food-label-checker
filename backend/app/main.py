@@ -11,6 +11,7 @@ from pydantic import BaseModel, model_validator
 from app import agent, llm, verdict
 from app.catalog import Embedder
 from app.config import get_settings
+from app.jobs import IdentifyResponse, Job, JobStore
 from app.models import Product, Region, Verdict
 from app.services import ProductService
 from app.sources import counterpart, label
@@ -34,6 +35,7 @@ async def lifespan(app: FastAPI):
     app.state.products = ProductService(store, http, embedder, settings.image_weight)
     await app.state.products.load_index()
     app.state.exa = Exa(settings.exa_api_key) if settings.exa_api_key else None
+    app.state.jobs = JobStore()
     yield
     await http.aclose()
     for closeable in (store, embedder):
@@ -89,23 +91,40 @@ async def get_product(key: str, svc: ProductsDep) -> Verdict:
     return verdict.build(product, await svc.store.get_counterpart(key, "EU"))
 
 
-class IdentifyResponse(BaseModel):
-    result: agent.AgentResult
-    verdict: Verdict | None = None
+class JobStarted(BaseModel):
+    job_id: str
+    status: str
+    poll_url: str
 
 
-@app.post("/identify")
+@app.post("/identify", status_code=202)
 async def identify(
     request: Request, svc: ProductsDep,
     images: Annotated[list[UploadFile], File(description="Photos of the front of the pack")],
-) -> IdentifyResponse:
-    """Front of pack -> our catalog, or an agent web search for the ingredients."""
-    result = await agent.find_from_front(request.app.state.settings, svc, request.app.state.exa,
-                                         await read_images(images))
-    v = None
-    if result.product:
-        v = verdict.build(result.product, await svc.store.get_counterpart(result.product.key, "EU"))
-    return IdentifyResponse(result=result, verdict=v)
+) -> JobStarted:
+    """Front of pack -> our catalog, or an agent web search for the ingredients.
+    Runs in the background (it can take over a minute); poll GET /jobs/{job_id}."""
+    files = await read_images(images)
+    llm.shrink(files[0][0])  # reject unreadable images now, not inside the job
+
+    async def work(steps: list[agent.Step]) -> IdentifyResponse:
+        result = await agent.find_from_front(request.app.state.settings, svc, request.app.state.exa, files, steps)
+        v = None
+        if result.product:
+            v = verdict.build(result.product, await svc.store.get_counterpart(result.product.key, "EU"))
+        return IdentifyResponse(result=result, verdict=v)
+
+    job = request.app.state.jobs.start(work)
+    return JobStarted(job_id=job.id, status=job.status, poll_url=f"/jobs/{job.id}")
+
+
+@app.get("/jobs/{job_id}")
+async def get_job(job_id: str, request: Request) -> Job:
+    """Progress (steps so far) and, once done, the result of a background scan."""
+    job = request.app.state.jobs.get(job_id)
+    if job is None:
+        raise HTTPException(404, "No such job (finished jobs are kept for an hour)")
+    return job
 
 
 @app.post("/labels/extract")

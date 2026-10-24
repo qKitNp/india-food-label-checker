@@ -143,11 +143,12 @@ def number_on_page(value: float, text: str) -> bool:
 
 class _Run:
     def __init__(self, settings: Settings, products: ProductService, exa: Exa | None,
-                 image_vector: np.ndarray | None = None) -> None:
+                 image_vector: np.ndarray | None = None, steps: list[Step] | None = None) -> None:
         self.settings = settings
         self.products = products
         self.exa = exa
         self.image_vector = image_vector  # the scanned photo, for catalog search
+        self.steps = steps if steps is not None else []  # appended live, so callers can show progress
         self.pages: dict[str, str] = {}
         self.final: AgentResult | None = None
 
@@ -228,12 +229,14 @@ class _Run:
 
     async def loop(self, ident: Identification) -> AgentResult:
         query = " ".join(x for x in (ident.brand, ident.product_name) if x)
-        trace = [Step(tool="search_catalog", args={"query": query, "with_photo": self.image_vector is not None},
-                      result=await self.candidates(query, use_photo=True))]
+        trace = self.steps
+        candidates = await self.candidates(query, use_photo=True)
+        trace.append(Step(tool="search_catalog", args={"query": query, "with_photo": self.image_vector is not None},
+                          result=candidates))
         messages = [
             {"role": "system", "content": SYSTEM},
             {"role": "user", "content": f"Product seen on the front of the pack: {ident.model_dump_json()}\n"
-                                        f"Catalog candidates: {trace[0].result}"},
+                                        f"Catalog candidates: {candidates}"},
         ]
         for _ in range(self.settings.agent_max_steps):
             response = await litellm.acompletion(
@@ -255,9 +258,9 @@ class _Run:
                 trace.append(Step(tool=tc.function.name, args=args, result=result[:500]))
                 messages.append({"role": "tool", "tool_call_id": tc.id, "content": result})
             if self.final:
-                self.final.trace = trace
+                self.final.trace = list(trace)
                 return self.final
-        return AgentResult(status="not_found", identification=ident, reason="Ran out of steps.", trace=trace)
+        return AgentResult(status="not_found", identification=ident, reason="Ran out of steps.", trace=list(trace))
 
 
 async def identify(settings: Settings, images: list[tuple[bytes, str]]) -> Identification:
@@ -265,23 +268,26 @@ async def identify(settings: Settings, images: list[tuple[bytes, str]]) -> Ident
 
 
 async def find_from_front(settings: Settings, products: ProductService, exa: Exa | None,
-                          images: list[tuple[bytes, str]]) -> AgentResult:
+                          images: list[tuple[bytes, str]], steps: list[Step] | None = None) -> AgentResult:
+    """Pass `steps` to watch progress: each step is appended as soon as it finishes."""
+    steps = steps if steps is not None else []
     photo = llm.shrink(images[0][0])
     # Reading the pack (~5 s) and embedding the photo (~3 s on 2 vCPUs) run side by side.
     ident, image_vector = await asyncio.gather(identify(settings, images), _embed_or_none(products, photo))
+    steps.append(Step(tool="read_pack", args={}, result=ident.model_dump_json()))
     if not ident.is_packaged_food:
-        return AgentResult(status="not_food", identification=ident)
+        return AgentResult(status="not_food", identification=ident, trace=list(steps))
 
     if ident.barcode and (digits := re.sub(r"\D", "", ident.barcode)):
         product = await products.lookup(digits)
         if product:
-            return AgentResult(status="barcode", identification=ident, product=product)
+            return AgentResult(status="barcode", identification=ident, product=product, trace=list(steps))
 
-    run = _Run(settings, products, exa, image_vector)
+    run = _Run(settings, products, exa, image_vector, steps)
     try:
         result = await asyncio.wait_for(run.loop(ident), settings.agent_timeout)
     except TimeoutError:
-        return AgentResult(status="not_found", identification=ident, reason="Timed out.")
+        return AgentResult(status="not_found", identification=ident, reason="Timed out.", trace=list(steps))
     except Exception as e:  # LiteLLM raises provider-specific exception types
         raise llm.LLMError(f"Agent failed: {e}") from e
 

@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     image_weight: float = 0.5  # photo scans: share of the score from the pack image vs the name
     appwrite_images_bucket: str = "pack-images"
     agent_max_steps: int = 8
-    agent_timeout: float = 90
+    agent_timeout: float = 150  # scans run as background jobs, so this isn't bound by proxy timeouts
 
     # Leave appwrite_project_id empty to fall back to the in-memory store.
     appwrite_endpoint: str = "https://cloud.appwrite.io/v1"
