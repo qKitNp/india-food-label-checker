@@ -178,6 +178,18 @@ export interface Submission {
   removed_codes: string[]
 }
 
+/** A catalog entry for the product list, with what it needs from shoppers. */
+export interface ProductSummary {
+  key: string
+  barcode: string | null
+  brand: string | null
+  name: string | null
+  source: Product['source']
+  verified: boolean
+  status: 'needs_ingredients' | 'data_looks_wrong' | 'checked' | 'ok'
+  needs_help: boolean
+}
+
 export class ApiError extends Error {
   status: number
   constructor(status: number, message: string) {
@@ -214,6 +226,7 @@ function form(images: Blob[], extra: Record<string, string> = {}): FormData {
 }
 
 export const api = {
+  products: () => request<ProductSummary[]>('/products'),
   product: (key: string) => request<Verdict>(`/products/${encodeURIComponent(key)}`),
   counterpart: (key: string, region: 'EU' | 'US' = 'EU') =>
     request<Verdict>(`/products/${encodeURIComponent(key)}/counterpart?region=${region}`),

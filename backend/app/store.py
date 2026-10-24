@@ -40,6 +40,7 @@ class StoredVectors:
 
 class Store(Protocol):
     async def get_product(self, key: str) -> Product | None: ...
+    async def list_products(self) -> list[Product]: ...
     async def save_product(self, product: Product, vectors: Vectors | None = None) -> None: ...
     def vectors(self) -> AsyncIterator[StoredVectors]: ...
     async def save_image(self, key: str, data: bytes) -> str: ...
@@ -65,6 +66,9 @@ class MemoryStore:
 
     async def get_product(self, key):
         return self.products.get(key)
+
+    async def list_products(self):
+        return list(self.products.values())
 
     async def save_product(self, product, vectors=None):
         self.products[product.key] = product
@@ -162,6 +166,20 @@ class AppwriteStore:
                 "image_embedding": None if vectors.image is None else catalog.encode(vectors.image),
             }
         await self._put(self.products, product.key, data)
+
+    async def list_products(self):
+        out, cursor = [], None
+        while True:
+            queries = [{"method": "select", "values": ["$id", "payload"]}, {"method": "limit", "values": [100]}]
+            if cursor:
+                queries.append({"method": "cursorAfter", "values": [cursor]})
+            r = await self.http.get(f"{self.products}/rows", params={"queries[]": [json.dumps(q) for q in queries]})
+            r.raise_for_status()
+            rows = r.json()["rows"]
+            out += [Product.model_validate_json(row["payload"]) for row in rows]
+            if len(rows) < 100:
+                return out
+            cursor = rows[-1]["$id"]
 
     async def vectors(self):
         """All stored product vectors, paged with a cursor."""

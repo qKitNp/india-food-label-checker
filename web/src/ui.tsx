@@ -18,12 +18,17 @@ function Nav() {
           <Logo />
           Label Check
         </Link>
-        <Link
-          to="/scan"
-          className="rounded-full border border-line bg-white px-3 py-1.5 text-sm font-medium text-ink-2 shadow-card hover:bg-wash"
-        >
-          Scan
-        </Link>
+        <div className="flex items-center gap-1.5">
+          <Link to="/products" className="rounded-full px-3 py-1.5 text-sm font-medium text-ink-2 hover:bg-white">
+            Products
+          </Link>
+          <Link
+            to="/scan"
+            className="rounded-full border border-line bg-white px-3 py-1.5 text-sm font-medium text-ink-2 shadow-card hover:bg-wash"
+          >
+            Scan
+          </Link>
+        </div>
       </nav>
     </div>
   )

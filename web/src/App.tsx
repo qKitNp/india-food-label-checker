@@ -3,6 +3,7 @@ import Home from './pages/Home'
 import JobPage from './pages/Job'
 import LabelPage from './pages/Label'
 import ProductPage from './pages/Product'
+import ProductsPage from './pages/Products'
 import Scan from './pages/Scan'
 import SubmitPage from './pages/Submit'
 
@@ -13,6 +14,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/scan" element={<Scan />} />
         <Route path="/job/:id" element={<JobPage />} />
+        <Route path="/products" element={<ProductsPage />} />
         <Route path="/p/:key" element={<ProductPage />} />
         <Route path="/label" element={<LabelPage />} />
         <Route path="/submit" element={<SubmitPage />} />

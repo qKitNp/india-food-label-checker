@@ -235,3 +235,22 @@ class TestUploadLimits:
         r = client.post("/identify", files=[("images", ("a.jpg", PHOTO, "image/jpeg")),
                                             ("images", ("b.jpg", b"not an image", "image/jpeg"))])
         assert r.status_code == 400
+
+
+def test_product_list_marks_what_needs_help(client):
+    store = client.app.state.products.store
+
+    async def seed():
+        await store.save_product(Product(barcode="1", brand="A", name="No list", source="off"))
+        await store.save_product(Product(barcode="2", brand="B", name="Contradicts", source="off",
+                                         ingredients_text="Water, sugar", nutrition=Nutrition(sugars_g=0)))
+        await store.save_product(Product(barcode="3", brand="C", name="Checked", source="label", verified=True,
+                                         ingredients_text="Rice, salt", nutrition=Nutrition(energy_kcal=350)))
+        await store.save_product(Product(barcode="4", brand="D", name="Fine", source="web",
+                                         ingredients_text="Rice, salt", nutrition=Nutrition(energy_kcal=350)))
+    client.portal.call(seed)
+
+    items = client.get("/products").json()
+    assert [(i["barcode"], i["status"], i["needs_help"]) for i in items] == [
+        ("1", "needs_ingredients", True), ("2", "data_looks_wrong", True), ("3", "checked", False), ("4", "ok", False)]
+    assert [i["barcode"] for i in client.get("/products?needs_help=true").json()] == ["1", "2"]

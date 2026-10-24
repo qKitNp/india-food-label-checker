@@ -12,13 +12,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, model_validator
 
-from app import additive_codes, agent, barcodes, llm, verdict
+from app import additive_codes, agent, barcodes, llm, sanity, verdict
 from app.catalog import Embedder
 from app.config import get_settings
 from app.research import ResearchQueue
 from app.rules import substances, tips
 from app.jobs import IdentifyResponse, Job, JobStore
-from app.models import Product, Region, Submission, Verdict
+from app.models import Product, ProductSummary, Region, Submission, Verdict
 from app.services import ProductService
 from app.sources import counterpart, label
 from app.store import make_store
@@ -145,6 +145,31 @@ async def get_tips() -> list[dict]:
 @app.get("/health")
 async def health(svc: ProductsDep):
     return {"ok": True, "indexed_products": len(svc.index)}
+
+
+def summarise(product: Product) -> ProductSummary:
+    if not product.ingredients_text:
+        status = "needs_ingredients"
+    elif sanity.check(product) and not product.verified:
+        status = "data_looks_wrong"
+    elif product.verified:
+        status = "checked"
+    else:
+        status = "ok"
+    return ProductSummary(
+        key=product.key, barcode=product.barcode, brand=product.brand, name=product.name, source=product.source,
+        verified=product.verified, status=status, needs_help=status in ("needs_ingredients", "data_looks_wrong"),
+    )
+
+
+@app.get("/products")
+async def list_products(svc: ProductsDep, needs_help: bool = False) -> list[ProductSummary]:
+    """Every product in the catalog, those needing a shopper's help first. `needs_help=true`
+    lists only products missing an ingredient list or whose data contradicts itself."""
+    items = [summarise(p) for p in await svc.store.list_products()]
+    if needs_help:
+        items = [i for i in items if i.needs_help]
+    return sorted(items, key=lambda i: (not i.needs_help, (i.brand or "").lower(), (i.name or "").lower()))
 
 
 @app.get("/products/{key}")

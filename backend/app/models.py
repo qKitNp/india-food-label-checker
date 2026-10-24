@@ -165,3 +165,16 @@ class Submission(BaseModel):
     removed_codes: list[str] = Field(default_factory=list)
     image_file_ids: list[str] = Field(default_factory=list)
     created_at: str
+
+
+class ProductSummary(BaseModel):
+    """A catalog entry for the product list, with what it needs from shoppers."""
+
+    key: str
+    barcode: str | None
+    brand: str | None
+    name: str | None
+    source: Source
+    verified: bool
+    status: Literal["needs_ingredients", "data_looks_wrong", "checked", "ok"]
+    needs_help: bool  # someone with the pack can add or correct its ingredient list
