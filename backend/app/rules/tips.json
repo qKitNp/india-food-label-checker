@@ -1,0 +1,86 @@
+[
+ {
+  "id": "sugar-free",
+  "title": "'Sugar free' doesn't always mean zero",
+  "text": "In Europe, a food can say 'sugar free' with up to 0.5 g of sugar per 100 g or 100 ml.",
+  "quote": "A claim that a food is sugars-free, and any claim likely to have the same meaning for the consumer, may only be made where the product contains no more than 0,5 g of sugars per 100 g or 100 ml.",
+  "source_url": "https://food.ec.europa.eu/food-safety/labelling-and-nutrition/nutrition-and-health-claims/nutrition-claims_en"
+ },
+ {
+  "id": "zero-calorie",
+  "title": "'Zero calorie' drinks can still have a few",
+  "text": "In Europe, a drink can be called energy-free with up to 4 kcal per 100 ml.",
+  "quote": "A claim that a food is energy-free, and any claim likely to have the same meaning for the consumer, may only be made where the product does not contain more than 4 kcal (17 kJ)/100 ml.",
+  "source_url": "https://food.ec.europa.eu/food-safety/labelling-and-nutrition/nutrition-and-health-claims/nutrition-claims_en"
+ },
+ {
+  "id": "fat-free",
+  "title": "'Fat free' allows a little fat",
+  "text": "In Europe, 'fat free' means no more than 0.5 g of fat per 100 g or 100 ml.",
+  "quote": "A claim that a food is fat-free, and any claim likely to have the same meaning for the consumer, may only be made where the product contains no more than 0,5 g of fat per 100 g or 100 ml. However, claims expressed as 'X % fat-free' shall be prohibited.",
+  "source_url": "https://food.ec.europa.eu/food-safety/labelling-and-nutrition/nutrition-and-health-claims/nutrition-claims_en"
+ },
+ {
+  "id": "low-sugar",
+  "title": "'Low sugar' has a number behind it",
+  "text": "In Europe, 'low sugar' means at most 5 g per 100 g of food, or 2.5 g per 100 ml of drink.",
+  "quote": "A claim that a food is low in sugars, and any claim likely to have the same meaning for the consumer, may only be made where the product contains no more than 5 g of sugars per 100 g for solids or 2,5 g of sugars per 100 ml for liquids.",
+  "source_url": "https://food.ec.europa.eu/food-safety/labelling-and-nutrition/nutrition-and-health-claims/nutrition-claims_en"
+ },
+ {
+  "id": "no-added-sugar",
+  "title": "'No added sugar' can still be sweet",
+  "text": "Fruit and milk have natural sugars. In Europe, such packs must say they contain naturally occurring sugars.",
+  "quote": "If sugars are naturally present in the food, the following indication should also appear on the label: 'CONTAINS NATURALLY OCCURRING SUGARS'.",
+  "source_url": "https://food.ec.europa.eu/food-safety/labelling-and-nutrition/nutrition-and-health-claims/nutrition-claims_en"
+ },
+ {
+  "id": "ingredient-order",
+  "title": "The first ingredient is the biggest",
+  "text": "Ingredients are listed by weight, largest first. If sugar comes second, there's more of it than most other things.",
+  "quote": "(b) The name of ingredients used in the product shall be listed in descending order of their composition by weight or volume, as the case may be at the time of its manufacture;",
+  "source_url": "https://fssai.gov.in/upload/uploadfiles/files/Comp_Labelling%20Display_Version%20VIII_09_09_2025.pdf"
+ },
+ {
+  "id": "per-100g",
+  "title": "Compare 'per 100 g', not 'per serving'",
+  "text": "Serving sizes vary between brands. Indian labels give nutrition per 100 g or 100 ml (or per pack for small single-serve packs), so use that to compare.",
+  "quote": "Reference is drawn to the Sub-Regulation 5(3)(b) of Food Safety and Standards (Labelling and Display) Regulations, 2020, which stipulates labelling of Nutritional Information per 100g or 100ml or per single consumption pack of the product and per serve percentage (%) contribution to Recommended Dietary Allowance calculated on the basis of 2000kcal energy, 67 g total fat, 22 g saturated fat, 2 g trans-fat, 50 g added sugar and 2000 mg of sodium (5 g salt) requirement for average adult per day, on the label.",
+  "source_url": "https://fssai.gov.in/upload/advisories/2022/03/62414c50d2342Direction_RDA_03_02_2022.pdf"
+ },
+ {
+  "id": "ins-330",
+  "title": "Not every number is a worry",
+  "text": "Codes like INS 330 just name an additive. 330 is citric acid, the same acid that makes lemons sour.",
+  "quote": "Pursuant to Annex II to Regulation (EC) No 1333/2008, ascorbic acid (E 300) and citric acid (E 330) are currently authorised for use as food additives in a wide variety of foods.",
+  "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=OJ%3AL%3A2020%3A326%3AFULL"
+ },
+ {
+  "id": "salt-sodium",
+  "title": "Sodium isn't the same as salt",
+  "text": "To get salt from sodium, multiply by 2.5. 400 mg of sodium is about 1 g of salt.",
+  "quote": "The amount of ‘salt’ declared in the mandatory nutrition panel will be calculated using the formula: salt = sodium × 2,5.",
+  "source_url": "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=OJ%3AC%3A2018%3A196%3AFULL"
+ },
+ {
+  "id": "trans-fat-label",
+  "title": "Look for 'trans fat' on fried snacks",
+  "text": "In India, foods made with hydrogenated vegetable fat must say on the pack that they contain trans fats.",
+  "quote": "The food, in which hydrogenated vegetable fats or bakery shortening is used shall declare on the label that ‘hydrogenated vegetable fats or bakery shortening used- contains trans fats;",
+  "source_url": "https://www.fssai.gov.in/upload/uploadfiles/files/Packaging_Labelling_Regulations.pdf"
+ },
+ {
+  "id": "phenylalanine",
+  "title": "Why some diet drinks mention phenylalanine",
+  "text": "Aspartame contains phenylalanine, which people with the rare condition PKU must avoid, so labels have to warn them.",
+  "quote": "(2) The label of any food containing the additive shall bear, either on the principal display panel or on the information panel, the following statement: PHENYLKETONURICS: CONTAINS PHENYLALANINE",
+  "source_url": "https://www.ecfr.gov/current/title-21/chapter-I/subchapter-B/part-172/subpart-I/section-172.804"
+ },
+ {
+  "id": "best-before",
+  "title": "'Use by' and 'best before' aren't the same",
+  "text": "'Use by' is about safety: don't eat it after that date. 'Best before' is about quality: it may just taste less fresh.",
+  "quote": "The ‘use by’ date on food is about safety – foods can be eaten until this date but not after, even if they look and smell fine. ‘Best before’ refers to quality – the food will be safe to eat after this date but may not be at its best.",
+  "source_url": "https://www.efsa.europa.eu/en/news/use-or-best-new-tool-support-food-operators"
+ }
+]

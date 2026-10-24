@@ -12,7 +12,7 @@ from pydantic import BaseModel, model_validator
 from app import additive_codes, agent, llm, verdict
 from app.catalog import Embedder
 from app.config import get_settings
-from app.rules import substances
+from app.rules import tips
 from app.jobs import IdentifyResponse, Job, JobStore
 from app.models import Product, Region, Verdict
 from app.services import ProductService
@@ -88,10 +88,10 @@ async def read_images(images: list[UploadFile]) -> list[tuple[bytes, str]]:
     return [(await f.read(), f.content_type or "image/jpeg") for f in images]
 
 
-@app.get("/facts")
-async def get_facts() -> list[dict]:
-    """Facts about additives and their regulation, each with the source it came from."""
-    return substances.facts()
+@app.get("/tips")
+async def get_tips() -> list[dict]:
+    """Label-reading tips, each checked against the official source it links to."""
+    return tips.tips()
 
 
 @app.get("/health")

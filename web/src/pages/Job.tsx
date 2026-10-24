@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { api, ApiError, type Fact, type Job } from '../api'
+import { api, ApiError, type Job, type Tip } from '../api'
 import { Card, ErrorNote, Page, Spinner, buttonClass } from '../ui'
 
 const POLL_MS = 1500
-const FACT_MS = 7000
+const TIP_MS = 8000
 
 // The agent's individual steps are logged server-side; here we only show coarse progress.
 const STAGES: { key: Job['stage'][]; label: string }[] = [
@@ -83,7 +83,7 @@ export default function JobPage() {
         </div>
       )}
 
-      {!finished && <Facts />}
+      {!finished && <Tips />}
 
       {error && <div className="mt-4"><ErrorNote>{error}</ErrorNote></div>}
 
@@ -130,41 +130,42 @@ function domain(url: string) {
   }
 }
 
-/** Rotating facts about additives, each from a source we checked. Tap for the next one. */
-function Facts() {
-  const [facts, setFacts] = useState<Fact[]>([])
+/** Rotating label-reading tips, each from a source we checked. Tap for the next one. */
+function Tips() {
+  const [tips, setTips] = useState<Tip[]>([])
   const [index, setIndex] = useState(0)
 
   useEffect(() => {
-    api.facts().then((f) => setFacts(shuffle(f)), () => setFacts([]))
+    api.tips().then((t) => setTips(shuffle(t)), () => setTips([]))
   }, [])
 
   useEffect(() => {
-    if (facts.length < 2) return
-    const timer = window.setInterval(() => setIndex((i) => (i + 1) % facts.length), FACT_MS)
+    if (tips.length < 2) return
+    const timer = window.setInterval(() => setIndex((i) => (i + 1) % tips.length), TIP_MS)
     return () => window.clearInterval(timer)
-  }, [facts.length])
+  }, [tips.length])
 
-  if (!facts.length) {
-    return (
-      <div className="mt-10 flex justify-center text-accent"><Spinner /></div>
-    )
+  if (!tips.length) {
+    return <div className="mt-10 flex justify-center text-accent"><Spinner /></div>
   }
-  const fact = facts[index]
+  const tip = tips[index]
   return (
     <Card className="rise mt-8">
-      <p className="text-xs font-medium tracking-wide text-accent-deep uppercase">Did you know</p>
+      <p className="text-xs font-medium tracking-wide text-accent-deep uppercase">Label tip</p>
       <button
         type="button"
-        onClick={() => setIndex((i) => (i + 1) % facts.length)}
+        onClick={() => setIndex((i) => (i + 1) % tips.length)}
         className="mt-2 block w-full text-left"
-        aria-label="Next fact"
+        aria-label="Next tip"
       >
-        <p key={index} className="rise min-h-[4.5rem] font-serif text-lg leading-snug font-medium text-ink">{fact.text}</p>
+        <div key={index} className="rise min-h-[6.5rem]">
+          <p className="font-serif text-xl leading-snug font-medium text-ink">{tip.title}</p>
+          <p className="mt-2 text-[15px] leading-relaxed text-muted">{tip.text}</p>
+        </div>
       </button>
       <div className="mt-3 flex items-center justify-between gap-3 text-xs text-faint">
-        <a href={fact.source_url} target="_blank" rel="noreferrer" className="truncate underline">Source: {domain(fact.source_url)}</a>
-        <span className="shrink-0">{index + 1} / {facts.length}</span>
+        <a href={tip.source_url} target="_blank" rel="noreferrer" className="truncate underline">Source: {domain(tip.source_url)}</a>
+        <span className="shrink-0">{index + 1} / {tips.length}</span>
       </div>
     </Card>
   )

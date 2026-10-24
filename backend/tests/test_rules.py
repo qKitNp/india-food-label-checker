@@ -156,14 +156,11 @@ def test_grounding():
     assert not grounded("water", page)
 
 
-def test_facts_come_with_sources(monkeypatch):
-    table = [{**SUBSTANCES[0], "regions": {
-        "EU": {**SUBSTANCES[0]["regions"]["EU"], "fact": "The EU banned titanium dioxide in food in 2022."},
-        "US": {**SUBSTANCES[0]["regions"]["US"], "fact": "The US limits titanium dioxide to 1% of food weight."}}}]
-    monkeypatch.setattr(substances, "table", lambda: table)
-    assert substances.facts() == [{"text": "The EU banned titanium dioxide in food in 2022.",
-                                   "source_url": "https://eur-lex.europa.eu/x",
-                                   "substance": "Titanium dioxide", "region": "EU"}]
+
+def test_tips_are_sourced():
+    from app.rules import tips
+    items = tips.tips()
+    assert items and all(t["title"] and t["text"] and t["source_url"].startswith("https://") for t in items)
 
 
 def test_normalise_sub_numbers_without_brackets():

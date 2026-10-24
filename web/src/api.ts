@@ -64,11 +64,12 @@ export interface AdditiveFinding {
   message: string
 }
 
-export interface Fact {
+/** A label-reading tip, checked against the official source it links to. */
+export interface Tip {
+  id: string
+  title: string
   text: string
   source_url: string
-  substance: string
-  region: Region
 }
 
 export interface Counterpart {
@@ -168,7 +169,7 @@ export const api = {
     request<Verdict>(`/products/${encodeURIComponent(key)}/counterpart?region=${region}`),
   identify: (photo: Blob) => request<{ job_id: string; poll_url: string }>('/identify', { method: 'POST', body: form([photo]) }),
   job: (id: string) => request<Job>(`/jobs/${id}`),
-  facts: () => request<Fact[]>('/facts'),
+  tips: () => request<Tip[]>('/tips'),
   extractLabel: (photos: Blob[], barcode?: string) =>
     request<LabelResult>('/labels/extract', { method: 'POST', body: form(photos, barcode ? { barcode } : {}) }),
   confirm: (product: Product) =>

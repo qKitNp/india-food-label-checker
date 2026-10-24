@@ -65,14 +65,3 @@ def evaluate(product: Product) -> list[AdditiveFinding]:
 def reviewed_codes() -> set[str]:
     return {c for sub in table() for c in sub["codes"]}
 
-
-def facts() -> list[dict]:
-    """Plain-language facts for the app's loading screen, each tied to its verified source.
-    Only bans: restriction details (usage limits per food category) make dull trivia and are
-    shown on the product page instead."""
-    return [
-        {"text": cell["fact"], "source_url": cell["source_url"], "substance": sub["name"], "region": region}
-        for sub in table()
-        for region, cell in sub.get("regions", {}).items()
-        if cell.get("status") == "banned" and cell.get("fact") and cell.get("source_url")
-    ]
