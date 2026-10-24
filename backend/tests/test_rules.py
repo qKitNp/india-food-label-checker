@@ -33,7 +33,7 @@ class TestAdditiveCodes:
 
     def test_find_codes_with_ins_sub_numbers(self):
         # Real Maggi Masala label text
-        text = ("Thickeners (508 & 412). Acidity regulators (501(i) & 500(i)) and Humectant (451(i)). "
+        text = ("Thickeners (508 & 412). Acidity regulators (501(i) & 500(i)) and Humectant (451(1)). "
                 "Acidity regulator (330), Flavour enhancer (635), Colour (150d)")
         assert additive_codes.find_in_text(text) == ["E508", "E412", "E501", "E500", "E451", "E330", "E635", "E150d"]
 

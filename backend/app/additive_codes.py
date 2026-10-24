@@ -10,7 +10,7 @@ _IN_TEXT = re.compile(r"(?:\bE|\bINS)\s*-?\s*(\d{3,4}[a-z]{0,2})\b|\(([^()]*)\)"
 _SEPARATORS = re.compile(r"\s*(?:,|&|/|\band\b)\s*", re.IGNORECASE)
 # INS sub-numbers: "501(i)", "500 (ii)", "451(i)". The sub-number refers to a variant of the same
 # additive, and its nested brackets would break group matching, so drop it before parsing.
-_SUB_NUMBER = re.compile(r"(\d{3,4}[a-z]?)\s*\((?:i{1,3}|iv|vi{0,3}|ix|x)\)", re.IGNORECASE)
+_SUB_NUMBER = re.compile(r"(\d{3,4}[a-z]?)\s*\((?:i{1,3}|iv|vi{0,3}|ix|x|\d)\)", re.IGNORECASE)
 
 
 def normalise(code: str) -> str | None:
