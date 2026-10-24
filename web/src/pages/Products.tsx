@@ -40,7 +40,7 @@ export default function ProductsPage() {
         <h1 className="mt-3 font-serif text-[1.75rem] font-medium tracking-tight">Products we know</h1>
         <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted">
           Everything people have scanned so far.
-          {needHelp > 0 && ` ${needHelp} need help from someone who has the pack.`}
+          {needHelp > 0 && ` ${needHelp} ${needHelp === 1 ? 'needs' : 'need'} help from someone who has the pack.`}
         </p>
       </div>
 
