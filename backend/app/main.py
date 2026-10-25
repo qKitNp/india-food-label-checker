@@ -617,7 +617,9 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
             _live_log.warning("live vision read failed: %s", e)
             return None
         nonlocal seen
-        seen = " ".join(x for x in (ident.brand, ident.product_name) if x)
+        brand, name = ident.brand or "", ident.product_name or ""
+        # The read often repeats the brand in the name ("Thums Up" / "Thums Up").
+        seen = name if brand and name.lower().startswith(brand.lower()) else f"{brand} {name}".strip()
         if not ident.is_packaged_food:
             return note(LiveLookupResponse(found=False, reason="not_food", answer=LIVE_NOT_FOOD_SAY))
         if digits := re.sub(r"\D", "", ident.barcode or ""):
