@@ -541,7 +541,10 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
         except Exception:
             name_matches = []
         if name_matches and name_matches[0].score >= VOICE_MATCH_THRESHOLD:
-            if (product := await svc.store.get_product(name_matches[0].key)) is not None:
+            # Sibling variants embed close ("Chilli Chatka" vs "Masala Munch" ~0.7),
+            # so the variant words must match too, as for Open Food Facts below.
+            product = await svc.store.get_product(name_matches[0].key)
+            if product is not None and agent.mentions_product(f"{product.brand or ''} {product.name or ''}", ident):
                 return await answer_for(product, "name",
                                         f"query={query!r} name_score={name_matches[0].score:.3f}")
         try:

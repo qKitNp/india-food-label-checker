@@ -170,3 +170,39 @@ def test_live_lookup_not_food(client, monkeypatch):
                 files={"image": ("f.jpg", jpeg(), "image/jpeg")})
     body = client.post("/voice/live-lookup", json={"session_id": sid}).json()
     assert body["found"] is False and body["reason"] == "not_food" and body["job_id"] is None
+
+
+@respx.mock
+def test_live_lookup_name_match_rejects_sibling_variant(client, monkeypatch):
+    """A Chilli Chatka pack must not be answered with Masala Munch just because the
+    names embed close; it falls through to OFF and then the background job."""
+    from app.catalog import Match
+
+    async def seed():
+        await client.app.state.products.store.save_product(
+            Product(barcode="8901764111105", brand="Kurkure", name="Masala Munch", source="label",
+                    verified=True, ingredients_text="Rice meal, corn meal",
+                    nutrition=Nutrition(energy_kcal=550)))
+    client.portal.call(seed)
+    respx.get("https://world.openfoodfacts.org/cgi/search.pl").mock(
+        return_value=httpx.Response(200, json=OFF_SEARCH_HIT))
+    monkeypatch.setattr(barcodes, "read", lambda data: [])
+
+    async def fake_identify(settings, images, usage=None):
+        return agent.Identification(brand="Kurkure", product_name="Chilli Chatka")
+    monkeypatch.setattr(agent, "identify", fake_identify)
+
+    async def close_name(text=None, image_vector=None, k=1):
+        return [Match(key="8901764111105", score=0.72, text="Kurkure Masala Munch")]
+    monkeypatch.setattr(client.app.state.products, "similar", close_name)
+
+    async def fake_find(settings, products, exa, images, steps):
+        return agent.AgentResult(status="not_found", identification=agent.Identification(brand="Kurkure"),
+                                 reason="nope", trace=[])
+    monkeypatch.setattr(agent, "find_from_front", fake_find)
+
+    sid = "testsession-sibling1"
+    client.post("/live/frame", data={"session_id": sid},
+                files={"image": ("f.jpg", jpeg(), "image/jpeg")})
+    body = client.post("/voice/live-lookup", json={"session_id": sid}).json()
+    assert body["found"] is False and body["reason"] == "unknown"
