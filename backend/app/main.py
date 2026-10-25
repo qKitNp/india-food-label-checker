@@ -17,6 +17,7 @@ from pydantic import BaseModel, model_validator
 from app import additive_codes, agent, barcodes, llm, sanity, verdict
 from app.catalog import Embedder
 from app.config import get_settings
+from app.live import FRAME_TTL, MAX_SESSIONS, STALE_AFTER, LiveStore, SESSION_RE
 from app.research import ResearchQueue
 from app.rules import substances, tips
 from app.jobs import IdentifyResponse, Job, JobStore
@@ -46,6 +47,17 @@ def log_llm_usage(path: str, usage: list[dict]) -> None:
 # scored ~0.77-0.81 in testing; this cut-off hasn't been tuned against unrelated products yet.
 VOICE_MATCH_THRESHOLD = 0.6
 
+# Below this image similarity, a live camera frame is treated as unknown and starts a
+# background identify job instead of answering. Not yet tuned; image self-matches
+# score 1.0, look-alike variants scored well below this in the catalog tests.
+LIVE_IMAGE_THRESHOLD = 0.88
+
+# What Bolna says when the fast path misses. Spoken verbatim by the agent.
+LIVE_UNKNOWN_SAY = ("Oh, I haven't seen this one yet. It'll take me a minute to look up. "
+                    "Or show me the barcode and I'll tell you right away.")
+LIVE_NO_FRAME_SAY = "I can't see your camera yet. Keep the live view on and ask again."
+LIVE_STALE_SAY = "I lost your camera feed. Keep pointing at the pack and ask again."
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -61,6 +73,7 @@ async def lifespan(app: FastAPI):
     await app.state.products.load_index()
     app.state.exa = Exa(settings.exa_api_key) if settings.exa_api_key else None
     app.state.jobs = JobStore(on_finish=store.save_scan_log)
+    app.state.live = LiveStore()
     await load_substances(store)
 
     async def save_substance(sub: dict) -> None:
@@ -396,3 +409,90 @@ async def voice_lookup(body: VoiceLookup, svc: ProductsDep) -> dict:
                 "answer": "I couldn't find that product. Try reading the barcode digits, or scan it in the app."}
     v = verdict.build(product, await svc.store.get_counterpart(product.key, "EU"))
     return {"found": True, "answer": verdict.spoken(v)}
+
+
+@app.post("/live/frame")
+async def post_live_frame(
+    request: Request,
+    session_id: Annotated[str, Form()],
+    image: Annotated[UploadFile, File(description="Latest camera frame")],
+) -> dict:
+    """Keep the freshest camera frame per live-voice session, in memory only.
+
+    The browser posts about one frame per second. Frames expire after
+    `FRAME_TTL` seconds of silence; nothing is stored in Appwrite.
+    """
+    if not SESSION_RE.match(session_id):
+        raise HTTPException(400, "session_id must be 8-64 chars of a-z, A-Z, 0-9, '-' or '_'")
+    files = await read_images([image])
+    data, media_type = files[0]
+    request.app.state.live.put(session_id, data, media_type)
+    return {"ok": True, "session_id": session_id}
+
+
+class LiveLookup(BaseModel):
+    session_id: str
+
+
+class LiveLookupResponse(BaseModel):
+    found: bool
+    reason: Literal["barcode", "catalog_image", "no_frame", "stale", "unknown"]
+    answer: str  # spoken verbatim by the agent when found; suggested line when not
+    product_key: str | None = None
+    job_id: str | None = None
+    poll_url: str | None = None
+
+
+@app.post("/voice/live-lookup")
+async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep) -> LiveLookupResponse:
+    """Tool endpoint for the live camera + voice mode.
+
+    Uses the session's freshest frame: barcode read then pack-image vector search
+    (both local, both fast). On a miss it starts the full identify job in the
+    background and tells the agent what to say while it runs.
+    """
+    import time as _time
+
+    if not SESSION_RE.match(body.session_id):
+        raise HTTPException(400, "session_id must be 8-64 chars of a-z, A-Z, 0-9, '-' or '_'")
+    frame = request.app.state.live.get(body.session_id)
+    if frame is None:
+        return LiveLookupResponse(found=False, reason="no_frame", answer=LIVE_NO_FRAME_SAY)
+    stale = _time.time() - frame.received_at > STALE_AFTER
+
+    found_codes = await asyncio.to_thread(barcodes.read, frame.data)
+    if found_codes:
+        product = await lookup(svc, found_codes[0])
+        if product is not None:
+            v = verdict.build(product, await svc.store.get_counterpart(product.key, "EU"))
+            return LiveLookupResponse(found=True, reason="barcode", answer=verdict.spoken(v),
+                                      product_key=product.key)
+
+    image_vector = await svc.embed_image(frame.data) if svc.embedder else None
+    if image_vector is not None:
+        try:
+            matches = await svc.similar(image_vector=image_vector, k=1)
+        except Exception:
+            matches = []
+        if matches and matches[0].score >= LIVE_IMAGE_THRESHOLD:
+            product = await svc.store.get_product(matches[0].key)
+            if product is not None:
+                v = verdict.build(product, await svc.store.get_counterpart(product.key, "EU"))
+                return LiveLookupResponse(found=True, reason="catalog_image", answer=verdict.spoken(v),
+                                          product_key=product.key)
+
+    async def work(steps: list[agent.Step]) -> IdentifyResponse:
+        result = await agent.find_from_front(request.app.state.settings, svc, request.app.state.exa,
+                                             [(frame.data, frame.media_type)], steps)
+        v = None
+        if result.product:
+            v = with_research(request, verdict.build(
+                result.product, await svc.store.get_counterpart(result.product.key, "EU")))
+        return IdentifyResponse(result=result, verdict=v)
+
+    job = request.app.state.jobs.start(work)
+    if stale:
+        return LiveLookupResponse(found=False, reason="stale", answer=LIVE_STALE_SAY,
+                                  job_id=job.id, poll_url=f"/jobs/{job.id}")
+    return LiveLookupResponse(found=False, reason="unknown", answer=LIVE_UNKNOWN_SAY,
+                              job_id=job.id, poll_url=f"/jobs/{job.id}")
