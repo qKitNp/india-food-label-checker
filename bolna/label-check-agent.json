@@ -81,12 +81,46 @@
                     "Content-Type": "application/json"
                   }
                 }
+              },
+              {
+                "name": "lookup_visible_product",
+                "description": "Use when the caller is on a live camera call (a session id is shown in the prompt) and asks about what they are showing: 'what is this', 'tell me about this', 'which has less sugar'. Sends the caller's latest camera frame for lookup. Never ask the caller for the session id; copy it from the prompt.",
+                "pre_call_message": "Looking at what you are showing me.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "session_id": {
+                      "type": "string",
+                      "description": "Live camera session id shown in the prompt."
+                    }
+                  },
+                  "required": ["session_id"]
+                },
+                "key": "custom_task",
+                "value": {
+                  "method": "POST",
+                  "param": {
+                    "session_id": "%(session_id)s"
+                  },
+                  "url": "https://food-label-api.tinkerers.space/voice/live-lookup",
+                  "api_token": "",
+                  "headers": {
+                    "Content-Type": "application/json"
+                  }
+                }
               }
             ],
             "tools_params": {
               "lookup_food_label": {
                 "method": "POST",
                 "url": "https://food-label-api.tinkerers.space/voice/lookup",
+                "headers": {
+                  "Content-Type": "application/json"
+                }
+              },
+              "lookup_visible_product": {
+                "method": "POST",
+                "url": "https://food-label-api.tinkerers.space/voice/live-lookup",
                 "headers": {
                   "Content-Type": "application/json"
                 }
@@ -103,7 +137,7 @@
   },
   "agent_prompts": {
     "task_1": {
-      "system_prompt": "You are Label Check, a helper that tells shoppers what is in Indian packaged food. Keep every reply under two sentences. When the caller names a product or reads barcode digits, call lookup_food_label at once with what you heard. Speak the tool's answer out word for word. Never invent additives, numbers or verdicts. If the tool says it could not find the product, ask them to read the barcode digits slowly, or to scan the pack in the Label Check app. If asked anything outside food labels, say you only help with food labels."
+      "system_prompt": "You are Label Check, a helper that tells shoppers what is in Indian packaged food. Keep every reply under two sentences. Live camera session id for this call: {{session_id}}. If a session id is shown there, the caller is pointing their camera at products: when they say 'this', 'these' or ask what they are showing, call lookup_visible_product with that session id at once. Never ask the caller for the session id. Otherwise, when the caller names a product or reads barcode digits, call lookup_food_label with what you heard. Speak the tool's answer out word for word. Never invent additives, numbers or verdicts. If a tool says it could not find the product, ask them to read the barcode digits slowly, or to scan the pack in the Label Check app. If asked anything outside food labels, say you only help with food labels."
     }
   }
 }

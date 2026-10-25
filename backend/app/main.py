@@ -17,7 +17,7 @@ from pydantic import BaseModel, model_validator
 from app import additive_codes, agent, barcodes, llm, sanity, verdict
 from app.catalog import Embedder
 from app.config import get_settings
-from app.live import FRAME_TTL, MAX_SESSIONS, STALE_AFTER, LiveStore, SESSION_RE
+from app.live import FRAME_TTL, MAX_SESSIONS, STALE_AFTER, LiveResult, LiveStore, SESSION_RE
 from app.research import ResearchQueue
 from app.rules import substances, tips
 from app.jobs import IdentifyResponse, Job, JobStore
@@ -65,6 +65,7 @@ async def lifespan(app: FastAPI):
     app.state.settings = settings
     llm.export_keys(settings)
     http = httpx.AsyncClient(headers={"User-Agent": settings.off_user_agent}, timeout=15)
+    app.state.http = http
     store = make_store(settings)
     embedder = Embedder(settings) if settings.embeddings_enabled else None
     if embedder:
@@ -449,15 +450,25 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
 
     Uses the session's freshest frame: barcode read then pack-image vector search
     (both local, both fast). On a miss it starts the full identify job in the
-    background and tells the agent what to say while it runs.
+    background and tells the agent what to say while it runs. Every answer is
+    also stored for GET /live/result, so the web page can show cards for what
+    the voice call says out loud.
     """
     import time as _time
 
     if not SESSION_RE.match(body.session_id):
         raise HTTPException(400, "session_id must be 8-64 chars of a-z, A-Z, 0-9, '-' or '_'")
-    frame = request.app.state.live.get(body.session_id)
+    live: LiveStore = request.app.state.live
+
+    def note(resp: LiveLookupResponse) -> LiveLookupResponse:
+        live.note_result(body.session_id, LiveResult(
+            answer=resp.answer, reason=resp.reason, product_key=resp.product_key,
+            job_id=resp.job_id, poll_url=resp.poll_url, at=_time.time()))
+        return resp
+
+    frame = live.get(body.session_id)
     if frame is None:
-        return LiveLookupResponse(found=False, reason="no_frame", answer=LIVE_NO_FRAME_SAY)
+        return note(LiveLookupResponse(found=False, reason="no_frame", answer=LIVE_NO_FRAME_SAY))
     stale = _time.time() - frame.received_at > STALE_AFTER
 
     found_codes = await asyncio.to_thread(barcodes.read, frame.data)
@@ -465,8 +476,8 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
         product = await lookup(svc, found_codes[0])
         if product is not None:
             v = verdict.build(product, await svc.store.get_counterpart(product.key, "EU"))
-            return LiveLookupResponse(found=True, reason="barcode", answer=verdict.spoken(v),
-                                      product_key=product.key)
+            return note(LiveLookupResponse(found=True, reason="barcode", answer=verdict.spoken(v),
+                                           product_key=product.key))
 
     image_vector = await svc.embed_image(frame.data) if svc.embedder else None
     if image_vector is not None:
@@ -478,8 +489,8 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
             product = await svc.store.get_product(matches[0].key)
             if product is not None:
                 v = verdict.build(product, await svc.store.get_counterpart(product.key, "EU"))
-                return LiveLookupResponse(found=True, reason="catalog_image", answer=verdict.spoken(v),
-                                          product_key=product.key)
+                return note(LiveLookupResponse(found=True, reason="catalog_image", answer=verdict.spoken(v),
+                                              product_key=product.key))
 
     async def work(steps: list[agent.Step]) -> IdentifyResponse:
         result = await agent.find_from_front(request.app.state.settings, svc, request.app.state.exa,
@@ -492,7 +503,58 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
 
     job = request.app.state.jobs.start(work)
     if stale:
-        return LiveLookupResponse(found=False, reason="stale", answer=LIVE_STALE_SAY,
-                                  job_id=job.id, poll_url=f"/jobs/{job.id}")
-    return LiveLookupResponse(found=False, reason="unknown", answer=LIVE_UNKNOWN_SAY,
-                              job_id=job.id, poll_url=f"/jobs/{job.id}")
+        return note(LiveLookupResponse(found=False, reason="stale", answer=LIVE_STALE_SAY,
+                                       job_id=job.id, poll_url=f"/jobs/{job.id}"))
+    return note(LiveLookupResponse(found=False, reason="unknown", answer=LIVE_UNKNOWN_SAY,
+                                   job_id=job.id, poll_url=f"/jobs/{job.id}"))
+
+
+class LiveResultResponse(BaseModel):
+    found: bool
+    answer: str | None = None
+    reason: str | None = None
+    product_key: str | None = None
+    job_id: str | None = None
+    poll_url: str | None = None
+    at: float | None = None
+
+
+@app.get("/live/result")
+async def live_result(request: Request, session_id: str) -> LiveResultResponse:
+    """Last tool answer for a session, so the web page can show cards for what
+    the Bolna voice call says out loud (the page can't hear the call)."""
+    if not SESSION_RE.match(session_id):
+        raise HTTPException(400, "session_id must be 8-64 chars of a-z, A-Z, 0-9, '-' or '_'")
+    res = request.app.state.live.last_result(session_id)
+    if res is None:
+        return LiveResultResponse(found=False)
+    return LiveResultResponse(found=True, answer=res.answer, reason=res.reason,
+                              product_key=res.product_key, job_id=res.job_id,
+                              poll_url=res.poll_url, at=res.at)
+
+
+class LiveSessionRequest(BaseModel):
+    user_data: dict = {}
+
+
+@app.post("/live/session")
+async def live_session(body: LiveSessionRequest, request: Request) -> dict:
+    """Mint a Bolna web-call session (thin proxy: the API key stays server-side).
+
+    The Web Call SDK POSTs {user_data} here; we forward it so per-call variables
+    (e.g. session_id) reach the agent's prompt, and return Bolna's mint JSON.
+    """
+    settings = request.app.state.settings
+    if not settings.bolna_api_key or not settings.bolna_agent_id:
+        raise HTTPException(503, "Live voice calls are not configured")
+    try:
+        r = await request.app.state.http.post(
+            "https://api.bolna.ai/web-call/session",
+            headers={"Authorization": f"Bearer {settings.bolna_api_key}"},
+            json={"agent_id": settings.bolna_agent_id, "user_data": body.user_data},
+        )
+    except httpx.HTTPError as e:
+        raise HTTPException(502, f"Bolna session mint failed: {e}") from e
+    if r.status_code >= 400:
+        raise HTTPException(r.status_code, f"Bolna session mint failed: {r.text[:300]}")
+    return r.json()

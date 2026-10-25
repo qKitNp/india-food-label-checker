@@ -1,5 +1,5 @@
 {
-  "projectId": "betterfssai-sgp",
-  "endpoint": "https://sgp.cloud.appwrite.io/v1",
-  "projectName": "betterfssai (Singapore)"
+    "projectId": "betterfssai-sgp",
+    "projectName": "betterfssai (Singapore)",
+    "endpoint": "https://sgp.cloud.appwrite.io/v1"
 }

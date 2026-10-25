@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     appwrite_substances_table: str = "substances"
     appwrite_submissions_table: str = "submissions"
     appwrite_submissions_bucket: str = "pack-images"  # free plan: one bucket for all photos
+    # Live voice (Bolna Web Call SDK): the browser mints a call session through us
+    # so the Bolna API key never reaches the client.
+    bolna_api_key: str = ""
+    bolna_agent_id: str = "55133e0b-379d-43da-b121-cf0c1734e041"
     research_daily_cap: int = 100  # codes researched automatically per day
 
     off_user_agent: str = "better-fssai/0.1 (hackathon project)"

@@ -76,3 +76,26 @@ def test_live_lookup_unknown_starts_job(client, monkeypatch):
     body = client.post("/voice/live-lookup", json={"session_id": sid}).json()
     assert body["found"] is False and body["reason"] == "unknown"
     assert "barcode" in body["answer"].lower() and body["job_id"]
+
+
+def test_live_result_feeds_voice_answers_to_page(client, monkeypatch):
+    async def seed():
+        await client.app.state.products.store.save_product(
+            Product(barcode="8901764111105", brand="Kurkure", name="Masala Munch", source="label",
+                    verified=True, ingredients_text="Rice meal, corn meal",
+                    nutrition=Nutrition(energy_kcal=550)))
+    client.portal.call(seed)
+    monkeypatch.setattr(barcodes, "read", lambda data: ["8901764111105"])
+
+    assert client.get("/live/result", params={"session_id": "testsession-feed1"}).json()["found"] is False
+    sid = "testsession-feed1"
+    client.post("/live/frame", data={"session_id": sid},
+                files={"image": ("f.jpg", jpeg(), "image/jpeg")})
+    answer = client.post("/voice/live-lookup", json={"session_id": sid}).json()["answer"]
+    fed = client.get("/live/result", params={"session_id": sid}).json()
+    assert fed["found"] is True and fed["answer"] == answer and fed["product_key"] == "8901764111105"
+
+
+def test_live_session_needs_key(client):
+    r = client.post("/live/session", json={"user_data": {"session_id": "abc"}})
+    assert r.status_code == 503  # BOLNA_API_KEY not set in tests
