@@ -36,6 +36,14 @@ if not _scan_log.handlers:
     _scan_log.setLevel(logging.INFO)
     _scan_log.propagate = False
 
+_live_log = logging.getLogger("live_lookup")
+if not _live_log.handlers:
+    _live_handler = logging.StreamHandler()
+    _live_handler.setFormatter(logging.Formatter("live %(message)s"))
+    _live_log.addHandler(_live_handler)
+    _live_log.setLevel(logging.INFO)
+    _live_log.propagate = False
+
 log = logging.getLogger(__name__)
 
 
@@ -464,13 +472,12 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
     if not SESSION_RE.match(body.session_id):
         raise HTTPException(400, "session_id must be 8-64 chars of a-z, A-Z, 0-9, '-' or '_'")
     live: LiveStore = request.app.state.live
-    _log = logging.getLogger("live_lookup")
 
     def note(resp: LiveLookupResponse, extra: str = "") -> LiveLookupResponse:
         live.note_result(body.session_id, LiveResult(
             answer=resp.answer, reason=resp.reason, product_key=resp.product_key,
             job_id=resp.job_id, poll_url=resp.poll_url, at=_time.time()))
-        _log.info("session=%s reason=%s %s", body.session_id[-6:], resp.reason, extra)
+        _live_log.info("session=%s reason=%s %s", body.session_id[-6:], resp.reason, extra)
         return resp
 
     async def answer_for(product: Product, reason: str, extra: str = "") -> LiveLookupResponse:
@@ -488,7 +495,7 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
     if found_codes:
         if (product := await lookup(svc, found_codes[0])) is not None:
             return await answer_for(product, "barcode", f"barcode={found_codes[0]}")
-        _log.info("session=%s barcode %s not in catalog", body.session_id[-6:], found_codes[0])
+        _live_log.info("session=%s barcode %s not in catalog", body.session_id[-6:], found_codes[0])
 
     image_vector = await svc.embed_image(frame.data) if svc.embedder else None
     top = -1.0
@@ -508,7 +515,7 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
     try:
         ident = await agent.identify(settings, [(frame.data, frame.media_type)])
     except Exception as e:  # vision trouble: fall through to the background job
-        _log.warning("live vision read failed: %s", e)
+        _live_log.warning("live vision read failed: %s", e)
         ident = None
     if ident is not None and not ident.is_packaged_food:
         return note(LiveLookupResponse(found=False, reason="not_food", answer=LIVE_NOT_FOOD_SAY))
@@ -528,7 +535,7 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
         try:
             candidates = await off.search_by_name(svc.http, query)
         except Exception as e:
-            _log.warning("OFF name search failed: %s", e)
+            _live_log.warning("OFF name search failed: %s", e)
             candidates = []
         for cand in candidates:
             if cand.ingredients_text and agent.mentions_product(
