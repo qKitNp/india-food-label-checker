@@ -171,6 +171,16 @@ export interface LiveLookup {
   poll_url: string | null
 }
 
+export interface LiveResultFeed {
+  found: boolean
+  answer: string | null
+  reason: string | null
+  product_key: string | null
+  job_id: string | null
+  poll_url: string | null
+  at: number | null
+}
+
 export interface LabelResult {
   product: Product
   legible: boolean
@@ -272,5 +282,13 @@ export const api = {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ session_id: sessionId }),
+    }),
+  liveResult: (sessionId: string) =>
+    request<LiveResultFeed>(`/live/result?session_id=${encodeURIComponent(sessionId)}`),
+  liveSession: (sessionId: string) =>
+    request<unknown>('/live/session', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ user_data: { session_id: sessionId } }),
     }),
 }

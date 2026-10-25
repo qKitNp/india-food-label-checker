@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api, ApiError, type Verdict } from '../api'
+import { API_URL, api, ApiError, type Verdict } from '../api'
 import { toJpeg } from '../images'
 import { Button, Card, Chip, ErrorNote, Page, ProductImage, Spinner, buttonClass, productTitle, shortBrand } from '../ui'
 
@@ -43,12 +43,46 @@ export default function Live() {
   const [error, setError] = useState<string | null>(null)
   const [listening, setListening] = useState(false)
   const [muted, setMuted] = useState(false)
+  const [callState, setCallState] = useState<'idle' | 'connecting' | 'ringing' | 'active' | 'ended'>('idle')
+  const [callError, setCallError] = useState<string | null>(null)
+  const [callMuted, setCallMuted] = useState(false)
   const idRef = useRef(1)
   const busyRef = useRef(false)
+  const callRef = useRef<{ stop(): Promise<void>; setMuted(b: boolean): void } | null>(null)
+  const onCallRef = useRef(false)
+  const seenAtRef = useRef(0)
 
   const say = useCallback((role: Msg['role'], text: string, productKey?: string) => {
     setMsgs((m) => [...m, { id: idRef.current++, role, text, productKey }])
   }, [])
+
+  const speakIfFree = useCallback((text: string) => {
+    if (!muted && !onCallRef.current) speak(text)
+  }, [muted])
+
+  const showProduct = useCallback(async (productKey: string) => {
+    const v = await api.product(productKey)
+    setVerdicts((vs) => [...vs.slice(-1), v])
+    return v
+  }, [])
+
+  const followBackgroundJob = useCallback(async (jobId: string) => {
+    setJobNote('Looking it up in the background… keep pointing at the pack.')
+    const job = await pollJob(jobId)
+    setJobNote(null)
+    const verdict = job?.result?.verdict
+    const outcome = job?.result?.result
+    if (verdict) {
+      setVerdicts((vs) => [...vs.slice(-1), verdict])
+      const line = `Found it: ${productTitle(verdict.product)}. ${verdict.headline[0] ?? ''}`
+      say('assistant', line, verdict.product.key)
+      speakIfFree(line)
+    } else if (outcome?.status === 'not_food') {
+      say('assistant', "That doesn't look like a packaged food. Point at the front of the pack?")
+    } else if (outcome) {
+      say('assistant', 'I still couldn\'t find reliable ingredients for this one. A photo of the back label would help.')
+    }
+  }, [say, speakIfFree])
 
   // Camera + 1fps frame upload. Fire-and-forget; skips a tick while one is in flight.
   useEffect(() => {
@@ -144,26 +178,11 @@ export default function Live() {
       }
       const res = await api.liveLookup(sessionId)
       say('assistant', res.answer, res.product_key ?? undefined)
-      if (!muted) speak(res.answer)
+      speakIfFree(res.answer)
       if (res.found && res.product_key) {
-        const v = await api.product(res.product_key)
-        setVerdicts((vs) => [...vs.slice(-1), v])
+        await showProduct(res.product_key)
       } else if (res.job_id) {
-        setJobNote('Looking it up in the background… keep pointing at the pack.')
-        const job = await pollJob(res.job_id)
-        setJobNote(null)
-        const verdict = job?.result?.verdict
-        const outcome = job?.result?.result
-        if (verdict) {
-          setVerdicts((vs) => [...vs.slice(-1), verdict])
-          const line = `Found it: ${productTitle(verdict.product)}. ${verdict.headline[0] ?? ''}`
-          say('assistant', line, verdict.product.key)
-          if (!muted) speak(line)
-        } else if (outcome?.status === 'not_food') {
-          say('assistant', "That doesn't look like a packaged food. Point at the front of the pack?")
-        } else if (outcome) {
-          say('assistant', 'I still couldn\'t find reliable ingredients for this one. A photo of the back label would help.')
-        }
+        await followBackgroundJob(res.job_id)
       }
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Something went wrong. Try again.')
@@ -171,7 +190,7 @@ export default function Live() {
       busyRef.current = false
       setBusy(false)
     }
-  }, [input, muted, say, sessionId])
+  }, [input, say, sessionId, showProduct, followBackgroundJob, speakIfFree])
 
   function toggleListen() {
     const Rec = (window as unknown as { SpeechRecognition?: new () => SpeechRec; webkitSpeechRecognition?: new () => SpeechRec }).SpeechRecognition
@@ -209,6 +228,90 @@ export default function Live() {
     start(): void
   }
 
+  // Bolna voice call: same agent + tools as the phone path, over WebRTC.
+  // The call's tool answers land in /live/result (the page can't hear the call),
+  // so we poll it and render cards while talking.
+  async function startCall() {
+    if (callRef.current) return
+    setCallError(null)
+    setCallState('connecting')
+    try {
+      const { BolnaWebCall } = await import('@bolna/web-call')
+      const call = new BolnaWebCall({ sessionUrl: `${API_URL}/live/session` })
+      callRef.current = call
+      call.on('state-change', (s: string) => {
+        setCallState(s as typeof callState)
+        if (s === 'active') onCallRef.current = true
+        if (s === 'ended') {
+          onCallRef.current = false
+          callRef.current = null
+        }
+      })
+      call.on('error', (e: { message?: string }) => {
+        setCallError(e.message ?? 'Call failed. Try again.')
+        setCallState('ended')
+        onCallRef.current = false
+        callRef.current = null
+      })
+      await call.start({ userData: { session_id: sessionId } })
+    } catch (e) {
+      callRef.current = null
+      onCallRef.current = false
+      setCallState('idle')
+      setCallError(e instanceof Error ? e.message : 'Could not start the call.')
+    }
+  }
+
+  async function stopCall() {
+    try {
+      await callRef.current?.stop()
+    } finally {
+      callRef.current = null
+      onCallRef.current = false
+      setCallState('ended')
+    }
+  }
+
+  // While on a Bolna call, mirror spoken answers into the chat + cards.
+  useEffect(() => {
+    if (callState !== 'active') return
+    let stopped = false
+    let timer: number | undefined
+    const busyJobs = new Set<string>()
+    const tick = async () => {
+      if (stopped) return
+      try {
+        const fed = await api.liveResult(sessionId)
+        if (!stopped && fed.found && fed.answer && (fed.at ?? 0) > seenAtRef.current) {
+          seenAtRef.current = fed.at ?? Date.now() / 1000
+          say('assistant', fed.answer, fed.product_key ?? undefined)
+          if (fed.product_key) {
+            showProduct(fed.product_key).catch(() => {})
+          } else if (fed.job_id) {
+            const jobId = fed.job_id
+            if (!busyJobs.has(jobId)) {
+              busyJobs.add(jobId)
+              followBackgroundJob(jobId).catch(() => {}).finally(() => busyJobs.delete(jobId))
+            }
+          }
+        }
+      } catch {
+        /* offline blip: next tick retries */
+      }
+      timer = window.setTimeout(tick, 2000)
+    }
+    tick()
+    return () => {
+      stopped = true
+      window.clearTimeout(timer)
+    }
+  }, [callState, sessionId, say, showProduct, followBackgroundJob])
+
+  // Hang up if the user leaves the page mid-call.
+  useEffect(() => () => {
+    callRef.current?.stop().catch(() => {})
+  }, [])
+
   const pair = verdicts.slice(-2)
 
   return (
@@ -235,6 +338,43 @@ export default function Live() {
       </div>
 
       {error && <div className="mt-4"><ErrorNote>{error}</ErrorNote></div>}
+      {callError && <div className="mt-4"><ErrorNote>{callError}</ErrorNote></div>}
+
+      <div className="rise mt-4">
+        {callState === 'idle' || callState === 'ended' ? (
+          <button type="button" onClick={startCall} className={buttonClass('primary', 'w-full py-3')}>
+            📞 Talk to Label Check
+          </button>
+        ) : (
+          <Card className="flex items-center justify-between gap-3">
+            <p className="flex items-center gap-2 text-[15px] font-medium">
+              {callState === 'active' ? (
+                <><span className="inline-block size-2.5 animate-pulse rounded-full bg-good" /> On the call — just speak</>
+              ) : (
+                <><Spinner className="text-accent" /> {callState === 'connecting' ? 'Connecting…' : 'Ringing…'}</>
+              )}
+            </p>
+            <div className="flex gap-2">
+              {callState === 'active' && (
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    const next = !callMuted
+                    setCallMuted(next)
+                    callRef.current?.setMuted(next)
+                  }}
+                >
+                  {callMuted ? 'Unmute' : 'Mute'}
+                </Button>
+              )}
+              <Button variant="secondary" onClick={stopCall}>Hang up</Button>
+            </div>
+          </Card>
+        )}
+        <p className="mt-2 text-center text-xs text-faint">
+          Voice call answers out loud; product cards appear below as you talk.
+        </p>
+      </div>
 
       {pair.length === 2 && <CompareCard a={pair[0]} b={pair[1]} />}
 
