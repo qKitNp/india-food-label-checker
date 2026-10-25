@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     # Live voice (Bolna Web Call SDK): the browser mints a call session through us
     # so the Bolna API key never reaches the client.
     bolna_api_key: str = ""
-    bolna_agent_id: str = "2563ee76-ef8d-4c3d-93b3-1901ac996f39"
+    bolna_agent_id: str = "d09afdca-5794-4127-b2b5-7cf243ab361f"
     research_daily_cap: int = 100  # codes researched automatically per day
 
     off_user_agent: str = "better-fssai/0.1 (hackathon project)"

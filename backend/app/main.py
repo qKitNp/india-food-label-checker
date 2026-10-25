@@ -459,11 +459,13 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
     if not SESSION_RE.match(body.session_id):
         raise HTTPException(400, "session_id must be 8-64 chars of a-z, A-Z, 0-9, '-' or '_'")
     live: LiveStore = request.app.state.live
+    _log = logging.getLogger("live_lookup")
 
-    def note(resp: LiveLookupResponse) -> LiveLookupResponse:
+    def note(resp: LiveLookupResponse, extra: str = "") -> LiveLookupResponse:
         live.note_result(body.session_id, LiveResult(
             answer=resp.answer, reason=resp.reason, product_key=resp.product_key,
             job_id=resp.job_id, poll_url=resp.poll_url, at=_time.time()))
+        _log.info("session=%s reason=%s %s", body.session_id[-6:], resp.reason, extra)
         return resp
 
     frame = live.get(body.session_id)
@@ -477,7 +479,11 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
         if product is not None:
             v = verdict.build(product, await svc.store.get_counterpart(product.key, "EU"))
             return note(LiveLookupResponse(found=True, reason="barcode", answer=verdict.spoken(v),
-                                           product_key=product.key))
+                                           product_key=product.key),
+                        f"barcode={found_codes[0]}")
+        return note(LiveLookupResponse(found=False, reason="unknown", answer=LIVE_UNKNOWN_SAY),
+                    f"barcode={found_codes[0]} not_in_catalog")
+    top = -1.0
 
     image_vector = await svc.embed_image(frame.data) if svc.embedder else None
     if image_vector is not None:
@@ -485,12 +491,15 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
             matches = await svc.similar(image_vector=image_vector, k=1)
         except Exception:
             matches = []
+        if matches:
+            top = matches[0].score
         if matches and matches[0].score >= LIVE_IMAGE_THRESHOLD:
             product = await svc.store.get_product(matches[0].key)
             if product is not None:
                 v = verdict.build(product, await svc.store.get_counterpart(product.key, "EU"))
                 return note(LiveLookupResponse(found=True, reason="catalog_image", answer=verdict.spoken(v),
-                                              product_key=product.key))
+                                              product_key=product.key),
+                            f"image_score={top:.3f}")
 
     async def work(steps: list[agent.Step]) -> IdentifyResponse:
         result = await agent.find_from_front(request.app.state.settings, svc, request.app.state.exa,
@@ -504,9 +513,11 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
     job = request.app.state.jobs.start(work)
     if stale:
         return note(LiveLookupResponse(found=False, reason="stale", answer=LIVE_STALE_SAY,
-                                       job_id=job.id, poll_url=f"/jobs/{job.id}"))
+                                       job_id=job.id, poll_url=f"/jobs/{job.id}"),
+                    f"image_top={top:.3f}")
     return note(LiveLookupResponse(found=False, reason="unknown", answer=LIVE_UNKNOWN_SAY,
-                                   job_id=job.id, poll_url=f"/jobs/{job.id}"))
+                                   job_id=job.id, poll_url=f"/jobs/{job.id}"),
+                f"image_top={top:.3f}")
 
 
 class LiveResultResponse(BaseModel):

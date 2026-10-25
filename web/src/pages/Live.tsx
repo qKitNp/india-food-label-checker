@@ -51,6 +51,7 @@ export default function Live() {
   const [endReason, setEndReason] = useState<string | null>(null)
   const idRef = useRef(1)
   const busyRef = useRef(false)
+  const freshRef = useRef(0)
   const callRef = useRef<{ stop(): Promise<void>; setMuted(b: boolean): void } | null>(null)
   const onCallRef = useRef(false)
   const seenAtRef = useRef(0)
@@ -171,8 +172,9 @@ export default function Live() {
     say('user', q)
     setInput('')
     try {
-      // Fresh frame first so the tool sees what the user sees now.
-      if (video.current && video.current.videoWidth > 0) {
+      // Fresh frame first so the tool sees what the user sees now, unless a
+      // full-res snap just uploaded one (Snap button beats the 800px loop frame).
+      if (Date.now() - freshRef.current > 3000 && video.current && video.current.videoWidth > 0) {
         try {
           await api.liveFrame(sessionId, await toJpeg(video.current, 800))
         } catch {
@@ -219,6 +221,27 @@ export default function Live() {
     } catch {
       setListening(false)
     }
+  }
+
+  // Full-res still for barcodes: the 1fps loop frames are 800px and often
+  // motion-blurred; a deliberate 1600px snap decodes far more reliably.
+  async function snapBarcode() {
+    if (busyRef.current || !video.current || video.current.videoWidth === 0) return
+    busyRef.current = true
+    setBusy(true)
+    setError(null)
+    try {
+      await api.liveFrame(sessionId, await toJpeg(video.current, 1600))
+      freshRef.current = Date.now()
+    } catch {
+      setError("Couldn't take the photo. Try again holding steady.")
+      busyRef.current = false
+      setBusy(false)
+      return
+    }
+    busyRef.current = false
+    setBusy(false)
+    ask('Read this barcode')
   }
 
   interface SpeechRec {
@@ -500,6 +523,9 @@ export default function Live() {
       <div className="mt-2 flex justify-center gap-2">
         <button type="button" onClick={() => setMuted((m) => !m)} className={buttonClass('ghost', 'text-xs')}>
           {muted ? 'Unmute answers' : 'Mute answers'}
+        </button>
+        <button type="button" onClick={snapBarcode} disabled={busy || !ready} className={buttonClass('ghost', 'text-xs')}>
+          📷 Snap barcode
         </button>
         <Link to="/scan" className={buttonClass('ghost', 'text-xs')}>Back to scan</Link>
       </div>

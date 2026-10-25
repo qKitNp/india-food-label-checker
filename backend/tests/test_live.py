@@ -22,6 +22,7 @@ def client(monkeypatch):
     monkeypatch.setenv("GEMINI_API_KEY", "")
     monkeypatch.setenv("EXA_API_KEY", "")
     monkeypatch.setenv("EMBEDDINGS_ENABLED", "false")
+    monkeypatch.setenv("BOLNA_API_KEY", "")
     get_settings.cache_clear()
     with TestClient(app) as c:
         yield c
