@@ -70,12 +70,19 @@ LIVE_BUDGET = 8.0
 # asking "did you find it?" answers from it instead of re-reading the camera.
 LIVE_RESEARCH_TTL = 300.0
 
-# What Bolna says when the fast path misses. Spoken verbatim by the agent.
-LIVE_UNKNOWN_SAY = ("That one's new to me, so I'm looking it up now. It usually takes 15 to 30 seconds. "
-                    "Ask me if I found it in a bit, or show me the barcode for an instant answer.")
-LIVE_STILL_SAY = "Still looking that one up. Give me about {secs} more seconds."
+# The agent keeps calling the wait tool while a lookup runs, so it tells the caller
+# the result without being asked. Each wait is up to LIVE_BUDGET; this caps the loop.
+LIVE_MAX_WAITS = 6
+LIVE_KEEP_WAITING = "Say the answer, then call wait_for_lookup straight away. Do not wait for the caller to speak."
+
+# What Bolna says when the fast path misses. Spoken verbatim by the agent. Never ask
+# callers to read barcode digits aloud: long numbers are easy to mishear.
+LIVE_UNKNOWN_SAY = "That one's new to me, so I'm looking it up now. It usually takes 15 to 30 seconds."
+LIVE_STILL_SAY = "Still looking up {what}. About {secs} more seconds."
+LIVE_SLOW_SAY = "{what} is taking longer than usual. I'll keep at it, ask me again in a minute."
 LIVE_NOT_FOUND_SAY = ("I couldn't find reliable ingredients for that one online. "
-                      "Show me the barcode, or photograph the back label in the app.")
+                      "You can photograph its back label in the app.")
+LIVE_IDLE_SAY = "I'm not looking anything up right now. Point your camera at a pack and ask me about it."
 LIVE_NO_FRAME_SAY = "I can't see your camera yet. Keep the live view on and ask again."
 LIVE_STALE_SAY = "I lost your camera feed. Keep pointing at the pack and ask again."
 # Usually the phone has drifted off the pack (people look at the screen for the answer).
@@ -440,7 +447,7 @@ async def voice_lookup(body: VoiceLookup, svc: ProductsDep) -> dict:
             product = await svc.store.get_product(matches[0].key)
     if product is None:
         return {"found": False,
-                "answer": "I couldn't find that product. Try reading the barcode digits, or scan it in the app."}
+                "answer": "I couldn't find that product by name. Point your camera at it and ask me about it instead."}
     v = verdict.build(product, await svc.store.get_counterpart(product.key, "EU"))
     return {"found": True, "answer": verdict.spoken(v)}
 
@@ -473,20 +480,30 @@ class LiveLookup(BaseModel):
 class LiveLookupResponse(BaseModel):
     answer: str  # spoken verbatim by the agent, found or not
     found: bool
-    reason: Literal["barcode", "catalog_image", "name", "researched", "researching", "not_found",
-                    "no_frame", "stale", "unknown", "not_food"]
+    reason: Literal["barcode", "catalog_image", "name", "researched", "researching", "slow", "not_found",
+                    "idle", "no_frame", "stale", "unknown", "not_food"]
     product_key: str | None = None
     job_id: str | None = None
     poll_url: str | None = None
     snap_at: float | None = None  # the frozen frame this answers, see GET /live/snap
+    next_step: str | None = None  # instruction for the voice agent while a lookup runs
 
 
 # Rough time left by job stage, for "give me about N more seconds".
 _SECONDS_LEFT = {"queued": 25, "reading": 25, "matching": 20, "searching": 15, "checking": 5}
 
 
+@app.post("/voice/live-wait")
+async def voice_live_wait(body: LiveLookup, request: Request, svc: ProductsDep) -> LiveLookupResponse:
+    """Tool endpoint the agent calls in a loop while a lookup runs: waits on the
+    session's background lookup, never reads the camera. Lets the agent announce
+    the result as soon as it's ready instead of waiting to be asked."""
+    return await voice_live_lookup(body, request, svc, wait_only=True)
+
+
 @app.post("/voice/live-lookup")
-async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep) -> LiveLookupResponse:
+async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep,
+                            wait_only: bool = False) -> LiveLookupResponse:
     """Tool endpoint for the live camera + voice mode.
 
     If this session already has a background lookup, answer from it: the caller
@@ -505,6 +522,7 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
     live: LiveStore = request.app.state.live
     jobs = request.app.state.jobs
     snap_at: float | None = None
+    seen = ""  # what the vision read saw, for "still looking up Gatorade Orange"
 
     def note(resp: LiveLookupResponse, extra: str = "") -> LiveLookupResponse:
         resp.snap_at = snap_at
@@ -519,14 +537,18 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
         return note(LiveLookupResponse(found=True, reason=reason, answer=prefix + verdict.spoken(v, short=True),
                                        product_key=product.key), extra)
 
-    async def settle(job) -> LiveLookupResponse:
+    async def settle(job, label: str = "", waits: int = 0) -> LiveLookupResponse:
         """Wait on the background job until the budget runs out, then say where it is."""
         while job.status in ("queued", "running") and _time.monotonic() < deadline:
             await asyncio.sleep(0.25)
-        extra = f"job={job.id[:8]} stage={job.stage}"
+        extra = f"job={job.id[:8]} stage={job.stage} waits={waits}"
         if job.status in ("queued", "running"):
+            if waits >= LIVE_MAX_WAITS:  # stop the agent's wait loop; the job carries on
+                return note(LiveLookupResponse(found=False, reason="slow", answer=LIVE_SLOW_SAY.format(
+                    what=label or "This one"), job_id=job.id, poll_url=f"/jobs/{job.id}"), extra)
             secs = _SECONDS_LEFT.get(job.stage, 15)
-            return note(LiveLookupResponse(found=False, reason="researching", answer=LIVE_STILL_SAY.format(secs=secs),
+            return note(LiveLookupResponse(found=False, reason="researching", next_step=LIVE_KEEP_WAITING,
+                                           answer=LIVE_STILL_SAY.format(what=label or "that one", secs=secs),
                                            job_id=job.id, poll_url=f"/jobs/{job.id}"), extra)
         live.clear_research(body.session_id)
         outcome = job.result.result if job.result else None
@@ -538,14 +560,17 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
 
     # Follow up on this session's background lookup instead of starting another.
     if (pending := live.research(body.session_id, LIVE_RESEARCH_TTL)) is not None:
-        job_id, snap_at = pending
-        job = jobs.get(job_id)
+        snap_at = pending.snap_at
+        job = jobs.get(pending.job_id)
         if job is None:
             live.clear_research(body.session_id)
         elif job.status in ("queued", "running") or body.source == "voice":
-            return await settle(job)
+            waits = live.count_wait(body.session_id) if wait_only else 0
+            return await settle(job, pending.label, waits)
         else:  # the page already showed this job's result
             live.clear_research(body.session_id)
+    if wait_only:
+        return note(LiveLookupResponse(found=False, reason="idle", answer=LIVE_IDLE_SAY))
 
     frame = live.get(body.session_id)
     if frame is None:
@@ -591,6 +616,8 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
         except Exception as e:  # vision trouble: fall through to the background job
             _live_log.warning("live vision read failed: %s", e)
             return None
+        nonlocal seen
+        seen = " ".join(x for x in (ident.brand, ident.product_name) if x)
         if not ident.is_packaged_food:
             return note(LiveLookupResponse(found=False, reason="not_food", answer=LIVE_NOT_FOOD_SAY))
         if digits := re.sub(r"\D", "", ident.barcode or ""):
@@ -639,11 +666,11 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
         return IdentifyResponse(result=result, verdict=v)
 
     job = jobs.start(work)
-    live.set_research(body.session_id, job.id, snap_at)
+    live.set_research(body.session_id, job.id, snap_at, seen)
     if stale:
         return note(LiveLookupResponse(found=False, reason="stale", answer=LIVE_STALE_SAY,
                                        job_id=job.id, poll_url=f"/jobs/{job.id}"))
-    resp = await settle(job)
+    resp = await settle(job, seen)
     if resp.reason == "researching":  # first word on a new product: set expectations
         resp.reason, resp.answer = "unknown", LIVE_UNKNOWN_SAY
         live.note_result(body.session_id, LiveResult(

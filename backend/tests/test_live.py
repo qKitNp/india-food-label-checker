@@ -87,7 +87,7 @@ def test_live_lookup_unknown_starts_job(client, monkeypatch):
     body = client.post("/voice/live-lookup", json={"session_id": sid}).json()
     # The job finished inside the tool's time budget, so the answer is final.
     assert body["found"] is False and body["reason"] == "not_found"
-    assert "barcode" in body["answer"].lower()
+    assert "back label" in body["answer"] and "barcode" not in body["answer"].lower()
 
 
 def test_live_result_feeds_voice_answers_to_page(client, monkeypatch):
@@ -295,3 +295,50 @@ def test_off_name_search_falls_back_when_classic_search_is_down():
             return await off.search_by_name(http, "Diet Coke")
     [p] = asyncio.run(go())
     assert p.barcode == "54491496" and p.brand == "Coca-Cola" and p.claims == ["Vegan"]
+
+
+def test_live_wait_loop_announces_the_result_unprompted(client, monkeypatch):
+    """The agent calls /voice/live-wait in a loop (next_step tells it to) so the
+    caller hears the result without asking; the loop stops when the job is done,
+    and is capped so a slow job can't keep the agent looping forever."""
+    import asyncio
+
+    from app import main
+
+    monkeypatch.setattr(main, "LIVE_BUDGET", 0.6)
+    monkeypatch.setattr(main, "LIVE_MAX_WAITS", 2)
+    monkeypatch.setattr(barcodes, "read", lambda data: [])
+
+    async def fake_identify(settings, images, usage=None):
+        return agent.Identification(brand="Gatorade", product_name="Orange")
+    monkeypatch.setattr(agent, "identify", fake_identify)
+    release = asyncio.Event()
+
+    async def fake_find(settings, products, exa, images, steps):
+        await release.wait()
+        product = Product(brand="Gatorade", name="Orange", source="web", ingredients_text="Water, sugar",
+                          nutrition=Nutrition(sugars_g=6))
+        await products.save(product)
+        return agent.AgentResult(status="web", product=product,
+                                 identification=agent.Identification(brand="Gatorade"), trace=[])
+    monkeypatch.setattr(agent, "find_from_front", fake_find)
+
+    sid = "testsession-waitloop1"
+    assert client.post("/voice/live-wait", json={"session_id": sid}).json()["reason"] == "idle"
+    client.post("/live/frame", data={"session_id": sid}, files={"image": ("f.jpg", jpeg(), "image/jpeg")})
+    first = client.post("/voice/live-lookup", json={"session_id": sid}).json()
+    assert first["reason"] == "unknown" and first["next_step"]
+
+    wait = client.post("/voice/live-wait", json={"session_id": sid}).json()
+    assert wait["reason"] == "researching" and wait["next_step"]
+    assert wait["answer"].startswith("Still looking up Gatorade Orange.")
+    client.post("/voice/live-wait", json={"session_id": sid})
+    capped = client.post("/voice/live-wait", json={"session_id": sid}).json()
+    assert capped["reason"] == "slow" and capped["next_step"] is None
+    assert capped["answer"].startswith("Gatorade Orange is taking longer")
+
+    client.portal.call(release.set)
+    done = client.post("/voice/live-wait", json={"session_id": sid}).json()
+    assert done["reason"] == "researched" and done["answer"].startswith("Found it. Gatorade Orange.")
+    assert done["next_step"] is None
+    assert client.post("/voice/live-wait", json={"session_id": sid}).json()["reason"] == "idle"

@@ -398,8 +398,11 @@ export default function Live() {
         }
         if (!stopped && fed?.found && fed.answer && (fed.at ?? 0) > seenAtRef.current) {
           seenAtRef.current = fed.at ?? Date.now() / 1000
-          if (!ownSnapsRef.current.has(fed.snap_at ?? -1)) {
-            const snapId = snapMsgRef.current.get(fed.snap_at ?? -1)
+          const snapId = snapMsgRef.current.get(fed.snap_at ?? -1)
+          if (fed.reason === 'researching' || fed.reason === 'idle') {
+            // The agent's wait-loop progress: the snap bubble already says "Researching…".
+            if (fed.reason === 'researching') setSnapStatus(snapId, 'researching')
+          } else if (!ownSnapsRef.current.has(fed.snap_at ?? -1)) {
             say('assistant', fed.answer, fed.product_key ?? undefined)
             if (fed.product_key) {
               setSnapStatus(snapId, 'done')

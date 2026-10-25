@@ -39,6 +39,17 @@ class LiveResult:
 
 
 @dataclass
+class Research:
+    """A session's background lookup: the product being talked about while it runs."""
+
+    job_id: str
+    snap_at: float | None
+    label: str  # what the vision read saw, e.g. "Gatorade Orange"
+    started: float
+    waits: int = 0  # wait_for_lookup calls so far
+
+
+@dataclass
 class LiveSnap:
     """The frame a lookup is working on, so the page can freeze it on screen
     and show the caller exactly what is being looked at."""
@@ -54,8 +65,7 @@ class LiveStore:
         self.results: dict[str, LiveResult] = {}
         self.snaps: dict[str, LiveSnap] = {}
         self.looking: set[str] = set()
-        # session -> (job id, snap_at) of its background lookup, and when it started
-        self.research_jobs: dict[str, tuple[str, float | None, float]] = {}
+        self.research_jobs: dict[str, Research] = {}
 
     def put(self, session_id: str, data: bytes, media_type: str) -> None:
         self._prune()
@@ -87,16 +97,22 @@ class LiveStore:
         self.results[session_id] = result
         self.looking.discard(session_id)
 
-    def set_research(self, session_id: str, job_id: str, snap_at: float | None) -> None:
-        self.research_jobs[session_id] = (job_id, snap_at, time.time())
+    def set_research(self, session_id: str, job_id: str, snap_at: float | None, label: str = "") -> None:
+        self.research_jobs[session_id] = Research(job_id, snap_at, label, time.time())
 
-    def research(self, session_id: str, ttl: float) -> tuple[str, float | None] | None:
-        """This session's background lookup (job id, snap_at), if recent."""
+    def research(self, session_id: str, ttl: float) -> Research | None:
+        """This session's background lookup, if recent."""
         entry = self.research_jobs.get(session_id)
-        if entry is None or time.time() - entry[2] > ttl:
+        if entry is None or time.time() - entry.started > ttl:
             self.research_jobs.pop(session_id, None)
             return None
-        return entry[0], entry[1]
+        return entry
+
+    def count_wait(self, session_id: str) -> int:
+        """Count a wait_for_lookup call; returns how many came before it."""
+        entry = self.research_jobs[session_id]
+        entry.waits += 1
+        return entry.waits - 1
 
     def clear_research(self, session_id: str) -> None:
         self.research_jobs.pop(session_id, None)

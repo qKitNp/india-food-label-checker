@@ -160,7 +160,7 @@ export interface Job {
   error: string | null
 }
 
-export type LiveReason = 'barcode' | 'catalog_image' | 'name' | 'researched' | 'researching' | 'not_found'
+export type LiveReason = 'barcode' | 'catalog_image' | 'name' | 'researched' | 'researching' | 'slow' | 'not_found' | 'idle'
   | 'no_frame' | 'stale' | 'unknown' | 'not_food'
 
 export interface LiveLookup {

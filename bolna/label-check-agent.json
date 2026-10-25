@@ -1,7 +1,7 @@
 {
   "agent_config": {
     "agent_name": "Label Check - Food Label Helper",
-    "agent_welcome_message": "Hi! Ask me about any packaged food. Just read the barcode number or tell me the product name.",
+    "agent_welcome_message": "Hi! Point your camera at a pack and ask me about it.",
     "tasks": [
       {
         "task_type": "conversation",
@@ -57,38 +57,6 @@
           "api_tools": {
             "tools": [
               {
-                "name": "lookup_food_label",
-                "description": "Use when the caller asks about an Indian packaged food or drink: what is in it, is a claim like sugar free true, are its additives allowed. Call it when they read barcode digits or name a product, brand or variant. Speak the returned answer out word for word.",
-                "pre_call_message": "Let me check that label.",
-                "parameters": {
-                  "type": "object",
-                  "properties": {
-                    "barcode": {
-                      "type": "string",
-                      "description": "Barcode digits read out by the caller, e.g. 8901764111105. Digits only."
-                    },
-                    "product_name": {
-                      "type": "string",
-                      "description": "Product or brand name as the caller says it, e.g. Kurkure Masala Munch, Coke Zero."
-                    }
-                  },
-                  "required": []
-                },
-                "key": "custom_task",
-                "value": {
-                  "method": "POST",
-                  "param": {
-                    "barcode": "%(barcode)s",
-                    "product_name": "%(product_name)s"
-                  },
-                  "url": "https://food-label-api.tinkerers.space/voice/lookup",
-                  "api_token": "",
-                  "headers": {
-                    "Content-Type": "application/json"
-                  }
-                }
-              },
-              {
                 "name": "lookup_visible_product",
                 "description": "Use when the caller is on a live camera call (a session id is shown in the prompt) and asks about what they are showing: 'what is this', 'tell me about this', 'which has less sugar'. Sends the caller's latest camera frame for lookup. Never ask the caller for the session id; copy it from the prompt.",
                 "pre_call_message": "Looking at what you are showing me.",
@@ -116,6 +84,63 @@
                     "Content-Type": "application/json"
                   }
                 }
+              },
+              {
+                "name": "wait_for_lookup",
+                "description": "Waits for the product lookup already running on this live camera call and returns its result or progress. Call it whenever a tool result has a next_step telling you to, without waiting for the caller. Also call it when the caller asks 'did you find it', 'are you done' or 'any update'.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "session_id": {
+                      "type": "string",
+                      "description": "Live camera session id shown in the prompt."
+                    }
+                  },
+                  "required": [
+                    "session_id"
+                  ]
+                },
+                "key": "custom_task",
+                "value": {
+                  "method": "POST",
+                  "param": {
+                    "session_id": "%(session_id)s"
+                  },
+                  "url": "https://food-label-api.tinkerers.space/voice/live-wait",
+                  "api_token": "",
+                  "headers": {
+                    "Content-Type": "application/json"
+                  }
+                }
+              },
+              {
+                "name": "lookup_food_label",
+                "description": "Use only when the caller names a product, brand or variant without showing it, e.g. 'what about Kurkure Masala Munch'. Prefer lookup_visible_product whenever they are showing a pack.",
+                "pre_call_message": "Let me check that label.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "product_name": {
+                      "type": "string",
+                      "description": "Product or brand name as the caller says it, e.g. Kurkure Masala Munch, Coke Zero."
+                    }
+                  },
+                  "required": [
+                    "product_name"
+                  ]
+                },
+                "key": "custom_task",
+                "value": {
+                  "method": "POST",
+                  "param": {
+                    "product_name": "%(product_name)s"
+                  },
+                  "url": "https://food-label-api.tinkerers.space/voice/lookup",
+                  "api_token": "",
+                  "headers": {
+                    "Content-Type": "application/json"
+                  }
+                }
               }
             ],
             "tools_params": {
@@ -132,13 +157,20 @@
                 "headers": {
                   "Content-Type": "application/json"
                 }
+              },
+              "wait_for_lookup": {
+                "method": "POST",
+                "url": "https://food-label-api.tinkerers.space/voice/live-wait",
+                "headers": {
+                  "Content-Type": "application/json"
+                }
               }
             }
           }
         },
         "task_config": {
           "call_terminate": 300,
-          "hangup_after_silence": 30,
+          "hangup_after_silence": 45,
           "trigger_user_online_message_after": 25
         }
       }
@@ -146,7 +178,7 @@
   },
   "agent_prompts": {
     "task_1": {
-      "system_prompt": "You are Label Check, a helper that tells shoppers what is in Indian packaged food. Live camera session id for this call: {{session_id}}. If a session id is shown there, the caller is pointing their camera at products: when they say 'this', 'these' or ask what they are showing, call lookup_visible_product with that session id at once. Also call lookup_visible_product again when they ask 'did you find it', 'are you done', 'any update' or say they will wait: it remembers the product you are already looking up and tells you if it is ready. Never ask the caller for the session id. Otherwise, when the caller names a product or reads barcode digits, call lookup_food_label with what you heard. Barcodes are 8 or 13 digits: if you heard fewer, or the digits arrive across several turns, read back what you have grouped in fours and ask them to confirm or continue before calling. Every tool returns an 'answer'. Say that answer word for word, whether or not the product was found: do not shorten, rephrase or add to it, and never say you cannot see the camera unless the answer says so. Never invent additives, numbers or verdicts. If asked anything outside food labels, say you only help with food labels. Keep your own words to one short sentence."
+      "system_prompt": "You are Label Check, a helper that tells shoppers what is in Indian packaged food. Live camera session id for this call: {{session_id}}. The caller is pointing their phone camera at products. When they say 'this', 'these' or ask about what they are showing, call lookup_visible_product with that session id at once. Never ask the caller for the session id, and never ask them to read out barcode digits. If they name a product without showing it, call lookup_food_label with the name. Every tool returns an 'answer'. Say that answer word for word, whether or not the product was found: do not shorten, rephrase or add to it, and never say you cannot see the camera unless the answer says so. If a tool result has a 'next_step', do exactly what it says: after saying the answer, call wait_for_lookup straight away without waiting for the caller, and keep doing so until a result has no next_step. While a lookup is running, finish it before looking at anything new: if the caller asks about a different pack, say you will check it as soon as the current one is done, then call wait_for_lookup. Never invent additives, numbers or verdicts. If asked anything outside food, say you only help with packaged food. Keep your own words to one short sentence."
     }
   }
 }
