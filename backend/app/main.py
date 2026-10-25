@@ -556,6 +556,15 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
     settings = request.app.state.settings
 
     async def fast_path() -> LiveLookupResponse | None:
+        # The vision read (~3-5 s) runs alongside the barcode read and the CPU-bound
+        # image embedding (a few seconds on 2 vCPUs); one in sequence blew the budget.
+        vision = asyncio.create_task(agent.identify(settings, [(frame.data, frame.media_type)]))
+        try:
+            return await matched(vision)
+        finally:
+            vision.cancel()
+
+    async def matched(vision: asyncio.Task) -> LiveLookupResponse | None:
         found_codes = await asyncio.to_thread(barcodes.read, frame.data)
         if found_codes:
             if (product := await lookup(svc, found_codes[0])) is not None:
@@ -578,7 +587,7 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
         # No barcode, no pack-photo match: read the pack with vision, then search by
         # name - our catalog first, then Open Food Facts' millions of products.
         try:
-            ident = await agent.identify(settings, [(frame.data, frame.media_type)])
+            ident = await vision
         except Exception as e:  # vision trouble: fall through to the background job
             _live_log.warning("live vision read failed: %s", e)
             return None

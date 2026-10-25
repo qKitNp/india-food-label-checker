@@ -25,6 +25,10 @@ def client(monkeypatch):
     monkeypatch.setenv("EXA_API_KEY", "")
     monkeypatch.setenv("EMBEDDINGS_ENABLED", "false")
     monkeypatch.setenv("BOLNA_API_KEY", "")
+
+    async def no_vision(settings, images, usage=None):  # tests that need a read patch their own
+        raise agent.llm.LLMError("no vision in tests")
+    monkeypatch.setattr(agent, "identify", no_vision)
     get_settings.cache_clear()
     with TestClient(app) as c:
         yield c
