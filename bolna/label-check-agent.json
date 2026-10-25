@@ -1,0 +1,110 @@
+{
+  "agent_config": {
+    "agent_name": "Label Check - Food Label Helper",
+    "agent_welcome_message": "Namaste! Khaane ke packet ke baare mein poochhiye, barcode number ya product ka naam bataiye.",
+    "tasks": [
+      {
+        "task_type": "conversation",
+        "toolchain": {
+          "execution": "sequential",
+          "pipelines": [["transcriber", "llm", "synthesizer"]]
+        },
+        "tools_config": {
+          "llm_agent": {
+            "agent_type": "simple_llm_agent",
+            "agent_flow_type": "streaming",
+            "llm_config": {
+              "provider": "openai",
+              "model": "gpt-4.1-mini",
+              "max_tokens": 200,
+              "temperature": 0.2
+            }
+          },
+          "transcriber": {
+            "provider": "sarvam",
+            "model": "saaras:v4",
+            "language": "hi",
+            "stream": true,
+            "encoding": "linear16",
+            "sampling_rate": 16000
+          },
+          "synthesizer": {
+            "provider": "sarvam",
+            "provider_config": {
+              "voice": "Suhani",
+              "voice_id": "suhani",
+              "model": "bulbul:v3",
+              "language": "hi"
+            },
+            "language": "hi",
+            "stream": true,
+            "buffer_size": 250,
+            "audio_format": "wav"
+          },
+          "input": {
+            "provider": "plivo",
+            "format": "wav"
+          },
+          "output": {
+            "provider": "plivo",
+            "format": "wav"
+          },
+          "api_tools": {
+            "tools": [
+              {
+                "name": "lookup_food_label",
+                "description": "Use when the caller asks about an Indian packaged food or drink: what is in it, is a claim like sugar free true, are its additives allowed. Call it when they read barcode digits or name a product, brand or variant. Speak the returned answer out word for word.",
+                "pre_call_message": "Label check kar raha hoon.",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "barcode": {
+                      "type": "string",
+                      "description": "Barcode digits read out by the caller, e.g. 8901764111105. Digits only."
+                    },
+                    "product_name": {
+                      "type": "string",
+                      "description": "Product or brand name as the caller says it, e.g. Kurkure Masala Munch, Coke Zero."
+                    }
+                  },
+                  "required": []
+                },
+                "key": "custom_task",
+                "value": {
+                  "method": "POST",
+                  "param": {
+                    "barcode": "%(barcode)s",
+                    "product_name": "%(product_name)s"
+                  },
+                  "url": "https://food-label-api.tinkerers.space/voice/lookup",
+                  "api_token": "",
+                  "headers": {
+                    "Content-Type": "application/json"
+                  }
+                }
+              }
+            ],
+            "tools_params": {
+              "lookup_food_label": {
+                "method": "POST",
+                "url": "https://food-label-api.tinkerers.space/voice/lookup",
+                "headers": {
+                  "Content-Type": "application/json"
+                }
+              }
+            }
+          }
+        },
+        "task_config": {
+          "call_terminate": 120,
+          "hangup_after_silence": 10
+        }
+      }
+    ]
+  },
+  "agent_prompts": {
+    "task_1": {
+      "system_prompt": "You are Label Check, a helper that tells shoppers what is in Indian packaged food. Speak Hindi (Hinglish is fine) unless the caller speaks English. Keep every reply under two sentences. When the caller names a product or reads barcode digits, call lookup_food_label at once with what you heard. Speak the tool's answer out word for word. Never invent additives, numbers or verdicts. If the tool says it could not find the product, ask them to read the barcode digits slowly, or to scan the pack in the Label Check app. If asked anything outside food labels, say you only help with food labels."
+    }
+  }
+}
