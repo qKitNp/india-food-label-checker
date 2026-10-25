@@ -45,8 +45,6 @@ export default function Live() {
   const [muted, setMuted] = useState(false)
   const idRef = useRef(1)
   const busyRef = useRef(false)
-  const sessionRef = useRef(sessionId)
-  sessionRef.current = sessionId
 
   const say = useCallback((role: Msg['role'], text: string, productKey?: string) => {
     setMsgs((m) => [...m, { id: idRef.current++, role, text, productKey }])
@@ -89,7 +87,7 @@ export default function Live() {
           inFlight = true
           try {
             const blob = await toJpeg(video.current, 800)
-            await api.liveFrame(sessionRef.current, blob)
+            await api.liveFrame(sessionId, blob)
             lastOk = Date.now()
             if (!stopped) setFeed('live')
           } catch {
@@ -110,7 +108,7 @@ export default function Live() {
       window.clearTimeout(timer)
       stream?.getTracks().forEach((t) => t.stop())
     }
-  }, [])
+  }, [sessionId])
 
   async function pollJob(jobId: string) {
     for (let i = 0; i < 40; i++) {
@@ -139,12 +137,12 @@ export default function Live() {
       // Fresh frame first so the tool sees what the user sees now.
       if (video.current && video.current.videoWidth > 0) {
         try {
-          await api.liveFrame(sessionRef.current, await toJpeg(video.current, 800))
+          await api.liveFrame(sessionId, await toJpeg(video.current, 800))
         } catch {
           /* lookup still uses the last good frame */
         }
       }
-      const res = await api.liveLookup(sessionRef.current)
+      const res = await api.liveLookup(sessionId)
       say('assistant', res.answer, res.product_key ?? undefined)
       if (!muted) speak(res.answer)
       if (res.found && res.product_key) {
@@ -173,7 +171,7 @@ export default function Live() {
       busyRef.current = false
       setBusy(false)
     }
-  }, [input, muted, say])
+  }, [input, muted, say, sessionId])
 
   function toggleListen() {
     const Rec = (window as unknown as { SpeechRecognition?: new () => SpeechRec; webkitSpeechRecognition?: new () => SpeechRec }).SpeechRecognition
