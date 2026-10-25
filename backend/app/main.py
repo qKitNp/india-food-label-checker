@@ -11,6 +11,8 @@ from typing import Annotated, Literal
 import httpx
 from exa_py import Exa
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from pydantic import BaseModel, model_validator
@@ -135,6 +137,16 @@ async def llm_error(request: Request, exc: llm.LLMError):
 @app.exception_handler(llm.InvalidImage)
 async def invalid_image(request: Request, exc: llm.InvalidImage):
     return JSONResponse(status_code=400, content={"detail": str(exc)})
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error(request: Request, exc: RequestValidationError):
+    # Bolna calls the /voice tools with whatever its tool template produced; a
+    # broken template only ever shows up here, so log what it actually sent.
+    if request.url.path.startswith("/voice/"):
+        body = (await request.body())[:500]
+        _live_log.warning("422 %s body=%r errors=%s", request.url.path, body, exc.errors())
+    return await request_validation_exception_handler(request, exc)
 
 
 def products(request: Request) -> ProductService:
