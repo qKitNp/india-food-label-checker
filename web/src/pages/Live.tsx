@@ -1,18 +1,26 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { API_URL, api, ApiError, type Verdict } from '../api'
+import { API_URL, api, ApiError, liveSnapUrl, type Verdict } from '../api'
 import { toJpeg } from '../images'
 import { Button, Card, Chip, ErrorNote, Page, ProductImage, Spinner, buttonClass, productTitle, shortBrand } from '../ui'
+
+type SnapStatus = 'looking' | 'researching' | 'done' | 'missed'
 
 type Msg = {
   id: number
   role: 'user' | 'assistant'
   text: string
   productKey?: string
+  // The exact frame a lookup is working on, frozen in the chat.
+  snap?: { url: string; status: SnapStatus }
 }
 
 const FRAME_MS = 1000
 const POLL_MS = 1500
+// While on a call: how often to check whether Bolna started a lookup. The snap
+// shows up at most this long after the tool call, well before the answer.
+const CALL_POLL_MS = 1000
+const FREEZE_MS = 1400
 
 function newSession() {
   const bytes = new Uint8Array(16)
@@ -55,10 +63,34 @@ export default function Live() {
   const callRef = useRef<{ stop(): Promise<void>; setMuted(b: boolean): void } | null>(null)
   const onCallRef = useRef(false)
   const seenAtRef = useRef(0)
+  const lastSnapAtRef = useRef(0) // server time of the newest snap shown
+  const snapMsgRef = useRef(new Map<number, number>()) // snap_at -> chat message id
+  const lastBlobRef = useRef<Blob | null>(null) // last frame uploaded, for typed asks
+  const ownSnapsRef = useRef(new Set<number>()) // snaps from typed asks, already in the chat
+  const [freeze, setFreeze] = useState<{ url: string; key: number } | null>(null)
 
   const say = useCallback((role: Msg['role'], text: string, productKey?: string) => {
     setMsgs((m) => [...m, { id: idRef.current++, role, text, productKey }])
   }, [])
+
+  // Freeze the frame over the camera and pin it in the chat: "this is the pack I'm on".
+  const showSnap = useCallback((url: string) => {
+    const id = idRef.current++
+    setMsgs((m) => [...m, { id, role: 'assistant', text: '', snap: { url, status: 'looking' } }])
+    setFreeze({ url, key: id })
+    return id
+  }, [])
+
+  const setSnapStatus = useCallback((msgId: number | undefined, status: SnapStatus) => {
+    if (msgId === undefined) return
+    setMsgs((m) => m.map((x) => (x.id === msgId && x.snap ? { ...x, snap: { ...x.snap, status } } : x)))
+  }, [])
+
+  useEffect(() => {
+    if (!freeze) return
+    const t = window.setTimeout(() => setFreeze(null), FREEZE_MS)
+    return () => window.clearTimeout(t)
+  }, [freeze])
 
   const speakIfFree = useCallback((text: string) => {
     if (!muted && !onCallRef.current) speak(text)
@@ -70,7 +102,7 @@ export default function Live() {
     return v
   }, [])
 
-  const followBackgroundJob = useCallback(async (jobId: string) => {
+  const followBackgroundJob = useCallback(async (jobId: string): Promise<boolean> => {
     setJobNote('Looking it up in the background… keep pointing at the pack.')
     const job = await pollJob(jobId)
     setJobNote(null)
@@ -81,11 +113,13 @@ export default function Live() {
       const line = `Found it: ${productTitle(verdict.product)}. ${verdict.headline[0] ?? ''}`
       say('assistant', line, verdict.product.key)
       speakIfFree(line)
+      return true
     } else if (outcome?.status === 'not_food') {
       say('assistant', "That doesn't look like a packaged food. Point at the front of the pack?")
     } else if (outcome) {
       say('assistant', 'I still couldn\'t find reliable ingredients for this one. A photo of the back label would help.')
     }
+    return false
   }, [say, speakIfFree])
 
   // Camera + 1fps frame upload. Fire-and-forget; skips a tick while one is in flight.
@@ -126,6 +160,7 @@ export default function Live() {
           try {
             const blob = await toJpeg(video.current, 800)
             await api.liveFrame(sessionId, blob)
+            lastBlobRef.current = blob
             lastOk = Date.now()
             if (!stopped) setFeed('live')
           } catch {
@@ -176,18 +211,27 @@ export default function Live() {
       // full-res snap just uploaded one (Snap button beats the 800px loop frame).
       if (Date.now() - freshRef.current > 3000 && video.current && video.current.videoWidth > 0) {
         try {
-          await api.liveFrame(sessionId, await toJpeg(video.current, 800))
+          const blob = await toJpeg(video.current, 800)
+          await api.liveFrame(sessionId, blob)
+          lastBlobRef.current = blob
         } catch {
           /* lookup still uses the last good frame */
         }
       }
+      const snapId = lastBlobRef.current ? showSnap(URL.createObjectURL(lastBlobRef.current)) : undefined
       const res = await api.liveLookup(sessionId)
+      // A call running alongside must not show this snap and answer a second time.
+      if (res.snap_at) ownSnapsRef.current.add(res.snap_at)
       say('assistant', res.answer, res.product_key ?? undefined)
       speakIfFree(res.answer)
       if (res.found && res.product_key) {
+        setSnapStatus(snapId, 'done')
         await showProduct(res.product_key)
       } else if (res.job_id) {
-        await followBackgroundJob(res.job_id)
+        setSnapStatus(snapId, 'researching')
+        setSnapStatus(snapId, (await followBackgroundJob(res.job_id)) ? 'done' : 'missed')
+      } else {
+        setSnapStatus(snapId, 'missed')
       }
     } catch (e) {
       setError(e instanceof ApiError ? e.message : 'Something went wrong. Try again.')
@@ -195,7 +239,7 @@ export default function Live() {
       busyRef.current = false
       setBusy(false)
     }
-  }, [input, say, sessionId, showProduct, followBackgroundJob, speakIfFree])
+  }, [input, say, sessionId, showProduct, followBackgroundJob, speakIfFree, showSnap, setSnapStatus])
 
   function toggleListen() {
     const Rec = (window as unknown as { SpeechRecognition?: new () => SpeechRec; webkitSpeechRecognition?: new () => SpeechRec }).SpeechRecognition
@@ -231,7 +275,9 @@ export default function Live() {
     setBusy(true)
     setError(null)
     try {
-      await api.liveFrame(sessionId, await toJpeg(video.current, 1600))
+      const blob = await toJpeg(video.current, 1600)
+      await api.liveFrame(sessionId, blob)
+      lastBlobRef.current = blob
       freshRef.current = Date.now()
     } catch {
       setError("Couldn't take the photo. Try again holding steady.")
@@ -330,7 +376,9 @@ export default function Live() {
     }
   }
 
-  // While on a Bolna call, mirror spoken answers into the chat + cards.
+  // While on a Bolna call, mirror spoken answers into the chat + cards. The
+  // moment Bolna's tool starts on a frame, freeze that frame so the caller
+  // knows what's being looked at, long before the answer is spoken.
   useEffect(() => {
     if (callState !== 'active') return
     let stopped = false
@@ -339,31 +387,49 @@ export default function Live() {
     const tick = async () => {
       if (stopped) return
       try {
-        const fed = await api.liveResult(sessionId)
-        if (!stopped && fed.found && fed.answer && (fed.at ?? 0) > seenAtRef.current) {
+        // A typed ask in flight shows its own snap and answer.
+        const fed = busyRef.current ? null : await api.liveResult(sessionId)
+        const snapAt = fed?.latest_snap_at ?? 0
+        if (!stopped && fed && snapAt > lastSnapAtRef.current) {
+          lastSnapAtRef.current = snapAt
+          if (!ownSnapsRef.current.has(snapAt)) {
+            snapMsgRef.current.set(snapAt, showSnap(liveSnapUrl(sessionId, snapAt)))
+          }
+        }
+        if (!stopped && fed?.found && fed.answer && (fed.at ?? 0) > seenAtRef.current) {
           seenAtRef.current = fed.at ?? Date.now() / 1000
-          say('assistant', fed.answer, fed.product_key ?? undefined)
-          if (fed.product_key) {
-            showProduct(fed.product_key).catch(() => {})
-          } else if (fed.job_id) {
-            const jobId = fed.job_id
-            if (!busyJobs.has(jobId)) {
-              busyJobs.add(jobId)
-              followBackgroundJob(jobId).catch(() => {}).finally(() => busyJobs.delete(jobId))
+          if (!ownSnapsRef.current.has(fed.snap_at ?? -1)) {
+            const snapId = snapMsgRef.current.get(fed.snap_at ?? -1)
+            say('assistant', fed.answer, fed.product_key ?? undefined)
+            if (fed.product_key) {
+              setSnapStatus(snapId, 'done')
+              showProduct(fed.product_key).catch(() => {})
+            } else if (fed.job_id) {
+              setSnapStatus(snapId, 'researching')
+              const jobId = fed.job_id
+              if (!busyJobs.has(jobId)) {
+                busyJobs.add(jobId)
+                followBackgroundJob(jobId)
+                  .then((found) => setSnapStatus(snapId, found ? 'done' : 'missed'))
+                  .catch(() => setSnapStatus(snapId, 'missed'))
+                  .finally(() => busyJobs.delete(jobId))
+              }
+            } else {
+              setSnapStatus(snapId, 'missed')
             }
           }
         }
       } catch {
         /* offline blip: next tick retries */
       }
-      timer = window.setTimeout(tick, 2000)
+      timer = window.setTimeout(tick, CALL_POLL_MS)
     }
     tick()
     return () => {
       stopped = true
       window.clearTimeout(timer)
     }
-  }, [callState, sessionId, say, showProduct, followBackgroundJob])
+  }, [callState, sessionId, say, showProduct, followBackgroundJob, showSnap, setSnapStatus])
 
   // Hang up if the user leaves the page mid-call.
   useEffect(() => () => {
@@ -398,6 +464,12 @@ export default function Live() {
         )}
         {cameraError && (
           <div className="absolute inset-0 flex items-center justify-center p-8 text-center text-sm text-white/90">{cameraError}</div>
+        )}
+        {freeze && (
+          <div key={freeze.key} className="pointer-events-none absolute inset-0">
+            <img src={freeze.url} alt="" className="freeze absolute inset-0 size-full object-cover" />
+            <div className="shutter absolute inset-0 bg-white" />
+          </div>
         )}
         <div className="absolute top-3 left-3">
           <FeedChip feed={feed} />
@@ -483,7 +555,7 @@ export default function Live() {
         {msgs.length === 0 && (
           <p className="text-center text-sm text-faint">Try: “Tell me about this” → point at another pack → “Which has less sugar?”</p>
         )}
-        {msgs.map((m) => (
+        {msgs.map((m) => m.snap ? <SnapBubble key={m.id} {...m.snap} /> : (
           <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <p className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed ${m.role === 'user' ? 'bg-accent text-white' : 'bg-white border border-line text-ink-2 shadow-card'}`}>
               {m.text}
@@ -530,6 +602,31 @@ export default function Live() {
         <Link to="/scan" className={buttonClass('ghost', 'text-xs')}>Back to scan</Link>
       </div>
     </Page>
+  )
+}
+
+const SNAP_LABEL: Record<SnapStatus, string> = {
+  looking: 'Looking at this pack…',
+  researching: 'New to me. Researching it…',
+  done: '✓ Got it',
+  missed: "Couldn't place this one",
+}
+
+function SnapBubble({ url, status }: { url: string; status: SnapStatus }) {
+  const working = status === 'looking' || status === 'researching'
+  return (
+    <div className="rise flex justify-start">
+      <div className="flex items-center gap-3 rounded-2xl border border-line bg-white p-2 pr-4 shadow-card">
+        <div className={`relative h-16 w-20 shrink-0 overflow-hidden rounded-xl bg-wash ${working ? 'ring-2 ring-accent' : ''}`}>
+          <img src={url} alt="The frame being looked up" className="size-full object-cover" />
+          {working && <div className="scanline absolute inset-x-0 h-0.5 bg-accent shadow-[0_0_8px_2px] shadow-accent/60" />}
+        </div>
+        <p className={`flex items-center gap-2 text-sm ${status === 'done' ? 'text-good' : status === 'missed' ? 'text-muted' : 'text-accent-deep'}`}>
+          {working && <Spinner className="text-accent" />}
+          {SNAP_LABEL[status]}
+        </p>
+      </div>
+    </div>
   )
 }
 

@@ -206,3 +206,24 @@ def test_live_lookup_name_match_rejects_sibling_variant(client, monkeypatch):
                 files={"image": ("f.jpg", jpeg(), "image/jpeg")})
     body = client.post("/voice/live-lookup", json={"session_id": sid}).json()
     assert body["found"] is False and body["reason"] == "unknown"
+
+
+def test_live_result_reports_snap_being_looked_at(client, monkeypatch):
+    async def seed():
+        await client.app.state.products.store.save_product(
+            Product(barcode="8901764111105", brand="Kurkure", name="Masala Munch", source="label",
+                    verified=True, ingredients_text="Rice meal, corn meal",
+                    nutrition=Nutrition(energy_kcal=550)))
+    client.portal.call(seed)
+    monkeypatch.setattr(barcodes, "read", lambda data: ["8901764111105"])
+
+    sid = "testsession-snap1"
+    assert client.get("/live/snap", params={"session_id": sid}).status_code == 404
+    frame = jpeg()
+    client.post("/live/frame", data={"session_id": sid}, files={"image": ("f.jpg", frame, "image/jpeg")})
+    client.post("/voice/live-lookup", json={"session_id": sid})
+
+    fed = client.get("/live/result", params={"session_id": sid}).json()
+    assert fed["looking"] is False and fed["snap_at"] == fed["latest_snap_at"] is not None
+    snap = client.get("/live/snap", params={"session_id": sid})
+    assert snap.status_code == 200 and snap.content == frame

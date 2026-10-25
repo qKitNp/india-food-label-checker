@@ -60,6 +60,25 @@ body {
 }
 .rise { animation: rise 0.35s ease-out both; }
 
+/* Live mode: the frame being looked up freezes over the camera, then drops toward the chat. */
+@keyframes shutter {
+  from { opacity: 0.9; }
+  to { opacity: 0; }
+}
+.shutter { animation: shutter 0.4s ease-out both; }
+@keyframes freeze {
+  0%, 60% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translateY(40%) scale(0.3); }
+}
+.freeze { animation: freeze 1.4s ease-in both; transform-origin: bottom center; }
+@keyframes scan {
+  from { top: 0; }
+  to { top: calc(100% - 2px); }
+}
+.scanline { animation: scan 1.2s ease-in-out infinite alternate; }
+
 @media (prefers-reduced-motion: reduce) {
-  .rise { animation: none; }
+  .rise, .shutter, .scanline { animation: none; }
+  .scanline { display: none; }
+  .freeze { animation: shutter 1.4s ease-in both; }
 }

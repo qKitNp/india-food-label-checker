@@ -35,12 +35,25 @@ class LiveResult:
     job_id: str | None
     poll_url: str | None
     at: float
+    snap_at: float | None = None  # which snap this answers
+
+
+@dataclass
+class LiveSnap:
+    """The frame a lookup is working on, so the page can freeze it on screen
+    and show the caller exactly what is being looked at."""
+
+    data: bytes
+    media_type: str
+    at: float
 
 
 class LiveStore:
     def __init__(self) -> None:
         self.frames: dict[str, LiveFrame] = {}
         self.results: dict[str, LiveResult] = {}
+        self.snaps: dict[str, LiveSnap] = {}
+        self.looking: set[str] = set()
 
     def put(self, session_id: str, data: bytes, media_type: str) -> None:
         self._prune()
@@ -48,6 +61,8 @@ class LiveStore:
             oldest = min(self.frames, key=lambda k: self.frames[k].received_at)
             del self.frames[oldest]
             self.results.pop(oldest, None)
+            self.snaps.pop(oldest, None)
+            self.looking.discard(oldest)
         self.frames[session_id] = LiveFrame(data, media_type, time.time())
 
     def get(self, session_id: str) -> LiveFrame | None:
@@ -59,8 +74,18 @@ class LiveStore:
             return None
         return frame
 
+    def start_lookup(self, session_id: str, frame: LiveFrame) -> LiveSnap:
+        snap = LiveSnap(frame.data, frame.media_type, time.time())
+        self.snaps[session_id] = snap
+        self.looking.add(session_id)
+        return snap
+
     def note_result(self, session_id: str, result: LiveResult) -> None:
         self.results[session_id] = result
+        self.looking.discard(session_id)
+
+    def snap(self, session_id: str) -> LiveSnap | None:
+        return self.snaps.get(session_id)
 
     def last_result(self, session_id: str) -> LiveResult | None:
         return self.results.get(session_id)
@@ -70,3 +95,5 @@ class LiveStore:
         for key in [k for k, f in self.frames.items() if f.received_at < cutoff]:
             del self.frames[key]
             self.results.pop(key, None)
+            self.snaps.pop(key, None)
+            self.looking.discard(key)

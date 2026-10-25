@@ -160,7 +160,7 @@ export interface Job {
   error: string | null
 }
 
-export type LiveReason = 'barcode' | 'catalog_image' | 'no_frame' | 'stale' | 'unknown'
+export type LiveReason = 'barcode' | 'catalog_image' | 'name' | 'no_frame' | 'stale' | 'unknown' | 'not_food'
 
 export interface LiveLookup {
   found: boolean
@@ -169,6 +169,7 @@ export interface LiveLookup {
   product_key: string | null
   job_id: string | null
   poll_url: string | null
+  snap_at: number | null
 }
 
 export interface LiveResultFeed {
@@ -179,7 +180,14 @@ export interface LiveResultFeed {
   job_id: string | null
   poll_url: string | null
   at: number | null
+  snap_at: number | null
+  looking: boolean
+  latest_snap_at: number | null
 }
+
+/** The frame a live lookup is working on; `at` busts the cache per snap. */
+export const liveSnapUrl = (sessionId: string, at: number) =>
+  `${API_URL}/live/snap?session_id=${encodeURIComponent(sessionId)}&at=${at}`
 
 export interface LabelResult {
   product: Product

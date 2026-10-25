@@ -465,6 +465,7 @@ class LiveLookupResponse(BaseModel):
     product_key: str | None = None
     job_id: str | None = None
     poll_url: str | None = None
+    snap_at: float | None = None  # the frozen frame this answers, see GET /live/snap
 
 
 @app.post("/voice/live-lookup")
@@ -484,11 +485,13 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
     if not SESSION_RE.match(body.session_id):
         raise HTTPException(400, "session_id must be 8-64 chars of a-z, A-Z, 0-9, '-' or '_'")
     live: LiveStore = request.app.state.live
+    snap_at: float | None = None
 
     def note(resp: LiveLookupResponse, extra: str = "") -> LiveLookupResponse:
+        resp.snap_at = snap_at
         live.note_result(body.session_id, LiveResult(
             answer=resp.answer, reason=resp.reason, product_key=resp.product_key,
-            job_id=resp.job_id, poll_url=resp.poll_url, at=_time.time()))
+            job_id=resp.job_id, poll_url=resp.poll_url, at=_time.time(), snap_at=snap_at))
         _live_log.info("session=%s reason=%s %s", body.session_id[-6:], resp.reason, extra)
         return resp
 
@@ -501,6 +504,8 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
     if frame is None:
         return note(LiveLookupResponse(found=False, reason="no_frame", answer=LIVE_NO_FRAME_SAY))
     stale = _time.time() - frame.received_at > STALE_AFTER
+    # Freeze this exact frame: the page shows it in the chat while we work on it.
+    snap_at = live.start_lookup(body.session_id, frame).at
 
     settings = request.app.state.settings
     found_codes = await asyncio.to_thread(barcodes.read, frame.data)
@@ -584,6 +589,9 @@ class LiveResultResponse(BaseModel):
     job_id: str | None = None
     poll_url: str | None = None
     at: float | None = None
+    snap_at: float | None = None  # the snap this answer is for
+    looking: bool = False  # a lookup is running on the latest snap
+    latest_snap_at: float | None = None
 
 
 @app.get("/live/result")
@@ -592,12 +600,26 @@ async def live_result(request: Request, session_id: str) -> LiveResultResponse:
     the Bolna voice call says out loud (the page can't hear the call)."""
     if not SESSION_RE.match(session_id):
         raise HTTPException(400, "session_id must be 8-64 chars of a-z, A-Z, 0-9, '-' or '_'")
-    res = request.app.state.live.last_result(session_id)
+    live: LiveStore = request.app.state.live
+    snap = live.snap(session_id)
+    progress = {"looking": session_id in live.looking, "latest_snap_at": snap.at if snap else None}
+    res = live.last_result(session_id)
     if res is None:
-        return LiveResultResponse(found=False)
+        return LiveResultResponse(found=False, **progress)
     return LiveResultResponse(found=True, answer=res.answer, reason=res.reason,
                               product_key=res.product_key, job_id=res.job_id,
-                              poll_url=res.poll_url, at=res.at)
+                              poll_url=res.poll_url, at=res.at, snap_at=res.snap_at, **progress)
+
+
+@app.get("/live/snap")
+async def live_snap(request: Request, session_id: str) -> Response:
+    """The frame the latest lookup worked on (in memory only, gone with the session)."""
+    if not SESSION_RE.match(session_id):
+        raise HTTPException(400, "session_id must be 8-64 chars of a-z, A-Z, 0-9, '-' or '_'")
+    snap = request.app.state.live.snap(session_id)
+    if snap is None:
+        raise HTTPException(404, "No snap for this session")
+    return Response(snap.data, media_type=snap.media_type, headers={"Cache-Control": "private, max-age=300"})
 
 
 class LiveSessionRequest(BaseModel):
