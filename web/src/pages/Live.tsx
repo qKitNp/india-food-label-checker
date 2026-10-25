@@ -234,6 +234,15 @@ export default function Live() {
   async function startCall() {
     if (callRef.current) return
     setCallError(null)
+    // Warm up the mic inside the tap gesture: Brave/Chrome grant more reliably
+    // here than inside the SDK's async start, and a denial shows our guidance.
+    try {
+      const warm = await navigator.mediaDevices.getUserMedia({ audio: true })
+      warm.getTracks().forEach((t) => t.stop())
+    } catch {
+      setCallError('Microphone is blocked. Tap the lock icon → Site settings → Microphone → Allow, close any overlay or bubble apps, then try again. Chrome also works if Brave keeps refusing.')
+      return
+    }
     setCallState('connecting')
     try {
       const { BolnaWebCall } = await import('@bolna/web-call')
@@ -247,8 +256,12 @@ export default function Live() {
           callRef.current = null
         }
       })
-      call.on('error', (e: { message?: string }) => {
-        setCallError(e.message ?? 'Call failed. Try again.')
+      call.on('error', (e: { code?: string; message?: string }) => {
+        setCallError(
+          e.code === 'microphone_denied'
+            ? 'Microphone is blocked. Tap the lock icon → Site settings → Microphone → Allow, close any overlay or bubble apps, then try again. Chrome also works if Brave keeps refusing.'
+            : (e.message ?? 'Call failed. Try again.'),
+        )
         setCallState('ended')
         onCallRef.current = false
         callRef.current = null
