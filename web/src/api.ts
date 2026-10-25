@@ -160,6 +160,17 @@ export interface Job {
   error: string | null
 }
 
+export type LiveReason = 'barcode' | 'catalog_image' | 'no_frame' | 'stale' | 'unknown'
+
+export interface LiveLookup {
+  found: boolean
+  reason: LiveReason
+  answer: string
+  product_key: string | null
+  job_id: string | null
+  poll_url: string | null
+}
+
 export interface LabelResult {
   product: Product
   legible: boolean
@@ -249,5 +260,17 @@ export const api = {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(product),
+    }),
+  liveFrame: (sessionId: string, photo: Blob) => {
+    const data = new FormData()
+    data.append('session_id', sessionId)
+    data.append('image', photo, 'frame.jpg')
+    return request<{ ok: boolean; session_id: string }>('/live/frame', { method: 'POST', body: data })
+  },
+  liveLookup: (sessionId: string) =>
+    request<LiveLookup>('/voice/live-lookup', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId }),
     }),
 }

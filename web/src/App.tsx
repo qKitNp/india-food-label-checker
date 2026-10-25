@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import Home from './pages/Home'
 import JobPage from './pages/Job'
 import LabelPage from './pages/Label'
+import Live from './pages/Live'
 import ProductPage from './pages/Product'
 import ProductsPage from './pages/Products'
 import Scan from './pages/Scan'
@@ -13,6 +14,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/scan" element={<Scan />} />
+        <Route path="/live" element={<Live />} />
         <Route path="/job/:id" element={<JobPage />} />
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/p/:key" element={<ProductPage />} />
