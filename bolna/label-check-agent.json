@@ -129,8 +129,8 @@
           }
         },
         "task_config": {
-          "call_terminate": 120,
-          "hangup_after_silence": 10
+          "call_terminate": 300,
+          "hangup_after_silence": 30
         }
       }
     ]

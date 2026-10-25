@@ -46,6 +46,9 @@ export default function Live() {
   const [callState, setCallState] = useState<'idle' | 'connecting' | 'ringing' | 'active' | 'ended'>('idle')
   const [callError, setCallError] = useState<string | null>(null)
   const [callMuted, setCallMuted] = useState(false)
+  const [speaking, setSpeaking] = useState(false)
+  const [callSecs, setCallSecs] = useState(0)
+  const [endReason, setEndReason] = useState<string | null>(null)
   const idRef = useRef(1)
   const busyRef = useRef(false)
   const callRef = useRef<{ stop(): Promise<void>; setMuted(b: boolean): void } | null>(null)
@@ -201,9 +204,9 @@ export default function Live() {
     }
     if (listening) return
     const rec = new Rec()
-    rec.lang = 'en-IN'
+    rec.lang = 'en-US'
     rec.interimResults = false
-    rec.maxAlternatives = 1
+    rec.maxAlternatives = 3
     setListening(true)
     rec.onresult = (e: { results: { transcript: string }[][] }) => {
       const text = e.results[0][0].transcript
@@ -266,6 +269,25 @@ export default function Live() {
         onCallRef.current = false
         callRef.current = null
       })
+      call.on('volume-level', (v: number) => {
+        // ~10 events/sec while active: only flip state on change to avoid re-renders.
+        setSpeaking((prev) => {
+          const s = v > 0.02
+          return prev === s ? prev : s
+        })
+      })
+      call.on('call-end', (e: { reason?: string }) => {
+        const r = e.reason ?? ''
+        setEndReason(
+          r === 'local-hangup' ? 'You hung up.'
+            : r === 'remote-hangup' ? 'Label Check hung up — usually the 30s silence timeout. Tap Talk to redial.'
+              : r ? `Call ended (${r}). Tap Talk to redial.`
+                : null,
+        )
+      })
+      setEndReason(null)
+      setCallSecs(0)
+      setSpeaking(false)
       await call.start({ userData: { session_id: sessionId } })
     } catch (e) {
       callRef.current = null
@@ -325,6 +347,15 @@ export default function Live() {
     callRef.current?.stop().catch(() => {})
   }, [])
 
+  // Call timer while active.
+  useEffect(() => {
+    if (callState !== 'active') return
+    const t = window.setInterval(() => setCallSecs((s) => s + 1), 1000)
+    return () => window.clearInterval(t)
+  }, [callState])
+
+  const mmss = `${Math.floor(callSecs / 60)}:${String(callSecs % 60).padStart(2, '0')}`
+
   const pair = verdicts.slice(-2)
 
   return (
@@ -352,6 +383,9 @@ export default function Live() {
 
       {error && <div className="mt-4"><ErrorNote>{error}</ErrorNote></div>}
       {callError && <div className="mt-4"><ErrorNote>{callError}</ErrorNote></div>}
+      {endReason && callState === 'ended' && (
+        <p className="rise mt-3 text-center text-sm text-muted">{endReason}</p>
+      )}
 
       <div className="rise mt-4">
         {callState === 'idle' || callState === 'ended' ? (
@@ -360,13 +394,22 @@ export default function Live() {
           </button>
         ) : (
           <Card className="flex items-center justify-between gap-3">
-            <p className="flex items-center gap-2 text-[15px] font-medium">
-              {callState === 'active' ? (
-                <><span className="inline-block size-2.5 animate-pulse rounded-full bg-good" /> On the call — just speak</>
-              ) : (
-                <><Spinner className="text-accent" /> {callState === 'connecting' ? 'Connecting…' : 'Ringing…'}</>
+            <div>
+              <p className={`flex items-center gap-2 text-[15px] font-medium ${speaking ? 'text-accent-deep' : ''}`}>
+                {callState === 'active' ? (
+                  speaking ? (
+                    <><span className="inline-block size-2.5 animate-ping rounded-full bg-accent" /> Speaking… {mmss}</>
+                  ) : (
+                    <><span className="inline-block size-2.5 animate-pulse rounded-full bg-good" /> Listening… speak now {mmss}</>
+                  )
+                ) : (
+                  <><Spinner className="text-accent" /> {callState === 'connecting' ? 'Connecting…' : 'Ringing…'}</>
+                )}
+              </p>
+              {endReason === null && callState === 'active' && (
+                <p className="mt-1 text-xs text-faint">Quiet for 30s hangs up — tap Talk to redial</p>
               )}
-            </p>
+            </div>
             <div className="flex gap-2">
               {callState === 'active' && (
                 <Button
