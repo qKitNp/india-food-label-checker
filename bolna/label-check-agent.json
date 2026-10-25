@@ -53,7 +53,7 @@
               {
                 "name": "lookup_food_label",
                 "description": "Use when the caller asks about an Indian packaged food or drink: what is in it, is a claim like sugar free true, are its additives allowed. Call it when they read barcode digits or name a product, brand or variant. Speak the returned answer out word for word.",
-                "pre_call_message": "Label check kar raha hoon.",
+                "pre_call_message": "Let me check that label.",
                 "parameters": {
                   "type": "object",
                   "properties": {
