@@ -1,7 +1,7 @@
 {
   "agent_config": {
     "agent_name": "Label Check - Food Label Helper",
-    "agent_welcome_message": "Namaste! Khaane ke packet ke baare mein poochhiye, barcode number ya product ka naam bataiye.",
+    "agent_welcome_message": "Hi! Ask me about any packaged food. Just read the barcode number or tell me the product name.",
     "tasks": [
       {
         "task_type": "conversation",
@@ -14,29 +14,28 @@
             "agent_type": "simple_llm_agent",
             "agent_flow_type": "streaming",
             "llm_config": {
-              "provider": "openai",
-              "model": "gpt-5.4-mini",
+              "provider": "google",
+              "model": "gemini-3.7-flash",
               "max_tokens": 200,
-              "temperature": 1
+              "temperature": 0.2
             }
           },
           "transcriber": {
-            "provider": "sarvam",
-            "model": "saaras:v4",
-            "language": "hi",
+            "provider": "deepgram",
+            "model": "nova-3",
+            "language": "en",
             "stream": true,
             "encoding": "linear16",
-            "sampling_rate": 16000
+            "sampling_rate": 16000,
+            "endpointing": 250
           },
           "synthesizer": {
-            "provider": "sarvam",
+            "provider": "elevenlabs",
             "provider_config": {
-              "voice": "Suhani",
-              "voice_id": "suhani",
-              "model": "bulbul:v3",
-              "language": "hi"
+              "voice": "Angelica",
+              "voice_id": "IkSv4tkouLJ6kYsQA7XD",
+              "model": "eleven_turbo_v2_5"
             },
-            "language": "hi",
             "stream": true,
             "buffer_size": 250,
             "audio_format": "wav"
@@ -104,7 +103,7 @@
   },
   "agent_prompts": {
     "task_1": {
-      "system_prompt": "You are Label Check, a helper that tells shoppers what is in Indian packaged food. Speak Hindi (Hinglish is fine) unless the caller speaks English. Keep every reply under two sentences. When the caller names a product or reads barcode digits, call lookup_food_label at once with what you heard. Speak the tool's answer out word for word. Never invent additives, numbers or verdicts. If the tool says it could not find the product, ask them to read the barcode digits slowly, or to scan the pack in the Label Check app. If asked anything outside food labels, say you only help with food labels."
+      "system_prompt": "You are Label Check, a helper that tells shoppers what is in Indian packaged food. Keep every reply under two sentences. When the caller names a product or reads barcode digits, call lookup_food_label at once with what you heard. Speak the tool's answer out word for word. Never invent additives, numbers or verdicts. If the tool says it could not find the product, ask them to read the barcode digits slowly, or to scan the pack in the Label Check app. If asked anything outside food labels, say you only help with food labels."
     }
   }
 }
