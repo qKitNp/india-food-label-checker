@@ -9,6 +9,7 @@ from app import additive_codes
 from app.models import Nutrition, Product
 
 API = "https://world.openfoodfacts.org/api/v2/product/{barcode}.json"
+SEARCH_API = "https://world.openfoodfacts.org/cgi/search.pl"
 FIELDS = "code,product_name,brands,ingredients_text,ingredients_text_en,additives_tags,nutriments,quantity,labels,image_front_url"
 _LIQUID = re.compile(r"\d\s*(ml|cl|l|ltr|litre|liter)\b", re.IGNORECASE)
 
@@ -64,3 +65,24 @@ async def fetch(client: httpx.AsyncClient, barcode: str) -> Product | None:
     if body.get("status") != 1 or not body.get("product"):
         return None
     return parse(body["product"])
+
+
+async def search_by_name(client: httpx.AsyncClient, query: str, limit: int = 5) -> list[Product]:
+    """Name search for front-of-pack frames where no barcode is visible.
+
+    Powers the live voice fast path: millions of crowd-sourced products instead
+    of just our small catalog. Callers must check the candidate really is the
+    exact variant seen on the pack before answering.
+    """
+    r = await client.get(SEARCH_API, params={
+        "search_terms": query, "search_simple": 1, "action": "process",
+        "json": 1, "page_size": limit,
+    })
+    r.raise_for_status()
+    out = []
+    for p in (r.json().get("products") or [])[:limit]:
+        try:
+            out.append(parse(p))
+        except Exception:
+            continue
+    return out

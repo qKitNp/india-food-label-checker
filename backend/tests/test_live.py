@@ -1,6 +1,8 @@
 import io
 
+import httpx
 import pytest
+import respx
 from fastapi.testclient import TestClient
 from PIL import Image
 
@@ -64,6 +66,10 @@ def test_live_lookup_barcode_hit(client, monkeypatch):
 def test_live_lookup_unknown_starts_job(client, monkeypatch):
     monkeypatch.setattr(barcodes, "read", lambda data: [])
 
+    async def no_vision(settings, images, usage=None):
+        raise agent.llm.LLMError("no key")
+    monkeypatch.setattr(agent, "identify", no_vision)
+
     async def fake_find(settings, products, exa, images, steps):
         steps.append(agent.Step(tool="read_pack", args={}, result="pack"))
         return agent.AgentResult(status="not_found",
@@ -100,3 +106,67 @@ def test_live_result_feeds_voice_answers_to_page(client, monkeypatch):
 def test_live_session_needs_key(client):
     r = client.post("/live/session", json={"user_data": {"session_id": "abc"}})
     assert r.status_code == 503  # BOLNA_API_KEY not set in tests
+
+
+OFF_SEARCH_HIT = {"products": [{
+    "code": "8901491361026", "product_name": "Kurkure Masala Munch", "brands": "Kurkure",
+    "ingredients_text": "Rice meal, corn meal, gram meal, edible oil",
+    "nutriments": {"energy-kcal_100g": 550}, "quantity": "90 g", "labels": "",
+}]}
+
+
+@respx.mock
+def test_live_lookup_vision_barcode(client, monkeypatch):
+    async def seed():
+        await client.app.state.products.store.save_product(
+            Product(barcode="8901764111105", brand="Kurkure", name="Masala Munch", source="label",
+                    verified=True, ingredients_text="Rice meal, corn meal",
+                    nutrition=Nutrition(energy_kcal=550)))
+    client.portal.call(seed)
+    monkeypatch.setattr(barcodes, "read", lambda data: [])
+
+    async def fake_identify(settings, images, usage=None):
+        return agent.Identification(brand="Kurkure", product_name="Masala Munch",
+                                    barcode="8901764111105")
+    monkeypatch.setattr(agent, "identify", fake_identify)
+
+    sid = "testsession-visionbc1"
+    client.post("/live/frame", data={"session_id": sid},
+                files={"image": ("f.jpg", jpeg(), "image/jpeg")})
+    body = client.post("/voice/live-lookup", json={"session_id": sid}).json()
+    assert body["found"] is True and body["reason"] == "barcode"
+
+
+@respx.mock
+def test_live_lookup_off_name_search(client, monkeypatch):
+    respx.get("https://world.openfoodfacts.org/cgi/search.pl").mock(
+        return_value=httpx.Response(200, json=OFF_SEARCH_HIT))
+    monkeypatch.setattr(barcodes, "read", lambda data: [])
+
+    async def fake_identify(settings, images, usage=None):
+        return agent.Identification(brand="Kurkure", product_name="Masala Munch")
+    monkeypatch.setattr(agent, "identify", fake_identify)
+
+    sid = "testsession-offname1"
+    client.post("/live/frame", data={"session_id": sid},
+                files={"image": ("f.jpg", jpeg(), "image/jpeg")})
+    body = client.post("/voice/live-lookup", json={"session_id": sid}).json()
+    assert body["found"] is True and body["reason"] == "name"
+    assert "Kurkure" in body["answer"]
+    # Saved for next time: the re-ask hits the cache.
+    assert client.app.state.products.store.get_product("8901491361026") is not None
+
+
+@respx.mock
+def test_live_lookup_not_food(client, monkeypatch):
+    monkeypatch.setattr(barcodes, "read", lambda data: [])
+
+    async def fake_identify(settings, images, usage=None):
+        return agent.Identification(is_packaged_food=False)
+    monkeypatch.setattr(agent, "identify", fake_identify)
+
+    sid = "testsession-notfood1"
+    client.post("/live/frame", data={"session_id": sid},
+                files={"image": ("f.jpg", jpeg(), "image/jpeg")})
+    body = client.post("/voice/live-lookup", json={"session_id": sid}).json()
+    assert body["found"] is False and body["reason"] == "not_food" and body["job_id"] is None

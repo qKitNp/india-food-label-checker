@@ -2,6 +2,7 @@ import asyncio
 import datetime as dt
 import json
 import logging
+import re
 import uuid
 from collections import OrderedDict
 from contextlib import asynccontextmanager
@@ -53,10 +54,12 @@ VOICE_MATCH_THRESHOLD = 0.6
 LIVE_IMAGE_THRESHOLD = 0.88
 
 # What Bolna says when the fast path misses. Spoken verbatim by the agent.
+# The background job saves what it finds, so asking again in a minute hits the cache.
 LIVE_UNKNOWN_SAY = ("Oh, I haven't seen this one yet. It'll take me a minute to look up. "
-                    "Or show me the barcode and I'll tell you right away.")
+                    "Ask me again in a bit, or show me the barcode and I'll tell you right away.")
 LIVE_NO_FRAME_SAY = "I can't see your camera yet. Keep the live view on and ask again."
 LIVE_STALE_SAY = "I lost your camera feed. Keep pointing at the pack and ask again."
+LIVE_NOT_FOOD_SAY = "That doesn't look like a packaged food or drink. Point at the front of the pack."
 
 
 @asynccontextmanager
@@ -437,7 +440,7 @@ class LiveLookup(BaseModel):
 
 class LiveLookupResponse(BaseModel):
     found: bool
-    reason: Literal["barcode", "catalog_image", "no_frame", "stale", "unknown"]
+    reason: Literal["barcode", "catalog_image", "name", "no_frame", "stale", "unknown", "not_food"]
     answer: str  # spoken verbatim by the agent when found; suggested line when not
     product_key: str | None = None
     job_id: str | None = None
@@ -448,11 +451,13 @@ class LiveLookupResponse(BaseModel):
 async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep) -> LiveLookupResponse:
     """Tool endpoint for the live camera + voice mode.
 
-    Uses the session's freshest frame: barcode read then pack-image vector search
-    (both local, both fast). On a miss it starts the full identify job in the
-    background and tells the agent what to say while it runs. Every answer is
-    also stored for GET /live/result, so the web page can show cards for what
-    the voice call says out loud.
+    Fast path, all local except two quick network calls: ZXing barcode read,
+    pack-image vector search, then one vision read of the pack (~5 s) followed
+    by catalog name search and Open Food Facts name search. Anything still
+    unknown starts the full identify job in the background and tells the agent
+    what to say while it runs (the job saves what it finds, so asking again in
+    a minute hits the cache). Every answer is also stored for GET /live/result,
+    so the web page can show cards for what the voice call says out loud.
     """
     import time as _time
 
@@ -468,24 +473,25 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
         _log.info("session=%s reason=%s %s", body.session_id[-6:], resp.reason, extra)
         return resp
 
+    async def answer_for(product: Product, reason: str, extra: str = "") -> LiveLookupResponse:
+        v = verdict.build(product, await svc.store.get_counterpart(product.key, "EU"))
+        return note(LiveLookupResponse(found=True, reason=reason, answer=verdict.spoken(v),
+                                      product_key=product.key), extra)
+
     frame = live.get(body.session_id)
     if frame is None:
         return note(LiveLookupResponse(found=False, reason="no_frame", answer=LIVE_NO_FRAME_SAY))
     stale = _time.time() - frame.received_at > STALE_AFTER
 
+    settings = request.app.state.settings
     found_codes = await asyncio.to_thread(barcodes.read, frame.data)
     if found_codes:
-        product = await lookup(svc, found_codes[0])
-        if product is not None:
-            v = verdict.build(product, await svc.store.get_counterpart(product.key, "EU"))
-            return note(LiveLookupResponse(found=True, reason="barcode", answer=verdict.spoken(v),
-                                           product_key=product.key),
-                        f"barcode={found_codes[0]}")
-        return note(LiveLookupResponse(found=False, reason="unknown", answer=LIVE_UNKNOWN_SAY),
-                    f"barcode={found_codes[0]} not_in_catalog")
-    top = -1.0
+        if (product := await lookup(svc, found_codes[0])) is not None:
+            return await answer_for(product, "barcode", f"barcode={found_codes[0]}")
+        _log.info("session=%s barcode %s not in catalog", body.session_id[-6:], found_codes[0])
 
     image_vector = await svc.embed_image(frame.data) if svc.embedder else None
+    top = -1.0
     if image_vector is not None:
         try:
             matches = await svc.similar(image_vector=image_vector, k=1)
@@ -493,13 +499,41 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
             matches = []
         if matches:
             top = matches[0].score
-        if matches and matches[0].score >= LIVE_IMAGE_THRESHOLD:
-            product = await svc.store.get_product(matches[0].key)
-            if product is not None:
-                v = verdict.build(product, await svc.store.get_counterpart(product.key, "EU"))
-                return note(LiveLookupResponse(found=True, reason="catalog_image", answer=verdict.spoken(v),
-                                              product_key=product.key),
-                            f"image_score={top:.3f}")
+            if top >= LIVE_IMAGE_THRESHOLD and (
+                    (product := await svc.store.get_product(matches[0].key)) is not None):
+                return await answer_for(product, "catalog_image", f"image_score={top:.3f}")
+
+    # No barcode, no pack-photo match: read the pack with vision, then search by
+    # name - our catalog first, then Open Food Facts' millions of products.
+    try:
+        ident = await agent.identify(settings, [(frame.data, frame.media_type)])
+    except Exception as e:  # vision trouble: fall through to the background job
+        _log.warning("live vision read failed: %s", e)
+        ident = None
+    if ident is not None and not ident.is_packaged_food:
+        return note(LiveLookupResponse(found=False, reason="not_food", answer=LIVE_NOT_FOOD_SAY))
+    if ident is not None and (digits := re.sub(r"\D", "", ident.barcode or "")):
+        if (product := await lookup(svc, digits)) is not None:
+            return await answer_for(product, "barcode", f"vision_barcode={digits}")
+    query = " ".join(x for x in (getattr(ident, "brand", None), getattr(ident, "product_name", None)) if x)
+    if query:
+        try:
+            name_matches = await svc.similar(query, k=1)
+        except Exception:
+            name_matches = []
+        if name_matches and name_matches[0].score >= VOICE_MATCH_THRESHOLD:
+            if (product := await svc.store.get_product(name_matches[0].key)) is not None:
+                return await answer_for(product, "name",
+                                        f"query={query!r} name_score={name_matches[0].score:.3f}")
+        try:
+            candidates = await off.search_by_name(svc.http, query)
+        except Exception as e:
+            _log.warning("OFF name search failed: %s", e)
+            candidates = []
+        for cand in candidates:
+            if cand.ingredients_text and agent.mentions_product(
+                    f"{cand.brand or ''} {cand.name or ''}", ident):
+                return await answer_for(await svc.save(cand), "name", f"query={query!r} off={cand.barcode}")
 
     async def work(steps: list[agent.Step]) -> IdentifyResponse:
         result = await agent.find_from_front(request.app.state.settings, svc, request.app.state.exa,
