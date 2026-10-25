@@ -81,8 +81,9 @@ def test_live_lookup_unknown_starts_job(client, monkeypatch):
     client.post("/live/frame", data={"session_id": sid},
                 files={"image": ("f.jpg", jpeg(), "image/jpeg")})
     body = client.post("/voice/live-lookup", json={"session_id": sid}).json()
-    assert body["found"] is False and body["reason"] == "unknown"
-    assert "barcode" in body["answer"].lower() and body["job_id"]
+    # The job finished inside the tool's time budget, so the answer is final.
+    assert body["found"] is False and body["reason"] == "not_found"
+    assert "barcode" in body["answer"].lower()
 
 
 def test_live_result_feeds_voice_answers_to_page(client, monkeypatch):
@@ -154,7 +155,7 @@ def test_live_lookup_off_name_search(client, monkeypatch):
     assert body["found"] is True and body["reason"] == "name"
     assert "Kurkure" in body["answer"]
     # Saved for next time: the re-ask hits the cache.
-    assert client.app.state.products.store.get_product("8901491361026") is not None
+    assert client.portal.call(client.app.state.products.store.get_product, "8901491361026") is not None
 
 
 @respx.mock
@@ -205,7 +206,7 @@ def test_live_lookup_name_match_rejects_sibling_variant(client, monkeypatch):
     client.post("/live/frame", data={"session_id": sid},
                 files={"image": ("f.jpg", jpeg(), "image/jpeg")})
     body = client.post("/voice/live-lookup", json={"session_id": sid}).json()
-    assert body["found"] is False and body["reason"] == "unknown"
+    assert body["found"] is False and body["reason"] == "not_found"
 
 
 def test_live_result_reports_snap_being_looked_at(client, monkeypatch):
@@ -227,3 +228,66 @@ def test_live_result_reports_snap_being_looked_at(client, monkeypatch):
     assert fed["looking"] is False and fed["snap_at"] == fed["latest_snap_at"] is not None
     snap = client.get("/live/snap", params={"session_id": sid})
     assert snap.status_code == 200 and snap.content == frame
+
+
+def test_live_follow_up_answers_from_the_running_lookup(client, monkeypatch):
+    """"Did you find it?" must not re-read the camera (which by then often points at
+    the floor) or start a second job: it answers from the session's lookup."""
+    import asyncio
+
+    from app import main
+
+    monkeypatch.setattr(main, "LIVE_BUDGET", 1.0)
+    monkeypatch.setattr(barcodes, "read", lambda data: [])
+    reads = []
+
+    async def fake_identify(settings, images, usage=None):
+        reads.append(1)
+        return agent.Identification(brand="Coca-Cola", product_name="Diet Coke")
+    monkeypatch.setattr(agent, "identify", fake_identify)
+    release = asyncio.Event()
+    started = []
+
+    async def fake_find(settings, products, exa, images, steps):
+        started.append(1)
+        await release.wait()
+        product = Product(brand="Coca-Cola", name="Diet Coke", source="web", ingredients_text="Carbonated water",
+                          nutrition=Nutrition(energy_kcal=0))
+        await products.save(product)
+        return agent.AgentResult(status="web", product=product,
+                                 identification=agent.Identification(brand="Coca-Cola"), trace=[])
+    monkeypatch.setattr(agent, "find_from_front", fake_find)
+
+    sid = "testsession-followup1"
+    client.post("/live/frame", data={"session_id": sid}, files={"image": ("f.jpg", jpeg(), "image/jpeg")})
+    first = client.post("/voice/live-lookup", json={"session_id": sid}).json()
+    assert first["reason"] == "unknown" and "15 to 30 seconds" in first["answer"]
+
+    second = client.post("/voice/live-lookup", json={"session_id": sid}).json()
+    assert second["reason"] == "researching" and second["answer"].startswith("Still looking")
+    assert second["snap_at"] == first["snap_at"]  # still about the first frame
+
+    client.portal.call(release.set)
+    third = client.post("/voice/live-lookup", json={"session_id": sid}).json()
+    assert third["found"] is True and third["reason"] == "researched"
+    assert third["answer"].startswith("Found it. Coca-Cola Diet Coke.") and third["answer"].endswith("on your screen.")
+    assert started == [1] and reads == [1]  # one job, one vision read
+
+
+@respx.mock
+def test_off_name_search_falls_back_when_classic_search_is_down():
+    import asyncio
+
+    from app.sources import off
+
+    respx.get(off.SEARCH_API).mock(return_value=httpx.Response(503))
+    respx.get(off.SEARCH_API_V2).mock(return_value=httpx.Response(200, json={"hits": [{
+        "code": "54491496", "product_name": "Diet Coke", "brands": ["Coca-Cola", "Diet Coke"],
+        "ingredients_text": "Carbonated water, colour (150d)", "labels": ["Vegan"], "nutriments": {},
+    }]}))
+
+    async def go():
+        async with httpx.AsyncClient() as http:
+            return await off.search_by_name(http, "Diet Coke")
+    [p] = asyncio.run(go())
+    assert p.barcode == "54491496" and p.brand == "Coca-Cola" and p.claims == ["Vegan"]

@@ -10,6 +10,11 @@ from app.models import Nutrition, Product
 
 API = "https://world.openfoodfacts.org/api/v2/product/{barcode}.json"
 SEARCH_API = "https://world.openfoodfacts.org/cgi/search.pl"
+# search-a-licious: OFF's newer search service. The classic search above often
+# answers 503, so it's the fallback.
+SEARCH_API_V2 = "https://search.openfoodfacts.org/search"
+# Name search runs inside a voice tool call that Bolna cuts off at 10 s.
+SEARCH_TIMEOUT = 3.0
 FIELDS = "code,product_name,brands,ingredients_text,ingredients_text_en,additives_tags,nutriments,quantity,labels,image_front_url"
 _LIQUID = re.compile(r"\d\s*(ml|cl|l|ltr|litre|liter)\b", re.IGNORECASE)
 
@@ -74,15 +79,30 @@ async def search_by_name(client: httpx.AsyncClient, query: str, limit: int = 5) 
     of just our small catalog. Callers must check the candidate really is the
     exact variant seen on the pack before answering.
     """
-    r = await client.get(SEARCH_API, params={
-        "search_terms": query, "search_simple": 1, "action": "process",
-        "json": 1, "page_size": limit,
-    })
-    r.raise_for_status()
+    try:
+        r = await client.get(SEARCH_API, timeout=SEARCH_TIMEOUT, params={
+            "search_terms": query, "search_simple": 1, "action": "process",
+            "json": 1, "page_size": limit,
+        })
+        r.raise_for_status()
+        found = r.json().get("products") or []
+    except httpx.HTTPError:
+        r = await client.get(SEARCH_API_V2, timeout=SEARCH_TIMEOUT, params={
+            "q": query, "page_size": limit, "fields": FIELDS,
+        })
+        r.raise_for_status()
+        found = [_flatten(h) for h in r.json().get("hits") or []]
     out = []
-    for p in (r.json().get("products") or [])[:limit]:
+    for p in found[:limit]:
         try:
             out.append(parse(p))
         except Exception:
             continue
     return out
+
+
+def _flatten(hit: dict) -> dict:
+    """search-a-licious returns brands and labels as lists; parse() expects OFF's
+    comma-separated strings."""
+    return {k: ", ".join(v) if k in ("brands", "labels") and isinstance(v, list) else v
+            for k, v in hit.items()}

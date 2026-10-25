@@ -54,6 +54,8 @@ class LiveStore:
         self.results: dict[str, LiveResult] = {}
         self.snaps: dict[str, LiveSnap] = {}
         self.looking: set[str] = set()
+        # session -> (job id, snap_at) of its background lookup, and when it started
+        self.research_jobs: dict[str, tuple[str, float | None, float]] = {}
 
     def put(self, session_id: str, data: bytes, media_type: str) -> None:
         self._prune()
@@ -63,6 +65,7 @@ class LiveStore:
             self.results.pop(oldest, None)
             self.snaps.pop(oldest, None)
             self.looking.discard(oldest)
+            self.research_jobs.pop(oldest, None)
         self.frames[session_id] = LiveFrame(data, media_type, time.time())
 
     def get(self, session_id: str) -> LiveFrame | None:
@@ -84,6 +87,20 @@ class LiveStore:
         self.results[session_id] = result
         self.looking.discard(session_id)
 
+    def set_research(self, session_id: str, job_id: str, snap_at: float | None) -> None:
+        self.research_jobs[session_id] = (job_id, snap_at, time.time())
+
+    def research(self, session_id: str, ttl: float) -> tuple[str, float | None] | None:
+        """This session's background lookup (job id, snap_at), if recent."""
+        entry = self.research_jobs.get(session_id)
+        if entry is None or time.time() - entry[2] > ttl:
+            self.research_jobs.pop(session_id, None)
+            return None
+        return entry[0], entry[1]
+
+    def clear_research(self, session_id: str) -> None:
+        self.research_jobs.pop(session_id, None)
+
     def snap(self, session_id: str) -> LiveSnap | None:
         return self.snaps.get(session_id)
 
@@ -97,3 +114,4 @@ class LiveStore:
             self.results.pop(key, None)
             self.snaps.pop(key, None)
             self.looking.discard(key)
+            self.research_jobs.pop(key, None)

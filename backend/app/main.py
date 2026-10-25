@@ -63,13 +63,23 @@ VOICE_MATCH_THRESHOLD = 0.6
 # score 1.0, look-alike variants scored well below this in the catalog tests.
 LIVE_IMAGE_THRESHOLD = 0.88
 
+# Bolna drops a tool call after 10 s (trigger_api in bolna-ai/bolna) and the agent
+# then improvises an answer, so every live lookup replies within this budget.
+LIVE_BUDGET = 8.0
+# How long a session's background lookup stays "the product we're talking about":
+# asking "did you find it?" answers from it instead of re-reading the camera.
+LIVE_RESEARCH_TTL = 300.0
+
 # What Bolna says when the fast path misses. Spoken verbatim by the agent.
-# The background job saves what it finds, so asking again in a minute hits the cache.
-LIVE_UNKNOWN_SAY = ("Oh, I haven't seen this one yet. It'll take me a minute to look up. "
-                    "Ask me again in a bit, or show me the barcode and I'll tell you right away.")
+LIVE_UNKNOWN_SAY = ("That one's new to me, so I'm looking it up now. It usually takes 15 to 30 seconds. "
+                    "Ask me if I found it in a bit, or show me the barcode for an instant answer.")
+LIVE_STILL_SAY = "Still looking that one up. Give me about {secs} more seconds."
+LIVE_NOT_FOUND_SAY = ("I couldn't find reliable ingredients for that one online. "
+                      "Show me the barcode, or photograph the back label in the app.")
 LIVE_NO_FRAME_SAY = "I can't see your camera yet. Keep the live view on and ask again."
 LIVE_STALE_SAY = "I lost your camera feed. Keep pointing at the pack and ask again."
-LIVE_NOT_FOOD_SAY = "That doesn't look like a packaged food or drink. Point at the front of the pack."
+# Usually the phone has drifted off the pack (people look at the screen for the answer).
+LIVE_NOT_FOOD_SAY = "I can't see a food pack in the camera right now. Point it at the front of the pack and ask again."
 
 
 @asynccontextmanager
@@ -456,35 +466,44 @@ async def post_live_frame(
 
 class LiveLookup(BaseModel):
     session_id: str
+    # "page": the live page asked (typed or mic) and follows background jobs itself.
+    source: Literal["voice", "page"] = "voice"
 
 
 class LiveLookupResponse(BaseModel):
+    answer: str  # spoken verbatim by the agent, found or not
     found: bool
-    reason: Literal["barcode", "catalog_image", "name", "no_frame", "stale", "unknown", "not_food"]
-    answer: str  # spoken verbatim by the agent when found; suggested line when not
+    reason: Literal["barcode", "catalog_image", "name", "researched", "researching", "not_found",
+                    "no_frame", "stale", "unknown", "not_food"]
     product_key: str | None = None
     job_id: str | None = None
     poll_url: str | None = None
     snap_at: float | None = None  # the frozen frame this answers, see GET /live/snap
 
 
+# Rough time left by job stage, for "give me about N more seconds".
+_SECONDS_LEFT = {"queued": 25, "reading": 25, "matching": 20, "searching": 15, "checking": 5}
+
+
 @app.post("/voice/live-lookup")
 async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep) -> LiveLookupResponse:
     """Tool endpoint for the live camera + voice mode.
 
-    Fast path, all local except two quick network calls: ZXing barcode read,
-    pack-image vector search, then one vision read of the pack (~5 s) followed
-    by catalog name search and Open Food Facts name search. Anything still
-    unknown starts the full identify job in the background and tells the agent
-    what to say while it runs (the job saves what it finds, so asking again in
-    a minute hits the cache). Every answer is also stored for GET /live/result,
-    so the web page can show cards for what the voice call says out loud.
+    If this session already has a background lookup, answer from it: the caller
+    asking "did you find it?" means that product, whatever the camera shows now.
+    Otherwise the fast path: ZXing barcode read, pack-image vector search, one
+    vision read of the pack (~5 s), then catalog and Open Food Facts name search.
+    Anything still unknown starts the full identify job in the background, which
+    we wait on for whatever is left of LIVE_BUDGET. Every answer is also stored
+    for GET /live/result, so the page can show cards for what the call says.
     """
     import time as _time
 
     if not SESSION_RE.match(body.session_id):
         raise HTTPException(400, "session_id must be 8-64 chars of a-z, A-Z, 0-9, '-' or '_'")
+    deadline = _time.monotonic() + LIVE_BUDGET
     live: LiveStore = request.app.state.live
+    jobs = request.app.state.jobs
     snap_at: float | None = None
 
     def note(resp: LiveLookupResponse, extra: str = "") -> LiveLookupResponse:
@@ -495,10 +514,38 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
         _live_log.info("session=%s reason=%s %s", body.session_id[-6:], resp.reason, extra)
         return resp
 
-    async def answer_for(product: Product, reason: str, extra: str = "") -> LiveLookupResponse:
+    async def answer_for(product: Product, reason: str, extra: str = "", prefix: str = "") -> LiveLookupResponse:
         v = verdict.build(product, await svc.store.get_counterpart(product.key, "EU"))
-        return note(LiveLookupResponse(found=True, reason=reason, answer=verdict.spoken(v),
-                                      product_key=product.key), extra)
+        return note(LiveLookupResponse(found=True, reason=reason, answer=prefix + verdict.spoken(v, short=True),
+                                       product_key=product.key), extra)
+
+    async def settle(job) -> LiveLookupResponse:
+        """Wait on the background job until the budget runs out, then say where it is."""
+        while job.status in ("queued", "running") and _time.monotonic() < deadline:
+            await asyncio.sleep(0.25)
+        extra = f"job={job.id[:8]} stage={job.stage}"
+        if job.status in ("queued", "running"):
+            secs = _SECONDS_LEFT.get(job.stage, 15)
+            return note(LiveLookupResponse(found=False, reason="researching", answer=LIVE_STILL_SAY.format(secs=secs),
+                                           job_id=job.id, poll_url=f"/jobs/{job.id}"), extra)
+        live.clear_research(body.session_id)
+        outcome = job.result.result if job.result else None
+        if outcome and outcome.product:
+            return await answer_for(outcome.product, "researched", extra, prefix="Found it. ")
+        if outcome and outcome.status == "not_food":
+            return note(LiveLookupResponse(found=False, reason="not_food", answer=LIVE_NOT_FOOD_SAY), extra)
+        return note(LiveLookupResponse(found=False, reason="not_found", answer=LIVE_NOT_FOUND_SAY), extra)
+
+    # Follow up on this session's background lookup instead of starting another.
+    if (pending := live.research(body.session_id, LIVE_RESEARCH_TTL)) is not None:
+        job_id, snap_at = pending
+        job = jobs.get(job_id)
+        if job is None:
+            live.clear_research(body.session_id)
+        elif job.status in ("queued", "running") or body.source == "voice":
+            return await settle(job)
+        else:  # the page already showed this job's result
+            live.clear_research(body.session_id)
 
     frame = live.get(body.session_id)
     if frame is None:
@@ -506,41 +553,43 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
     stale = _time.time() - frame.received_at > STALE_AFTER
     # Freeze this exact frame: the page shows it in the chat while we work on it.
     snap_at = live.start_lookup(body.session_id, frame).at
-
     settings = request.app.state.settings
-    found_codes = await asyncio.to_thread(barcodes.read, frame.data)
-    if found_codes:
-        if (product := await lookup(svc, found_codes[0])) is not None:
-            return await answer_for(product, "barcode", f"barcode={found_codes[0]}")
-        _live_log.info("session=%s barcode %s not in catalog", body.session_id[-6:], found_codes[0])
 
-    image_vector = await svc.embed_image(frame.data) if svc.embedder else None
-    top = -1.0
-    if image_vector is not None:
+    async def fast_path() -> LiveLookupResponse | None:
+        found_codes = await asyncio.to_thread(barcodes.read, frame.data)
+        if found_codes:
+            if (product := await lookup(svc, found_codes[0])) is not None:
+                return await answer_for(product, "barcode", f"barcode={found_codes[0]}")
+            _live_log.info("session=%s barcode %s not in catalog", body.session_id[-6:], found_codes[0])
+
+        image_vector = await svc.embed_image(frame.data) if svc.embedder else None
+        if image_vector is not None:
+            try:
+                matches = await svc.similar(image_vector=image_vector, k=1)
+            except Exception:
+                matches = []
+            if matches:
+                top = matches[0].score
+                if top >= LIVE_IMAGE_THRESHOLD and (
+                        (product := await svc.store.get_product(matches[0].key)) is not None):
+                    return await answer_for(product, "catalog_image", f"image_score={top:.3f}")
+                _live_log.info("session=%s image_top=%.3f", body.session_id[-6:], top)
+
+        # No barcode, no pack-photo match: read the pack with vision, then search by
+        # name - our catalog first, then Open Food Facts' millions of products.
         try:
-            matches = await svc.similar(image_vector=image_vector, k=1)
-        except Exception:
-            matches = []
-        if matches:
-            top = matches[0].score
-            if top >= LIVE_IMAGE_THRESHOLD and (
-                    (product := await svc.store.get_product(matches[0].key)) is not None):
-                return await answer_for(product, "catalog_image", f"image_score={top:.3f}")
-
-    # No barcode, no pack-photo match: read the pack with vision, then search by
-    # name - our catalog first, then Open Food Facts' millions of products.
-    try:
-        ident = await agent.identify(settings, [(frame.data, frame.media_type)])
-    except Exception as e:  # vision trouble: fall through to the background job
-        _live_log.warning("live vision read failed: %s", e)
-        ident = None
-    if ident is not None and not ident.is_packaged_food:
-        return note(LiveLookupResponse(found=False, reason="not_food", answer=LIVE_NOT_FOOD_SAY))
-    if ident is not None and (digits := re.sub(r"\D", "", ident.barcode or "")):
-        if (product := await lookup(svc, digits)) is not None:
-            return await answer_for(product, "barcode", f"vision_barcode={digits}")
-    query = " ".join(x for x in (getattr(ident, "brand", None), getattr(ident, "product_name", None)) if x)
-    if query:
+            ident = await agent.identify(settings, [(frame.data, frame.media_type)])
+        except Exception as e:  # vision trouble: fall through to the background job
+            _live_log.warning("live vision read failed: %s", e)
+            return None
+        if not ident.is_packaged_food:
+            return note(LiveLookupResponse(found=False, reason="not_food", answer=LIVE_NOT_FOOD_SAY))
+        if digits := re.sub(r"\D", "", ident.barcode or ""):
+            if (product := await lookup(svc, digits)) is not None:
+                return await answer_for(product, "barcode", f"vision_barcode={digits}")
+        query = " ".join(x for x in (ident.brand, ident.product_name) if x)
+        if not query:
+            return None
         try:
             name_matches = await svc.similar(query, k=1)
         except Exception:
@@ -561,6 +610,15 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
             if cand.ingredients_text and agent.mentions_product(
                     f"{cand.brand or ''} {cand.name or ''}", ident):
                 return await answer_for(await svc.save(cand), "name", f"query={query!r} off={cand.barcode}")
+        _live_log.info("session=%s not matched: query=%r", body.session_id[-6:], query)
+        return None
+
+    try:
+        # Leave a little of the budget to start the job and reply.
+        if (resp := await asyncio.wait_for(fast_path(), deadline - _time.monotonic() - 0.5)) is not None:
+            return resp
+    except TimeoutError:
+        _live_log.info("session=%s fast path over budget", body.session_id[-6:])
 
     async def work(steps: list[agent.Step]) -> IdentifyResponse:
         result = await agent.find_from_front(request.app.state.settings, svc, request.app.state.exa,
@@ -571,14 +629,18 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
                 result.product, await svc.store.get_counterpart(result.product.key, "EU")))
         return IdentifyResponse(result=result, verdict=v)
 
-    job = request.app.state.jobs.start(work)
+    job = jobs.start(work)
+    live.set_research(body.session_id, job.id, snap_at)
     if stale:
         return note(LiveLookupResponse(found=False, reason="stale", answer=LIVE_STALE_SAY,
-                                       job_id=job.id, poll_url=f"/jobs/{job.id}"),
-                    f"image_top={top:.3f}")
-    return note(LiveLookupResponse(found=False, reason="unknown", answer=LIVE_UNKNOWN_SAY,
-                                   job_id=job.id, poll_url=f"/jobs/{job.id}"),
-                f"image_top={top:.3f}")
+                                       job_id=job.id, poll_url=f"/jobs/{job.id}"))
+    resp = await settle(job)
+    if resp.reason == "researching":  # first word on a new product: set expectations
+        resp.reason, resp.answer = "unknown", LIVE_UNKNOWN_SAY
+        live.note_result(body.session_id, LiveResult(
+            answer=resp.answer, reason=resp.reason, product_key=None, job_id=job.id,
+            poll_url=resp.poll_url, at=_time.time(), snap_at=snap_at))
+    return resp
 
 
 class LiveResultResponse(BaseModel):

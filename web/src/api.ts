@@ -160,7 +160,8 @@ export interface Job {
   error: string | null
 }
 
-export type LiveReason = 'barcode' | 'catalog_image' | 'name' | 'no_frame' | 'stale' | 'unknown' | 'not_food'
+export type LiveReason = 'barcode' | 'catalog_image' | 'name' | 'researched' | 'researching' | 'not_found'
+  | 'no_frame' | 'stale' | 'unknown' | 'not_food'
 
 export interface LiveLookup {
   found: boolean
@@ -289,7 +290,8 @@ export const api = {
     request<LiveLookup>('/voice/live-lookup', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ session_id: sessionId }),
+      // "page": we follow background jobs here, so a finished one isn't re-announced.
+      body: JSON.stringify({ session_id: sessionId, source: 'page' }),
     }),
   liveResult: (sessionId: string) =>
     request<LiveResultFeed>(`/live/result?session_id=${encodeURIComponent(sessionId)}`),

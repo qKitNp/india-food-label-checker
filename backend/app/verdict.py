@@ -60,12 +60,15 @@ def build(product: Product, counterpart: Counterpart | None = None) -> Verdict:
     )
 
 
-def spoken(v: Verdict) -> str:
-    """Short plain-text summary for the voice agent."""
+def spoken(v: Verdict, short: bool = False) -> str:
+    """Short plain-text summary for the voice agent. `short` is for the live camera
+    page, which shows the full report: just the name and the most important point."""
     brand, product = v.product.brand or "", v.product.name or ""
     name = product if brand and product.lower().startswith(brand.lower()) else f"{brand} {product}".strip()
     name = name or "This product"
     if suspect(v):
         return (f"I found {name}, but I don't have reliable data for it yet. "
                 "You can scan its back label in the app to check it.")
+    if short:
+        return f"{name}. {v.headline[0]} The full report is on your screen."
     return f"{name}. " + " ".join(v.headline[:3])
