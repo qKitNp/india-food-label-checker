@@ -1,5 +1,6 @@
 import asyncio
 import datetime as dt
+import json
 import logging
 import uuid
 from collections import OrderedDict
@@ -32,6 +33,14 @@ if not _scan_log.handlers:
     _scan_log.addHandler(_handler)
     _scan_log.setLevel(logging.INFO)
     _scan_log.propagate = False
+
+log = logging.getLogger(__name__)
+
+
+def log_llm_usage(path: str, usage: list[dict]) -> None:
+    """One JSON line per request that spent LLM tokens (tokens, cache hits, cost)."""
+    if usage:
+        log.info("llm usage path=%s %s", path, json.dumps(llm.usage_totals(usage), ensure_ascii=False))
 
 # Below this similarity, a spoken product name is treated as not found. Correct matches
 # scored ~0.77-0.81 in testing; this cut-off hasn't been tuned against unrelated products yet.
@@ -262,7 +271,9 @@ async def extract_label(
     barcode: Annotated[str | None, Form()] = None,
 ) -> label.LabelResult:
     """Read the label. Nothing is saved: the user reviews and POSTs to /products/confirm."""
-    return await label.extract(request.app.state.settings, await read_images(images), barcode)
+    read = await label.extract(request.app.state.settings, await read_images(images), barcode)
+    log_llm_usage("/labels/extract", read.usage)
+    return read
 
 
 @app.post("/products/confirm")
@@ -307,6 +318,7 @@ async def submit(
     barcode = product.barcode or found[0]
 
     read = await label.extract(request.app.state.settings, files, barcode)
+    log_llm_usage(f"/products/{key}/submissions", read.usage)
     proposed = read.product
     if not proposed.ingredients_text:
         raise HTTPException(422, "We couldn't read an ingredient list in your photos. Try a sharper, closer photo.")
@@ -349,7 +361,10 @@ async def get_counterpart(key: str, request: Request, svc: ProductsDep, region: 
     if found is None:
         if request.app.state.exa is None:
             raise HTTPException(503, "EXA_API_KEY is not configured")
-        found = await counterpart.find(request.app.state.exa, request.app.state.settings, product, region)
+        usage: list[dict] = []
+        found = await counterpart.find(request.app.state.exa, request.app.state.settings, product, region,
+                                       usage=usage)
+        log_llm_usage(f"/products/{key}/counterpart", usage)
         if found:
             await svc.store.save_counterpart(key, found)
     return with_research(request, verdict.build(product, found))

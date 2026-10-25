@@ -20,7 +20,7 @@ REGIONS = {
 def fake_research(monkeypatch):
     calls = []
 
-    async def fake(exa, settings, sub):
+    async def fake(exa, settings, sub, usage=None):
         calls.append(sub["codes"][0])
         await asyncio.sleep(0)
         return dict(REGIONS)

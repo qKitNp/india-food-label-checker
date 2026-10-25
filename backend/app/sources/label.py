@@ -33,11 +33,13 @@ class _Extraction(BaseModel):
 class LabelResult(BaseModel):
     product: Product
     legible: bool
+    usage: list[dict] = Field(default_factory=list)  # one llm.usage_record per LLM call
 
 
 async def extract(settings: Settings, images: list[tuple[bytes, str]],
-                  barcode: str | None = None) -> LabelResult:
-    ex = await llm.complete_json(settings, _Extraction, PROMPT, images)
+                  barcode: str | None = None, usage: list[dict] | None = None) -> LabelResult:
+    usage = usage if usage is not None else []
+    ex = await llm.complete_json(settings, _Extraction, PROMPT, images, usage=usage)
 
     additives = [c for c in (additive_codes.normalise(a) for a in ex.additives) if c]
     for code in additive_codes.find_in_text(ex.ingredients_text or ""):
@@ -49,4 +51,4 @@ async def extract(settings: Settings, images: list[tuple[bytes, str]],
         additives=additives, nutrition=ex.nutrition, claims=ex.claims, is_liquid=ex.is_liquid,
         source="label", verified=False,
     )
-    return LabelResult(product=product, legible=ex.legible)
+    return LabelResult(product=product, legible=ex.legible, usage=list(usage))

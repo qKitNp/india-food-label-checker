@@ -125,7 +125,7 @@ def test_voice_lookup_needs_input(client):
 
 
 def test_label_extract(client, monkeypatch):
-    async def fake(settings, schema, prompt, images=None):
+    async def fake(settings, schema, prompt, images=None, usage=None):
         assert images == [(PHOTO, "image/jpeg")]
         return schema(name="Coke Zero", ingredients_text="Water, colour (150d), INS 951", is_liquid=True)
     monkeypatch.setattr(llm, "complete_json", fake)
@@ -206,7 +206,7 @@ class TestUploadLimits:
         return client.post("/labels/extract", files=[("images", f) for f in files])
 
     def test_png_and_webp_accepted_formats(self, client, monkeypatch):
-        async def fake(settings, schema, prompt, images=None):
+        async def fake(settings, schema, prompt, images=None, usage=None):
             return schema(name="x")
         monkeypatch.setattr(llm, "complete_json", fake)
         for fmt in ("PNG", "WEBP"):

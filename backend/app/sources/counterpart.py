@@ -62,12 +62,13 @@ def _rank(url: str, brand: str) -> int:
     return 1
 
 
-async def _check(settings: Settings, product: Product, region: Region, result) -> Counterpart | None:
+async def _check(settings: Settings, product: Product, region: Region, result,
+                 usage: list[dict] | None = None) -> Counterpart | None:
     if not result.text:
         return None
     ex = await llm.complete_json(settings, _Extraction, PROMPT.format(
         region=region, brand=product.brand, name=product.name, url=result.url, text=result.text,
-    ))
+    ), usage=usage)
     if not ex.same_product or "india" in ex.country.lower() or not grounded(ex.ingredients_quote, result.text):
         return None
     theirs = additive_codes.find_in_text(ex.ingredients_quote)
@@ -79,15 +80,17 @@ async def _check(settings: Settings, product: Product, region: Region, result) -
     )
 
 
-async def find(exa: Exa, settings: Settings, product: Product, region: Region) -> Counterpart | None:
+async def find(exa: Exa, settings: Settings, product: Product, region: Region,
+             usage: list[dict] | None = None) -> Counterpart | None:
     if not (product.brand and product.name):
         return None
+    usage = usage if usage is not None else []
     query = f"{product.brand} {product.name} ingredients {REGION_QUERY[region]}"
     response = await asyncio.to_thread(
         exa.search, query, num_results=8, contents={"text": {"max_characters": 12000}},
     )
     results = sorted(response.results, key=lambda r: _rank(r.url, product.brand))[:3]
     checked = await asyncio.gather(
-        *(_check(settings, product, region, r) for r in results), return_exceptions=True,
+        *(_check(settings, product, region, r, usage=usage) for r in results), return_exceptions=True,
     )
     return next((c for c in checked if isinstance(c, Counterpart)), None)

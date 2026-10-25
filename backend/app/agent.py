@@ -127,6 +127,7 @@ class AgentResult(BaseModel):
     product: Product | None = None
     reason: str = ""
     trace: list[Step] = Field(default_factory=list)
+    usage: list[dict] = Field(default_factory=list)  # one llm.usage_record per LLM call
 
 
 # Words that describe the product type, not the variant; retailer pages often drop them.
@@ -155,12 +156,14 @@ def number_on_page(value: float, text: str) -> bool:
 
 class _Run:
     def __init__(self, settings: Settings, products: ProductService, exa: Exa | None,
-                 image_vector: np.ndarray | None = None, steps: list[Step] | None = None) -> None:
+                 image_vector: np.ndarray | None = None, steps: list[Step] | None = None,
+                 usage: list[dict] | None = None) -> None:
         self.settings = settings
         self.products = products
         self.exa = exa
         self.image_vector = image_vector  # the scanned photo, for catalog search
         self.steps = steps if steps is not None else []  # appended live, so callers can show progress
+        self.usage = usage if usage is not None else []  # one record per LLM call, shared with the caller
         self.pages: dict[str, str] = {}
         self.final: AgentResult | None = None
 
@@ -259,6 +262,10 @@ class _Run:
                 model=self.settings.llm_model, fallbacks=self.settings.llm_fallbacks,
                 messages=messages, tools=TOOLS, tool_choice="auto", timeout=self.settings.llm_timeout,
             )
+            try:
+                self.usage.append(llm.usage_record(response))
+            except Exception as e:  # observability must never break a scan
+                log.warning("LLM usage record failed: %s", e)
             message = response.choices[0].message
             messages.append(message.model_dump(exclude_none=True))
             if not message.tool_calls:
@@ -275,38 +282,47 @@ class _Run:
                 trace.append(Step(tool=tc.function.name, args=args, result=result[:500], ms=_ms(started)))
                 messages.append({"role": "tool", "tool_call_id": tc.id, "content": result})
             if self.final:
+                self.final.usage = list(self.usage)
                 self.final.trace = list(trace)
                 return self.final
-        return AgentResult(status="not_found", identification=ident, reason="Ran out of steps.", trace=list(trace))
+        return AgentResult(status="not_found", identification=ident, reason="Ran out of steps.", trace=list(trace),
+                           usage=list(self.usage))
 
 
-async def identify(settings: Settings, images: list[tuple[bytes, str]]) -> Identification:
-    return await llm.complete_json(settings, Identification, IDENTIFY_PROMPT, images)
+async def identify(settings: Settings, images: list[tuple[bytes, str]],
+                   usage: list[dict] | None = None) -> Identification:
+    return await llm.complete_json(settings, Identification, IDENTIFY_PROMPT, images, usage=usage)
 
 
 async def find_from_front(settings: Settings, products: ProductService, exa: Exa | None,
-                          images: list[tuple[bytes, str]], steps: list[Step] | None = None) -> AgentResult:
-    """Pass `steps` to watch progress: each step is appended as soon as it finishes."""
+                          images: list[tuple[bytes, str]], steps: list[Step] | None = None,
+                          usage: list[dict] | None = None) -> AgentResult:
+    """Pass `steps` to watch progress: each step is appended as soon as it finishes.
+    Pass `usage` to also collect one record per LLM call (tokens, cache hits, cost)."""
     steps = steps if steps is not None else []
+    usage = usage if usage is not None else []
     photo = llm.shrink(images[0][0])
     # Reading the pack (~5 s) and embedding the photo (~3 s on 2 vCPUs) run side by side.
     started = time.perf_counter()
-    ident, image_vector = await asyncio.gather(identify(settings, images), _embed_or_none(products, photo))
+    ident, image_vector = await asyncio.gather(identify(settings, images, usage=usage),
+                                               _embed_or_none(products, photo))
     steps.append(Step(tool="read_pack", args={"photo_embedded": image_vector is not None},
                       result=ident.model_dump_json(), ms=_ms(started)))
     if not ident.is_packaged_food:
-        return AgentResult(status="not_food", identification=ident, trace=list(steps))
+        return AgentResult(status="not_food", identification=ident, trace=list(steps), usage=list(usage))
 
     if ident.barcode and (digits := re.sub(r"\D", "", ident.barcode)):
         product = await products.lookup(digits)
         if product:
-            return AgentResult(status="barcode", identification=ident, product=product, trace=list(steps))
+            return AgentResult(status="barcode", identification=ident, product=product, trace=list(steps),
+                               usage=list(usage))
 
-    run = _Run(settings, products, exa, image_vector, steps)
+    run = _Run(settings, products, exa, image_vector, steps, usage)
     try:
         result = await asyncio.wait_for(run.loop(ident), settings.agent_timeout)
     except TimeoutError:
-        return AgentResult(status="not_found", identification=ident, reason="Timed out.", trace=list(steps))
+        return AgentResult(status="not_found", identification=ident, reason="Timed out.", trace=list(steps),
+                           usage=list(usage))
     except Exception as e:  # LiteLLM raises provider-specific exception types
         raise llm.LLMError(f"Agent failed: {e}") from e
 

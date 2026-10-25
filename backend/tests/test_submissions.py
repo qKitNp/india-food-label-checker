@@ -27,7 +27,7 @@ def photo(barcode: str | None = None) -> bytes:
 
 @pytest.fixture
 def reads_label(monkeypatch):
-    async def fake(settings, schema, prompt, images=None):
+    async def fake(settings, schema, prompt, images=None, usage=None):
         return schema(name="Magic Masala", brand="Lay's",
                       ingredients_text="Potato, Edible vegetable oil, Spices, Salt, Acidity regulator (330), Colour (171)",
                       nutrition=Nutrition(energy_kcal=540, fat_g=33))

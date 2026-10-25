@@ -41,6 +41,18 @@ def main():
     ignore_exists(db.create_varchar_column, d, t, "region", 4, True)
     ignore_exists(db.create_varchar_column, d, t, "source_url", 2048, True)
     ignore_exists(db.create_longtext_column, d, t, "payload", True)
+
+    t = s.appwrite_scan_logs_table
+    ignore_exists(db.create_table, d, t, "Scan logs")
+    ignore_exists(db.create_varchar_column, d, t, "job_id", 32, True)
+    ignore_exists(db.create_varchar_column, d, t, "status", 16, True)
+    ignore_exists(db.create_varchar_column, d, t, "outcome", 16, False)
+    ignore_exists(db.create_varchar_column, d, t, "product_key", 64, False)
+    ignore_exists(db.create_integer_column, d, t, "duration_ms", True)
+    ignore_exists(db.create_text_column, d, t, "error", False)
+    ignore_exists(db.create_longtext_column, d, t, "steps", True)
+    ignore_exists(db.create_longtext_column, d, t, "usage", False)
+    ignore_exists(db.create_text_column, d, t, "llm", False)
     print("Done")
 
 

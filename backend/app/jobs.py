@@ -22,6 +22,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, computed_field
 
 from app.agent import AgentResult, Step
+from app.llm import usage_totals
 from app.models import Verdict
 
 log = logging.getLogger("scans")
@@ -64,6 +65,7 @@ class Job(BaseModel):
 
     def log_record(self) -> dict:
         outcome = self.result.result if self.result else None
+        usage = list(outcome.usage) if outcome and outcome.usage else []
         return {
             "job_id": self.id,
             "status": self.status,
@@ -72,6 +74,8 @@ class Job(BaseModel):
             "duration_ms": round(((self.finished_at or time.time()) - self.created_at) * 1000),
             "error": self.error,
             "steps": [s.model_dump() for s in self.steps],
+            "usage": usage[-50:],  # one record per LLM call; capped to bound log size
+            "llm": usage_totals(usage),  # token + DeepSeek cache-hit + cost sums
         }
 
 

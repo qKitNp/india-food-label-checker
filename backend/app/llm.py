@@ -4,6 +4,7 @@ LLM_FALLBACKS), e.g. "deepseek/deepseek-flash" or "gemini/gemini-3.8-flash"."""
 import base64
 import io
 import json
+import logging
 import os
 import re
 from typing import TypeVar
@@ -13,6 +14,8 @@ from PIL import Image, ImageOps
 from pydantic import BaseModel, ValidationError
 
 from app.config import Settings
+
+log = logging.getLogger(__name__)
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -98,8 +101,12 @@ def _content(prompt: str, images: list[tuple[bytes, str]]) -> list[dict]:
 
 
 async def complete_json(settings: Settings, schema: type[T], prompt: str,
-                        images: list[tuple[bytes, str]] | None = None) -> T:
-    """Ask for JSON matching `schema`. Validates the reply and retries once on bad JSON."""
+                        images: list[tuple[bytes, str]] | None = None,
+                        usage: list[dict] | None = None) -> T:
+    """Ask for JSON matching `schema`. Validates the reply and retries once on bad JSON.
+
+    Pass `usage` (a list) to collect one record per API call with token counts,
+    DeepSeek cache hits and cost; see `usage_record` / `usage_totals`."""
     prompt = (f"{prompt}\n\nReply with only a JSON object matching this JSON schema:\n"
               f"{json.dumps(schema.model_json_schema())}")
     messages = [{"role": "user", "content": _content(prompt, images or [])}]
@@ -115,9 +122,70 @@ async def complete_json(settings: Settings, schema: type[T], prompt: str,
             )
         except Exception as e:  # LiteLLM raises provider-specific exception types
             raise LLMError(f"{settings.llm_model} failed: {e}") from e
+        try:
+            record = usage_record(response)
+        except Exception as e:  # observability must never break a scan
+            log.warning("LLM usage record failed: %s", e)
+        else:
+            log.debug("llm usage %s", json.dumps(record, ensure_ascii=False))
+            if usage is not None:
+                usage.append(record)
         text = _FENCE.sub("", (response.choices[0].message.content or "").strip())
         try:
             return schema.model_validate_json(text)
         except ValidationError as e:
             last_error = e
     raise LLMError(f"Model returned invalid JSON twice: {last_error}")
+
+
+def usage_record(response) -> dict:
+    """One JSON-serialisable record per LLM call: token counts, cache hits, cost.
+
+    DeepSeek reports `prompt_cache_hit_tokens` / `prompt_cache_miss_tokens` on
+    `usage`; LiteLLM normalises the hits to `usage.prompt_tokens_details.cached_tokens`.
+    `cost_usd` comes from LiteLLM's price map when the model is known, else None."""
+    usage = getattr(response, "usage", None)
+    prompt_tokens = getattr(usage, "prompt_tokens", 0) or 0
+    completion_tokens = getattr(usage, "completion_tokens", 0) or 0
+    total_tokens = getattr(usage, "total_tokens", 0) or (prompt_tokens + completion_tokens)
+    details = getattr(usage, "prompt_tokens_details", None)
+    cached = getattr(details, "cached_tokens", None)
+    if cached is None:  # raw DeepSeek field, or LiteLLM's private attr
+        cached = getattr(usage, "_cache_read_input_tokens", None)
+    if cached is None:
+        cached = getattr(usage, "prompt_cache_hit_tokens", None)
+    cached = cached or 0
+    miss = getattr(usage, "prompt_cache_miss_tokens", None)
+    if miss is None and prompt_tokens:
+        miss = max(prompt_tokens - cached, 0)
+    cost = None
+    try:
+        cost = litellm.completion_cost(completion_response=response)
+    except Exception as e:  # unknown model, price map unreachable, ...
+        log.debug("LLM cost lookup failed: %s", e)
+    return {
+        "model": getattr(response, "model", None),
+        "prompt_tokens": prompt_tokens,
+        "completion_tokens": completion_tokens,
+        "total_tokens": total_tokens,
+        "cached_tokens": cached,
+        "cache_miss_tokens": miss,
+        "cost_usd": cost,
+    }
+
+
+def usage_totals(records: list[dict]) -> dict:
+    """Sums across calls, with the overall cache hit rate. Cost is None unless
+    LiteLLM knew the price for at least one call."""
+    prompt_tokens = sum(r.get("prompt_tokens") or 0 for r in records)
+    costs = [r["cost_usd"] for r in records if r.get("cost_usd") is not None]
+    return {
+        "calls": len(records),
+        "prompt_tokens": prompt_tokens,
+        "completion_tokens": sum(r.get("completion_tokens") or 0 for r in records),
+        "cached_tokens": sum(r.get("cached_tokens") or 0 for r in records),
+        "hit_rate": (sum(r.get("cached_tokens") or 0 for r in records) / prompt_tokens)
+        if prompt_tokens else None,
+        "cost_usd": sum(costs) if costs else None,
+        "cost_known_for_calls": len(costs),
+    }

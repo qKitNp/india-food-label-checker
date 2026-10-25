@@ -5,6 +5,7 @@ Uses the TablesDB REST API over a persistent httpx connection rather than the Py
 SDK, which opens a new TLS connection per call (too slow for the voice path)."""
 
 import json
+import logging
 import re
 import uuid
 from collections.abc import AsyncIterator
@@ -17,6 +18,8 @@ import numpy as np
 from app import catalog
 from app.config import Settings
 from app.models import Counterpart, Product, Region, Submission
+
+log = logging.getLogger(__name__)
 
 
 def row_id(key: str) -> str:
@@ -240,11 +243,22 @@ class AppwriteStore:
     async def save_scan_log(self, record):
         """One row per finished scan, with the agent's full trace, for observability."""
         steps = json.dumps(record["steps"], ensure_ascii=False)
-        await self._put(self.scan_logs, record["job_id"], {
+        base = {
             "job_id": record["job_id"], "status": record["status"], "outcome": record["outcome"],
             "product_key": record["product_key"], "duration_ms": record["duration_ms"],
             "error": (record["error"] or "")[:2000] or None, "steps": steps[:1_000_000],
-        })
+        }
+        # Token counts, DeepSeek cache hits and cost. Older scan_logs tables won't
+        # have these columns; fall back to the base payload so the log still lands.
+        full = base | {
+            "usage": json.dumps(record.get("usage", []), ensure_ascii=False)[:100_000],
+            "llm": json.dumps(record.get("llm", {}), ensure_ascii=False),
+        }
+        try:
+            await self._put(self.scan_logs, record["job_id"], full)
+        except httpx.HTTPStatusError as e:
+            log.warning("Scan log with usage failed (%s); retrying without", e)
+            await self._put(self.scan_logs, record["job_id"], base)
 
     async def list_substances(self):
         out, cursor = [], None

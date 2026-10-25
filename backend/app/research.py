@@ -88,7 +88,8 @@ class Fact(BaseModel):
     fact: str
 
 
-async def research_region(exa: Exa, settings: Settings, sub: dict, region: str) -> dict:
+async def research_region(exa: Exa, settings: Settings, sub: dict, region: str,
+                          usage: list[dict] | None = None) -> dict:
     cfg = REGIONS[region]
     codes = " ".join(sub["codes"])
     for query in cfg["queries"]:  # a second phrasing when the first finds nothing grounded
@@ -104,7 +105,8 @@ async def research_region(exa: Exa, settings: Settings, sub: dict, region: str) 
         for r in [r for r in res.results if r.text and r.url not in sub.get("exclude_sources", [])][:3]:
             try:
                 f = await llm.complete_json(settings, Finding, STATUS_PROMPT.format(
-                    name=sub["name"], codes=codes or "no E-number", region=cfg["label"], url=r.url, text=r.text))
+                    name=sub["name"], codes=codes or "no E-number", region=cfg["label"], url=r.url, text=r.text),
+                    usage=usage)
             except llm.LLMError as e:
                 log.warning("%s/%s extraction failed: %s", sub["id"], region, e)
                 continue
@@ -114,7 +116,8 @@ async def research_region(exa: Exa, settings: Settings, sub: dict, region: str) 
     return {"status": "unknown"}
 
 
-async def write_fact(settings: Settings, sub: dict, region: str, cell: dict) -> None:
+async def write_fact(settings: Settings, sub: dict, region: str, cell: dict,
+                     usage: list[dict] | None = None) -> None:
     """Add a plain-language `fact` to a grounded banned/restricted status."""
     if cell.get("status") not in ("banned", "restricted") or not cell.get("quote"):
         return
@@ -122,17 +125,20 @@ async def write_fact(settings: Settings, sub: dict, region: str, cell: dict) -> 
         f = await llm.complete_json(settings, Fact, FACT_PROMPT.format(
             name=sub["name"], codes=" ".join(sub["codes"]) or "no E-number", region=REGIONS[region]["label"],
             status=cell["status"], since=f" since {cell['since']}" if cell.get("since") else "",
-            reason=cell.get("reason") or "not stated", url=cell["source_url"], quote=cell["quote"]))
+            reason=cell.get("reason") or "not stated", url=cell["source_url"], quote=cell["quote"]),
+            usage=usage)
         cell["fact"] = " ".join(f.fact.split())
     except llm.LLMError as e:
         log.warning("%s/%s fact failed: %s", sub["id"], region, e)
 
 
-async def research_substance(exa: Exa, settings: Settings, sub: dict) -> dict:
+async def research_substance(exa: Exa, settings: Settings, sub: dict,
+                             usage: list[dict] | None = None) -> dict:
     """All regions for one substance, with facts. Returns {region: status cell}."""
-    cells = await asyncio.gather(*(research_region(exa, settings, sub, r) for r in REGIONS))
+    usage = usage if usage is not None else []
+    cells = await asyncio.gather(*(research_region(exa, settings, sub, r, usage=usage) for r in REGIONS))
     regions = dict(zip(REGIONS, cells))
-    await asyncio.gather(*(write_fact(settings, sub, r, c) for r, c in regions.items()))
+    await asyncio.gather(*(write_fact(settings, sub, r, c, usage=usage) for r, c in regions.items()))
     return regions
 
 
@@ -206,11 +212,13 @@ class ResearchQueue:
         }
         try:
             async with self._slots:
-                sub["regions"] = await research_substance(self.exa, self.settings, sub)
+                usage: list[dict] = []
+                sub["regions"] = await research_substance(self.exa, self.settings, sub, usage=usage)
             sub["researched_at"] = dt.datetime.now(dt.UTC).isoformat(timespec="seconds")
             await self.save(sub)
             grounded_count = sum(1 for c in sub["regions"].values() if c["status"] != "unknown")
-            log.info("Researched %s (%s): %d/3 regions grounded", code, name, grounded_count)
+            log.info("Researched %s (%s): %d/3 regions grounded, llm %s",
+                     code, name, grounded_count, json.dumps(llm.usage_totals(usage), ensure_ascii=False))
         except Exception:
             log.exception("Research for %s failed", code)
         finally:

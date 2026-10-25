@@ -22,12 +22,13 @@ SEED = RULES / "substances_seed.json"
 OUT = RULES / "substances.json"
 
 
-def report(data: list[dict]) -> None:
+def report(data: list[dict], totals: dict[str, dict] | None = None) -> None:
     grounded = sum(1 for s in data for r in s.get("regions", {}).values() if r.get("status") != "unknown")
     print(f"{len(data)} substances, {grounded}/{len(data) * len(REGIONS)} region statuses grounded in a source")
     for s in data:
         cells = " | ".join(f"{k}:{v.get('status', '-'):10}" for k, v in s.get("regions", {}).items())
-        print(f"  {s['id']:26} {cells}")
+        llm = f" llm={totals[s['id']]}" if totals and s["id"] in totals else ""
+        print(f"  {s['id']:26} {cells}{llm}")
 
 
 async def research(only: set[str] | None) -> None:
@@ -37,16 +38,20 @@ async def research(only: set[str] | None) -> None:
     seed = json.loads(SEED.read_text())
     existing = {s["id"]: s for s in json.loads(OUT.read_text())} if OUT.exists() else {}
     sem = asyncio.Semaphore(3)
+    totals: dict[str, dict] = {}
 
     async def one(sub: dict) -> dict:
         if only and sub["id"] not in only:
             return {**sub, "origin": "seed", "regions": existing.get(sub["id"], {}).get("regions", {})}
         async with sem:
-            return {**sub, "origin": "seed", "regions": await research_substance(exa, settings, sub)}
+            usage: list[dict] = []
+            regions = await research_substance(exa, settings, sub, usage=usage)
+            totals[sub["id"]] = llm.usage_totals(usage)
+            return {**sub, "origin": "seed", "regions": regions}
 
     data = await asyncio.gather(*(one(s) for s in seed))
     OUT.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n")
-    report(data)
+    report(data, totals)
 
 
 async def facts(only: set[str] | None) -> None:
@@ -54,10 +59,12 @@ async def facts(only: set[str] | None) -> None:
     settings = get_settings()
     llm.export_keys(settings)
     data = json.loads(OUT.read_text())
-    await asyncio.gather(*(write_fact(settings, s, r, c) for s in data if not only or s["id"] in only
+    usage: list[dict] = []
+    await asyncio.gather(*(write_fact(settings, s, r, c, usage=usage) for s in data if not only or s["id"] in only
                            for r, c in s.get("regions", {}).items()))
     OUT.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n")
     print(sum(1 for s in data for c in s.get("regions", {}).values() if c.get("fact")), "facts")
+    print(f"llm={llm.usage_totals(usage)}")
 
 
 if __name__ == "__main__":
