@@ -658,7 +658,7 @@ function CallButton({ label, tone, onClick, small, children }: { label: string; 
 
 function FeedChip({ feed }: { feed: 'starting' | 'live' | 'stale' | 'off' }) {
   const tone = feed === 'live' ? 'good' : feed === 'stale' ? 'warn' : 'neutral'
-  const label = feed === 'live' ? '● Live · 1 fps' : feed === 'stale' ? '● Feed stale' : feed === 'off' ? 'Camera off' : 'Starting…'
+  const label = feed === 'live' ? '● Live' : feed === 'stale' ? '● Feed stale' : feed === 'off' ? 'Camera off' : 'Starting…'
   return <Chip tone={tone}>{label}</Chip>
 }
 
