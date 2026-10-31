@@ -9,6 +9,7 @@ both to the page as captions and forward the request to a fast upstream model.
 
 import itertools
 import json
+import logging
 import re
 import time
 from collections import OrderedDict
@@ -27,6 +28,7 @@ MAX_CAPTIONS = 60
 # Fields Bolna's OpenAI SDK may send that upstreams reject or we set ourselves.
 DROP_FIELDS = {"model", "service_tier", "parallel_tool_calls", "user", "metadata", "store"}
 GEMINI_OPENAI = "https://generativelanguage.googleapis.com/v1beta/openai"
+_log = logging.getLogger("live_lookup")
 
 
 def _agent_lines() -> tuple[str, dict[str, str]]:
@@ -180,12 +182,17 @@ async def relay(r: httpx.Response, transcripts: Transcripts, sid: str | None) ->
     tools: list[str] = []
     try:
         async for line in r.aiter_lines():
-            yield (line + "\n").encode()
-            if sid is None or not line.startswith("data:") or line.endswith("[DONE]"):
-                continue
-            try:
-                choices = json.loads(line[5:]).get("choices") or []
-            except ValueError:
+            # Read the chunk before passing it on: Bolna may hang up as soon as it has
+            # what it needs, cancelling us at the yield.
+            if sid is not None and line.startswith("data:") and not line.endswith("[DONE]"):
+                try:
+                    choices = json.loads(line[5:]).get("choices") or []
+                except ValueError:
+                    choices = []
+            else:
+                choices = []
+            if not choices:
+                yield (line + "\n").encode()
                 continue
             delta = (choices[0].get("delta") or {}) if choices else {}
             if piece := delta.get("content"):
@@ -201,6 +208,7 @@ async def relay(r: httpx.Response, transcripts: Transcripts, sid: str | None) ->
                     # Caption it now: Bolna speaks it as soon as it runs the tool, and
                     # may drop this stream before we'd reach the end.
                     tool_line(transcripts, sid, name)
+            yield (line + "\n").encode()
     finally:
         # Caption first: if Bolna hangs up on the stream (it often does once it has a
         # tool call), this runs inside a cancelled task and the first await raises.
@@ -212,5 +220,6 @@ async def relay(r: httpx.Response, transcripts: Transcripts, sid: str | None) ->
 
 def tool_line(transcripts: Transcripts, sid: str, name: str) -> None:
     """Bolna speaks a tool's pre-call message itself while the tool runs."""
+    _log.info("voice LLM tool call: session=%s tool=%s", sid, name)
     if line := PRE_CALL.get(name):
         transcripts.add(sid, "assistant", line)
