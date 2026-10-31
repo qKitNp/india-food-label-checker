@@ -198,11 +198,13 @@ async def relay(r: httpx.Response, transcripts: Transcripts, sid: str | None) ->
                 if name := (tc.get("function") or {}).get("name"):
                     tools.append(name)
     finally:
-        await r.aclose()
+        # Caption first: if Bolna hangs up on the stream (it often does once it has a
+        # tool call), this runs inside a cancelled task and the first await raises.
         if sid is not None:
             if caption is not None:
                 transcripts.update(caption, text.strip(), final=True)
             # Bolna speaks a tool's pre-call message itself while the tool runs.
-            for name in tools:
+            for name in dict.fromkeys(tools):
                 if line := PRE_CALL.get(name):
                     transcripts.add(sid, "assistant", line)
+        await r.aclose()
