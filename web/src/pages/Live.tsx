@@ -40,6 +40,8 @@ function speak(text: string) {
 
 export default function Live() {
   const video = useRef<HTMLVideoElement>(null)
+  const chatRef = useRef<HTMLDivElement>(null)
+  const [chatScrolled, setChatScrolled] = useState(false)
   const [sessionId] = useState(newSession)
   const [ready, setReady] = useState(false)
   const [cameraError, setCameraError] = useState<string | null>(null)
@@ -104,6 +106,12 @@ export default function Live() {
     const t = window.setTimeout(() => setFreeze(null), FREEZE_MS)
     return () => window.clearTimeout(t)
   }, [freeze])
+
+  // Keep the newest answer in view: the chat scrolls on its own, the page doesn't jump.
+  useEffect(() => {
+    const el = chatRef.current
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+  }, [msgs, jobNote])
 
   const speakIfFree = useCallback((text: string) => {
     if (!muted && !onCallRef.current) speak(text)
@@ -548,35 +556,15 @@ export default function Live() {
           </Card>
         )}
         <p className="mt-2 text-center text-xs text-faint">
-          Voice call answers out loud; product cards appear below as you talk.
+          Voice call answers out loud; answers and product cards appear below.
         </p>
       </div>
 
-      {pair.length === 2 && <CompareCard a={pair[0]} b={pair[1]} />}
-
-      {verdicts.length > 0 && (
-        <div className="rise mt-4 space-y-3">
-          {verdicts.slice(-2).map((v) => (
-            <Link key={v.product.key} to={`/p/${encodeURIComponent(v.product.key)}`} className="block">
-              <Card className="flex items-center gap-3">
-                <ProductImage
-                  productKey={v.product.key}
-                  hasImage={!!(v.product.image_file_id || v.product.image_url || (v.product.source === 'off' && v.product.barcode))}
-                  seed={shortBrand(v.product.brand) || productTitle(v.product)}
-                  label={shortBrand(v.product.brand) || 'Product'}
-                  className="h-16 w-13 shrink-0 rounded-2xl"
-                />
-                <div className="min-w-0">
-                  <p className="truncate text-[15px] font-medium">{productTitle(v.product)}</p>
-                  <p className="line-clamp-2 text-sm text-muted">{v.headline[0]}</p>
-                </div>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      )}
-
-      <div className="rise mt-4 space-y-2">
+      <div
+        ref={chatRef}
+        onScroll={(e) => setChatScrolled(e.currentTarget.scrollTop > 4)}
+        className={`rise -mx-1 mt-4 max-h-[22rem] space-y-2 overflow-y-auto overscroll-contain px-1 pb-1 ${chatScrolled ? '[mask-image:linear-gradient(to_bottom,transparent,black_2.5rem)]' : ''}`}
+      >
         {msgs.length === 0 && (
           <p className="text-center text-sm text-faint">Try: “Tell me about this” → point at another pack → “Which has less sugar?”</p>
         )}
@@ -626,6 +614,31 @@ export default function Live() {
         </button>
         <Link to="/scan" className={buttonClass('ghost', 'text-xs')}>Back to scan</Link>
       </div>
+
+      {pair.length === 2 && <CompareCard a={pair[0]} b={pair[1]} />}
+
+      {verdicts.length > 0 && (
+        <div className="rise mt-4 space-y-3">
+          {verdicts.slice(-2).map((v) => (
+            <Link key={v.product.key} to={`/p/${encodeURIComponent(v.product.key)}`} className="block">
+              <Card className="flex items-center gap-3">
+                <ProductImage
+                  productKey={v.product.key}
+                  hasImage={!!(v.product.image_file_id || v.product.image_url || (v.product.source === 'off' && v.product.barcode))}
+                  seed={shortBrand(v.product.brand) || productTitle(v.product)}
+                  label={shortBrand(v.product.brand) || 'Product'}
+                  className="h-16 w-13 shrink-0 rounded-2xl"
+                />
+                <div className="min-w-0">
+                  <p className="truncate text-[15px] font-medium">{productTitle(v.product)}</p>
+                  <p className="line-clamp-2 text-sm text-muted">{v.headline[0]}</p>
+                </div>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
+
     </Page>
   )
 }

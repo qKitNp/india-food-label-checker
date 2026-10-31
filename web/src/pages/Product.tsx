@@ -3,7 +3,7 @@ import { Link, useLocation, useParams } from 'react-router-dom'
 import { Check, CircleHelp, TriangleAlert, X, type LucideIcon } from 'lucide-react'
 import { api, ApiError, type AdditiveFinding, type ClaimFinding, type Ingredient, type LimitCheck, type Nutrition, type OtherAdditive, type Region, type RegionStatus, type Verdict } from '../api'
 import { remember } from '../history'
-import { Button, Card, Chip, ErrorNote, Page, ProductImage, SectionTitle, Spinner, buttonClass, productTitle, shortBrand } from '../ui'
+import { Button, Card, Chip, ErrorNote, Page, ProductImage, SectionTitle, Spinner, buttonClass, productKind, productTitle, shortBrand } from '../ui'
 
 const UNRELIABLE = "This product's online data looks unreliable"
 
@@ -77,6 +77,7 @@ function VerdictView({ verdict, onUpdate }: { verdict: Verdict; onUpdate: (v: Ve
         <div className="min-w-0 pb-1">
           {p.brand && <p className="text-sm text-muted">{shortBrand(p.brand)}</p>}
           <h1 className="font-serif text-[1.6rem] leading-tight font-medium tracking-tight">{productTitle(p)}</h1>
+          {productKind(p) && <p className="mt-0.5 text-sm text-faint first-letter:uppercase">{productKind(p)}</p>}
           <div className="mt-2 flex flex-wrap gap-1.5">
             <SourceChip verdict={verdict} />
             {p.barcode && <Chip>{p.barcode}</Chip>}

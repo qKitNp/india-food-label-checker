@@ -157,8 +157,16 @@ export function ProductImage({ productKey, hasImage = true, seed, label, classNa
   )
 }
 
+// Researched names often carry the product type: "Diet Coke (soft drink, zero sugar)".
+const KIND = /\s*\(([^)]*)\)\s*$/
+
 export function productTitle(p: { brand: string | null; name: string | null }) {
-  return p.name || p.brand || 'Unnamed product'
+  return (p.name ?? '').replace(KIND, '').trim() || p.name || p.brand || 'Unnamed product'
+}
+
+/** The bracketed product type dropped from the title, e.g. "soft drink, zero sugar". */
+export function productKind(p: { name: string | null }) {
+  return p.name?.match(KIND)?.[1].trim() || null
 }
 
 /** "Kurkure (PepsiCo)" -> "Kurkure": the agent sometimes adds the parent company. */

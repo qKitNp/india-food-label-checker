@@ -1,3 +1,4 @@
+import re
 from urllib.parse import urlparse
 
 from app import additive_codes, ingredients, research, sanity
@@ -63,7 +64,8 @@ def build(product: Product, counterpart: Counterpart | None = None) -> Verdict:
 def spoken(v: Verdict, short: bool = False) -> str:
     """Short plain-text summary for the voice agent. `short` is for the live camera
     page, which shows the full report: just the name and the most important point."""
-    brand, product = v.product.brand or "", v.product.name or ""
+    brand = re.sub(r"\s*\(.*?\)", "", v.product.brand or "").strip()
+    product = re.sub(r"\s*\([^)]*\)\s*$", "", v.product.name or "").strip()
     name = product if brand and product.lower().startswith(brand.lower()) else f"{brand} {product}".strip()
     name = name or "This product"
     if suspect(v):
