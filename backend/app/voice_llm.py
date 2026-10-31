@@ -221,5 +221,6 @@ async def relay(r: httpx.Response, transcripts: Transcripts, sid: str | None) ->
 def tool_line(transcripts: Transcripts, sid: str, name: str) -> None:
     """Bolna speaks a tool's pre-call message itself while the tool runs."""
     _log.info("voice LLM tool call: session=%s tool=%s", sid, name)
-    if line := PRE_CALL.get(name):
+    # Bolna prefixes API tools for the LLM: "custom_task_lookup_food_label".
+    if line := PRE_CALL.get(name.removeprefix("custom_task_")):
         transcripts.add(sid, "assistant", line)

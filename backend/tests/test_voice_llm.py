@@ -69,7 +69,7 @@ def test_proxy_streams_and_captions_both_sides(client):
 @respx.mock
 def test_resent_history_is_captioned_once_and_tool_lines_added(client):
     respx.post("https://api.deepseek.com/chat/completions").mock(return_value=httpx.Response(
-        200, text=sse({"tool_calls": [{"index": 0, "id": "c1", "function": {"name": "lookup_visible_product",
+        200, text=sse({"tool_calls": [{"index": 0, "id": "c1", "function": {"name": "custom_task_lookup_visible_product",
                                                                               "arguments": "{}"}}]}),
         headers={"content-type": "text/event-stream"}))
     client.post("/llm/v1/chat/completions", json=turn("what is this"), headers=KEY)
