@@ -24,6 +24,7 @@ const bubbleTtl = (m: Msg) => (m.snap ? 8000 : 6000 + 60 * m.text.length)
 const FADE_MS = 1000
 
 const FRAME_MS = 1000
+const CAPTION_POLL_MS = 400
 const POLL_MS = 1500
 // While on a call: how often to check whether Bolna started a lookup. The snap
 // shows up at most this long after the tool call, well before the answer.
@@ -101,9 +102,9 @@ export default function Live() {
   }, [])
 
   // Captions: add a placeholder the moment speech starts, fill or drop it when transcribed.
-  const addCaption = useCallback((role: Msg['role']) => {
+  const addCaption = useCallback((role: Msg['role'], text = '') => {
     const id = idRef.current++
-    setMsgs((m) => [...m, { id, role, text: '', at: Date.now(), pending: true }])
+    setMsgs((m) => [...m, { id, role, text, at: Date.now(), pending: !text }])
     return id
   }, [])
   const settleCaption = useCallback((id: number, text: string | null) => {
@@ -179,6 +180,7 @@ export default function Live() {
     if (outcome && !claimAnswer(snapId)) return !!verdict
     if (verdict) {
       addVerdict(verdict)
+      if (onCallRef.current) return true // the agent says it; captions show it
       const line = `Found it: ${productTitle(verdict.product)}. ${verdict.headline[0] ?? ''}`
       say('assistant', line, verdict.product.key)
       speakIfFree(line)
@@ -443,9 +445,7 @@ export default function Live() {
             // The agent's wait-loop progress: the snap bubble already says "Researching…".
             if (fed.reason === 'researching') setSnapStatus(snapId, 'researching')
           } else if (!ownSnapsRef.current.has(fed.snap_at ?? -1)) {
-            // "New to me, looking it up" isn't final; a found product or a miss is.
-            const final = !!fed.product_key || !fed.job_id
-            if (!final || claimAnswer(snapId)) say('assistant', fed.answer, fed.product_key ?? undefined)
+            // No chat line here: the agent says the answer and it arrives as a caption.
             if (fed.product_key) {
               setSnapStatus(snapId, 'done')
               showProduct(fed.product_key).catch(() => {})
@@ -481,9 +481,9 @@ export default function Live() {
     callRef.current?.stop().catch(() => {})
   }, [])
 
-  // Live captions while on a call. Bolna's web call is audio only and its transcript
-  // arrives after hang-up, so we cut our own copy of each side into utterances and
-  // caption them: the caller sees "it heard me" as soon as they start talking.
+  // Live captions while on a call, word for word: the agent's LLM runs through our
+  // server, which records what Bolna transcribed and what the agent is saying.
+  // Our mic only tells us *when* the caller talks, so a bubble appears instantly.
   const speakingRef = useRef(false)
   const callMutedRef = useRef(false)
   useEffect(() => {
@@ -495,14 +495,15 @@ export default function Live() {
     if (callState !== 'active') return
     let stopped = false
     const stops: (() => void)[] = []
-    const caption = (id: number, clip: Blob | null, skip = false) => {
-      if (!clip || skip) return settleCaption(id, null)
-      api.liveHear(sessionId, clip)
-        .then((r) => !stopped && settleCaption(id, r.text.trim() || null))
-        .catch(() => !stopped && settleCaption(id, null))
+    const shown = new Map<number, number>() // caption id -> chat message id
+    const pending: number[] = [] // "hearing you" bubbles waiting for Bolna's words
+    const drop = (id: number) => {
+      const i = pending.indexOf(id)
+      if (i < 0) return
+      pending.splice(i, 1)
+      settleCaption(id, null)
     }
 
-    // The caller: our own copy of the mic, with echo cancellation.
     navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })
       .then((mic) => {
         if (stopped) return mic.getTracks().forEach((t) => t.stop())
@@ -513,8 +514,15 @@ export default function Live() {
           // Echo cancellation removes most of the agent's voice from the mic; while it
           // talks, only clearly louder speech (the caller barging in) counts.
           boost: () => (speakingRef.current ? 2.5 : 1),
-          onStart: () => { id = addCaption('user') },
-          onEnd: (clip) => caption(id, clip),
+          onStart: () => {
+            id = addCaption('user')
+            pending.push(id)
+          },
+          onEnd: (wasSpeech) => {
+            const mine = id
+            // Bolna's transcript lands within a second or two; noise never gets one.
+            window.setTimeout(() => drop(mine), wasSpeech ? 5000 : 0)
+          },
         })
         stops.push(() => {
           stopWatch()
@@ -523,27 +531,32 @@ export default function Live() {
       })
       .catch(() => {})
 
-    // The agent. Tool answers are already in the chat word for word; caption only
-    // what it says around them (greeting, "looking at it", progress updates).
-    // The SDK attaches the agent's stream a moment after the call turns active.
-    const attach = window.setInterval(() => {
-      const remote = agentAudio.current?.srcObject
-      if (stopped || !(remote instanceof MediaStream)) return
-      window.clearInterval(attach)
-      let id = -1
-      let began = 0
-      stops.push(watchSpeech(remote, {
-        threshold: 0.01,
-        silenceMs: 600,
-        maxMs: 15000,
-        onStart: () => {
-          began = Date.now()
-          id = addCaption('assistant')
-        },
-        onEnd: (clip) => caption(id, clip, lastAnswerAtRef.current > began - 6000),
-      }))
-    }, 200)
-    stops.push(() => window.clearInterval(attach))
+    let rev = 0
+    let timer: number | undefined
+    const tick = async () => {
+      try {
+        const { captions } = await api.liveCaptions(sessionId, rev)
+        if (stopped) return
+        for (const c of captions) {
+          rev = Math.max(rev, c.rev)
+          const msgId = shown.get(c.id)
+          if (msgId !== undefined) {
+            settleCaption(msgId, c.text || null)
+          } else if (c.role === 'user' && pending.length) {
+            const id = pending.shift()!
+            shown.set(c.id, id)
+            settleCaption(id, c.text)
+          } else if (c.text) {
+            shown.set(c.id, addCaption(c.role, c.text))
+          }
+        }
+      } catch {
+        /* next tick retries */
+      }
+      if (!stopped) timer = window.setTimeout(tick, CAPTION_POLL_MS)
+    }
+    tick()
+    stops.push(() => window.clearTimeout(timer))
     return () => {
       stopped = true
       stops.forEach((f) => f())

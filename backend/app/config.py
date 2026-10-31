@@ -38,9 +38,12 @@ class Settings(BaseSettings):
     # so the Bolna API key never reaches the client.
     bolna_api_key: str = ""
     bolna_agent_id: str = "d09afdca-5794-4127-b2b5-7cf243ab361f"
-    # Live captions: a fast audio model, ~2 s per utterance.
-    caption_model: str = "gemini-flash-lite-latest"
-    caption_timeout: float = 8
+    # The voice agent's LLM, proxied through /llm/v1 so the live page gets exact captions.
+    llm_proxy_key: str = ""  # Bolna sends it as a bearer token; empty disables the proxy
+    voice_llm_name: str = "fineprint-voice"  # the model name registered with Bolna
+    voice_llm_model: str = "deepseek-flash"  # DeepSeek, thinking off: ~0.5 s to first token
+    voice_llm_fallback: str = "gemini-3.5-flash-lite"
+    voice_llm_timeout: float = 20
     research_daily_cap: int = 100  # codes researched automatically per day
 
     off_user_agent: str = "better-fssai/0.1 (hackathon project)"

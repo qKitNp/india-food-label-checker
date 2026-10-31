@@ -14,10 +14,10 @@ from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, Upload
 from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, RedirectResponse, Response
+from fastapi.responses import JSONResponse, RedirectResponse, Response, StreamingResponse
 from pydantic import BaseModel, model_validator
 
-from app import additive_codes, agent, barcodes, captions, llm, sanity, verdict
+from app import additive_codes, agent, barcodes, llm, sanity, verdict, voice_llm
 from app.catalog import Embedder
 from app.config import get_settings
 from app.live import FRAME_TTL, MAX_SESSIONS, STALE_AFTER, LiveResult, LiveStore, SESSION_RE
@@ -105,6 +105,7 @@ async def lifespan(app: FastAPI):
     app.state.exa = Exa(settings.exa_api_key) if settings.exa_api_key else None
     app.state.jobs = JobStore(on_finish=store.save_scan_log)
     app.state.live = LiveStore()
+    app.state.transcripts = voice_llm.Transcripts()
     await load_substances(store)
 
     async def save_substance(sub: dict) -> None:
@@ -458,29 +459,6 @@ async def voice_lookup(body: VoiceLookup, svc: ProductsDep) -> dict:
     return {"found": True, "answer": verdict.spoken(v)}
 
 
-@app.post("/live/hear")
-async def live_hear(
-    request: Request,
-    session_id: Annotated[str, Form()],
-    audio: Annotated[UploadFile, File(description="One utterance, recorded by the live page")],
-) -> dict:
-    """Caption one utterance from a live call (the caller's or the agent's)."""
-    if not SESSION_RE.match(session_id) or request.app.state.live.get(session_id) is None:
-        raise HTTPException(400, "captions need an active live camera session")
-    media_type = (audio.content_type or "").split(";")[0]
-    if not media_type.startswith("audio/"):
-        raise HTTPException(415, "send an audio clip")
-    data = await audio.read(captions.MAX_BYTES + 1)
-    if len(data) > captions.MAX_BYTES:
-        raise HTTPException(413, "clip too long")
-    try:
-        text = await captions.transcribe(get_settings(), data, media_type, request.app.state.http)
-    except captions.CaptionError as e:
-        _live_log.warning("caption failed: %s", e)
-        raise HTTPException(502, "couldn't caption that clip") from e
-    return {"text": text}
-
-
 @app.post("/live/frame")
 async def post_live_frame(
     request: Request,
@@ -775,4 +753,60 @@ async def live_session(body: LiveSessionRequest, request: Request) -> dict:
         raise HTTPException(502, f"Bolna session mint failed: {e}") from e
     if r.status_code >= 400:
         raise HTTPException(r.status_code, f"Bolna session mint failed: {r.text[:300]}")
+    sid = str(body.user_data.get("session_id", ""))
+    if SESSION_RE.match(sid) and voice_llm.WELCOME:
+        request.app.state.transcripts.add(sid, "assistant", voice_llm.WELCOME)
     return r.json()
+
+
+@app.get("/live/captions")
+async def live_captions(session_id: str, request: Request, after: int = 0) -> dict:
+    """What the call heard and said, exactly: the caller's words as Bolna transcribed
+    them and the agent's reply as it streams. `after` is the last `rev` seen."""
+    if not SESSION_RE.match(session_id):
+        raise HTTPException(400, "bad session_id")
+    caps = request.app.state.transcripts.since(session_id, after)
+    return {"captions": [{"id": c.id, "role": c.role, "text": c.text, "final": c.final, "rev": c.rev}
+                         for c in caps]}
+
+
+# The voice agent's LLM (Bolna "custom LLM", OpenAI-compatible). See app/voice_llm.py.
+def _llm_auth(request: Request) -> None:
+    key = request.app.state.settings.llm_proxy_key
+    if not key:
+        raise HTTPException(503, "voice LLM proxy is not configured")
+    if request.headers.get("authorization", "") != f"Bearer {key}":
+        raise HTTPException(401, "bad key")
+
+
+@app.get("/llm/v1/models")
+async def llm_models(request: Request) -> dict:
+    _llm_auth(request)
+    return {"object": "list", "data": [{"id": request.app.state.settings.voice_llm_name, "object": "model"}]}
+
+
+@app.post("/llm/v1/chat/completions")
+async def llm_chat(request: Request):
+    _llm_auth(request)
+    try:
+        body = await request.json()
+    except ValueError as e:
+        raise HTTPException(400, "send a JSON chat completion request") from e
+    transcripts = request.app.state.transcripts
+    sid = voice_llm.session_of(body)
+    if sid:
+        transcripts.note_user_turns(sid, body.get("messages", []))
+    try:
+        upstream = await voice_llm.open_stream(request.app.state.http, request.app.state.settings, body)
+    except voice_llm.UpstreamError as e:
+        _live_log.warning("voice LLM upstream failed: %s", e)
+        raise HTTPException(502, "voice LLM unavailable") from e
+    if body.get("stream"):
+        return StreamingResponse(voice_llm.relay(upstream, transcripts, sid), media_type="text/event-stream")
+    try:
+        data = json.loads(await upstream.aread())
+    finally:
+        await upstream.aclose()
+    if sid and (text := ((data.get("choices") or [{}])[0].get("message") or {}).get("content")):
+        transcripts.add(sid, "assistant", text.strip())
+    return data

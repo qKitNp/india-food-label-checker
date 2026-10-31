@@ -187,6 +187,9 @@ export interface LiveResultFeed {
 }
 
 /** The frame a live lookup is working on; `at` busts the cache per snap. */
+/** One line of a live call, exactly as Bolna heard it or as the agent is saying it. */
+export type LiveCaption = { id: number; role: 'user' | 'assistant'; text: string; final: boolean; rev: number }
+
 export const liveSnapUrl = (sessionId: string, at: number) =>
   `${API_URL}/live/snap?session_id=${encodeURIComponent(sessionId)}&at=${at}`
 
@@ -286,12 +289,8 @@ export const api = {
     data.append('image', photo, 'frame.jpg')
     return request<{ ok: boolean; session_id: string }>('/live/frame', { method: 'POST', body: data })
   },
-  liveHear: (sessionId: string, clip: Blob) => {
-    const data = new FormData()
-    data.append('session_id', sessionId)
-    data.append('audio', clip, clip.type.includes('mp4') ? 'clip.m4a' : 'clip.webm')
-    return request<{ text: string }>('/live/hear', { method: 'POST', body: data })
-  },
+  liveCaptions: (sessionId: string, after: number) =>
+    request<{ captions: LiveCaption[] }>(`/live/captions?session_id=${encodeURIComponent(sessionId)}&after=${after}`),
   liveLookup: (sessionId: string) =>
     request<LiveLookup>('/voice/live-lookup', {
       method: 'POST',
