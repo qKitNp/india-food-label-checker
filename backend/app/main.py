@@ -801,12 +801,18 @@ async def llm_chat(request: Request):
     except voice_llm.UpstreamError as e:
         _live_log.warning("voice LLM upstream failed: %s", e)
         raise HTTPException(502, "voice LLM unavailable") from e
+    _live_log.info("voice LLM turn: session=%s stream=%s tools=%d messages=%d",
+                   sid, bool(body.get("stream")), len(body.get("tools") or []), len(body.get("messages") or []))
     if body.get("stream"):
         return StreamingResponse(voice_llm.relay(upstream, transcripts, sid), media_type="text/event-stream")
     try:
         data = json.loads(await upstream.aread())
     finally:
         await upstream.aclose()
-    if sid and (text := ((data.get("choices") or [{}])[0].get("message") or {}).get("content")):
-        transcripts.add(sid, "assistant", text.strip())
+    message = (data.get("choices") or [{}])[0].get("message") or {}
+    if sid:
+        if text := message.get("content"):
+            transcripts.add(sid, "assistant", text.strip())
+        for tc in message.get("tool_calls") or []:
+            voice_llm.tool_line(transcripts, sid, (tc.get("function") or {}).get("name", ""))
     return data

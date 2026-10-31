@@ -195,16 +195,22 @@ async def relay(r: httpx.Response, transcripts: Transcripts, sid: str | None) ->
                 else:
                     transcripts.update(caption, text, final=False)
             for tc in delta.get("tool_calls") or []:
-                if name := (tc.get("function") or {}).get("name"):
+                name = (tc.get("function") or {}).get("name")
+                if name and name not in tools:
                     tools.append(name)
+                    # Caption it now: Bolna speaks it as soon as it runs the tool, and
+                    # may drop this stream before we'd reach the end.
+                    tool_line(transcripts, sid, name)
     finally:
         # Caption first: if Bolna hangs up on the stream (it often does once it has a
         # tool call), this runs inside a cancelled task and the first await raises.
         if sid is not None:
             if caption is not None:
                 transcripts.update(caption, text.strip(), final=True)
-            # Bolna speaks a tool's pre-call message itself while the tool runs.
-            for name in dict.fromkeys(tools):
-                if line := PRE_CALL.get(name):
-                    transcripts.add(sid, "assistant", line)
         await r.aclose()
+
+
+def tool_line(transcripts: Transcripts, sid: str, name: str) -> None:
+    """Bolna speaks a tool's pre-call message itself while the tool runs."""
+    if line := PRE_CALL.get(name):
+        transcripts.add(sid, "assistant", line)
