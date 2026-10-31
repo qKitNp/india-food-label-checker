@@ -13,6 +13,7 @@
     "@bolna/web-call": "^3.0.1",
     "@tailwindcss/vite": "^4.3.3",
     "barcode-detector": "^3.2.3",
+    "lucide-react": "^1.66.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-router-dom": "^7.18.4",

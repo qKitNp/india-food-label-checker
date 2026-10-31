@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { Check, Plus, type LucideIcon } from 'lucide-react'
 import { api, ApiError, type ProductSummary } from '../api'
 import { Chip, ErrorNote, Page, ProductImage, Spinner, productTitle, shortBrand } from '../ui'
 
-const STATUS: Record<ProductSummary['status'], { label: string; tone: 'accent' | 'warn' | 'good' | 'neutral'; hint?: string }> = {
-  needs_ingredients: { label: '+ Needs ingredient list', tone: 'accent', hint: 'Have the pack? Add its ingredients.' },
+const STATUS: Record<ProductSummary['status'], { label: string; icon?: LucideIcon; tone: 'accent' | 'warn' | 'good' | 'neutral'; hint?: string }> = {
+  needs_ingredients: { label: 'Needs ingredient list', icon: Plus, tone: 'accent', hint: 'Have the pack? Add its ingredients.' },
   data_looks_wrong: { label: 'Data looks wrong', tone: 'warn', hint: 'Have the pack? Help correct it.' },
-  checked: { label: '✓ Checked against the label', tone: 'good' },
+  checked: { label: 'Checked against the label', icon: Check, tone: 'good' },
   ok: { label: 'From online sources', tone: 'neutral' },
 }
 
@@ -91,7 +92,7 @@ export default function ProductsPage() {
                 <div className="flex flex-1 flex-col gap-2 p-3">
                   <p className="line-clamp-2 text-[15px] leading-snug font-medium">{productTitle(p)}</p>
                   <div className="mt-auto space-y-1">
-                    <Chip tone={status.tone}>{status.label}</Chip>
+                    <Chip tone={status.tone}>{status.icon && <status.icon className="size-3.5" aria-hidden />}{status.label}</Chip>
                     {status.hint && <p className="text-xs leading-snug text-muted">{status.hint}</p>}
                   </div>
                 </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Check, X } from 'lucide-react'
 import { api, ApiError, type Submission } from '../api'
 import { barcodesIn } from '../barcode'
 import { toJpeg, UnreadablePhoto } from '../images'
@@ -97,7 +98,7 @@ export default function SubmitPage() {
                 onClick={() => setPhotos((all) => all.filter((_, j) => j !== i))}
                 className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-ink/60 text-xs text-white"
               >
-                ✕
+                <X className="size-3.5" aria-hidden />
               </button>
             </div>
           ))}
@@ -106,7 +107,7 @@ export default function SubmitPage() {
 
       {photos.length > 0 && !checking && (
         <p className={`mt-3 text-sm ${barcode ? 'text-good' : 'text-warn'}`}>
-          {barcode ? `✓ Barcode found: ${barcode}` : 'No barcode found yet. Add a photo where the barcode is clear.'}
+          {barcode ? <span className="inline-flex items-center gap-1.5"><Check className="size-4" aria-hidden /> Barcode found: {barcode}</span> : 'No barcode found yet. Add a photo where the barcode is clear.'}
         </p>
       )}
       {checking && <p className="mt-3 flex items-center gap-2 text-sm text-muted"><Spinner className="text-accent" /> Looking for the barcode…</p>}

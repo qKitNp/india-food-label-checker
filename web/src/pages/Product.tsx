@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
+import { Check, CircleHelp, TriangleAlert, X, type LucideIcon } from 'lucide-react'
 import { api, ApiError, type AdditiveFinding, type ClaimFinding, type Ingredient, type LimitCheck, type Nutrition, type OtherAdditive, type Region, type RegionStatus, type Verdict } from '../api'
 import { remember } from '../history'
 import { Button, Card, Chip, ErrorNote, Page, ProductImage, SectionTitle, Spinner, buttonClass, productTitle, shortBrand } from '../ui'
@@ -149,7 +150,7 @@ function Contribute({ product }: { product: Verdict['product'] }) {
 
 function SourceChip({ verdict }: { verdict: Verdict }) {
   const p = verdict.product
-  if (p.verified) return <Chip tone="good">✓ Checked against the label</Chip>
+  if (p.verified) return <Chip tone="good"><Check className="size-3.5" aria-hidden /> Checked against the label</Chip>
   if (p.source === 'web' && p.evidence) return <Chip tone="accent">From {domain(p.evidence.source_url)}</Chip>
   if (p.source === 'off') return <Chip>Open Food Facts</Chip>
   if (p.source === 'label') return <Chip tone="accent">Read from a shopper's photo</Chip>
@@ -214,14 +215,19 @@ function Stat({ label, value, unit, muted }: { label: string; value: string; uni
   )
 }
 
-const FLAGS: Record<Region, string> = { IN: '🇮🇳', EU: '🇪🇺', US: '🇺🇸' }
+const FLAGS: Record<Region, string> = { IN: 'IN', EU: 'EU', US: 'US' }
 
-const STATUS: Record<RegionStatus['status'], { mark: string; tone: 'bad' | 'warn' | 'good' | 'neutral'; word: string }> = {
-  banned: { mark: '✕', tone: 'bad', word: 'Banned' },
-  restricted: { mark: '!', tone: 'warn', word: 'Limits apply' },
-  allowed: { mark: '✓', tone: 'good', word: 'Allowed' },
-  unknown: { mark: '?', tone: 'neutral', word: 'Not confirmed' },
+const STATUS: Record<RegionStatus['status'], { mark: LucideIcon; tone: 'bad' | 'warn' | 'good' | 'neutral'; word: string }> = {
+  banned: { mark: X, tone: 'bad', word: 'Banned' },
+  restricted: { mark: TriangleAlert, tone: 'warn', word: 'Limits apply' },
+  allowed: { mark: Check, tone: 'good', word: 'Allowed' },
+  unknown: { mark: CircleHelp, tone: 'neutral', word: 'Not confirmed' },
 }
+function StatusMark({ status }: { status: RegionStatus['status'] }) {
+  const Icon = STATUS[status].mark
+  return <Icon className="size-3.5" strokeWidth={2.5} aria-hidden />
+}
+
 const REGION_NAMES: Record<Region, string> = { IN: 'India', EU: 'European Union', US: 'United States' }
 
 function Additives({ additives, others }: { additives: AdditiveFinding[]; others: OtherAdditive[] }) {
@@ -244,7 +250,7 @@ function Additives({ additives, others }: { additives: AdditiveFinding[]; others
                 <span className="flex shrink-0 gap-1">
                   {(['IN', 'EU', 'US'] as Region[]).map((r) => (
                     <Chip key={r} tone={STATUS[a.status[r].status].tone} title={`${REGION_NAMES[r]}: ${STATUS[a.status[r].status].word}`}>
-                      {FLAGS[r]} {STATUS[a.status[r].status].mark}
+                      {FLAGS[r]} <StatusMark status={a.status[r].status} />
                     </Chip>
                   ))}
                 </span>
@@ -256,7 +262,7 @@ function Additives({ additives, others }: { additives: AdditiveFinding[]; others
                   return (
                     <div key={r} className="rounded-2xl bg-wash px-3 py-2.5 text-sm">
                       <p className="font-medium">
-                        {FLAGS[r]} {REGION_NAMES[r]}: {STATUS[s.status].word}
+                        {REGION_NAMES[r]}: {STATUS[s.status].word}
                         {s.since ? ` since ${s.since}` : ''}
                       </p>
                       {s.status === 'restricted' && (

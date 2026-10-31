@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Camera, Check, Mic, Phone, Volume2 } from 'lucide-react'
 import { API_URL, api, ApiError, liveSnapUrl, type Verdict } from '../api'
 import { toJpeg } from '../images'
 import { Button, Card, Chip, ErrorNote, Page, ProductImage, Spinner, buttonClass, productTitle, shortBrand } from '../ui'
@@ -71,6 +72,15 @@ export default function Live() {
   // Front cameras (laptops, selfie mode) are shown mirrored, like every video-call app.
   // Only the preview is flipped: frames sent for lookup stay as the camera sees them.
   const [mirror, setMirror] = useState(false)
+  // Snaps whose final answer is already in the chat. During a call both Bolna's wait loop
+  // and the page's own job poll learn the result; only the first one gets to say it.
+  const announcedRef = useRef(new Set<number>())
+  const claimAnswer = (snapId: number | undefined) => {
+    if (snapId === undefined) return true
+    if (announcedRef.current.has(snapId)) return false
+    announcedRef.current.add(snapId)
+    return true
+  }
 
   const say = useCallback((role: Msg['role'], text: string, productKey?: string) => {
     setMsgs((m) => [...m, { id: idRef.current++, role, text, productKey }])
@@ -99,20 +109,26 @@ export default function Live() {
     if (!muted && !onCallRef.current) speak(text)
   }, [muted])
 
-  const showProduct = useCallback(async (productKey: string) => {
-    const v = await api.product(productKey)
-    setVerdicts((vs) => [...vs.slice(-1), v])
-    return v
+  // Keep the last two distinct products: showing the same pack again just moves it last.
+  const addVerdict = useCallback((v: Verdict) => {
+    setVerdicts((vs) => [...vs.filter((x) => x.product.key !== v.product.key).slice(-1), v])
   }, [])
 
-  const followBackgroundJob = useCallback(async (jobId: string): Promise<boolean> => {
+  const showProduct = useCallback(async (productKey: string) => {
+    const v = await api.product(productKey)
+    addVerdict(v)
+    return v
+  }, [addVerdict])
+
+  const followBackgroundJob = useCallback(async (jobId: string, snapId?: number): Promise<boolean> => {
     setJobNote('Looking it up in the background… keep pointing at the pack.')
     const job = await pollJob(jobId)
     setJobNote(null)
     const verdict = job?.result?.verdict
     const outcome = job?.result?.result
+    if (outcome && !claimAnswer(snapId)) return !!verdict
     if (verdict) {
-      setVerdicts((vs) => [...vs.slice(-1), verdict])
+      addVerdict(verdict)
       const line = `Found it: ${productTitle(verdict.product)}. ${verdict.headline[0] ?? ''}`
       say('assistant', line, verdict.product.key)
       speakIfFree(line)
@@ -123,7 +139,7 @@ export default function Live() {
       say('assistant', 'I still couldn\'t find reliable ingredients for this one. A photo of the back label would help.')
     }
     return false
-  }, [say, speakIfFree])
+  }, [say, speakIfFree, addVerdict])
 
   // Camera + 1fps frame upload. Fire-and-forget; skips a tick while one is in flight.
   useEffect(() => {
@@ -233,7 +249,7 @@ export default function Live() {
         await showProduct(res.product_key)
       } else if (res.job_id) {
         setSnapStatus(snapId, 'researching')
-        setSnapStatus(snapId, (await followBackgroundJob(res.job_id)) ? 'done' : 'missed')
+        setSnapStatus(snapId, (await followBackgroundJob(res.job_id, snapId)) ? 'done' : 'missed')
       } else {
         setSnapStatus(snapId, 'missed')
       }
@@ -353,7 +369,7 @@ export default function Live() {
         const r = e.reason ?? ''
         setEndReason(
           r === 'local-hangup' ? 'You hung up.'
-            : r === 'remote-hangup' ? 'Label Check hung up — usually the 30s silence timeout. Tap Talk to redial.'
+            : r === 'remote-hangup' ? 'Label Check hung up — usually the 45s silence timeout. Tap Talk to redial.'
               : r ? `Call ended (${r}). Tap Talk to redial.`
                 : null,
         )
@@ -407,7 +423,9 @@ export default function Live() {
             // The agent's wait-loop progress: the snap bubble already says "Researching…".
             if (fed.reason === 'researching') setSnapStatus(snapId, 'researching')
           } else if (!ownSnapsRef.current.has(fed.snap_at ?? -1)) {
-            say('assistant', fed.answer, fed.product_key ?? undefined)
+            // "New to me, looking it up" isn't final; a found product or a miss is.
+            const final = !!fed.product_key || !fed.job_id
+            if (!final || claimAnswer(snapId)) say('assistant', fed.answer, fed.product_key ?? undefined)
             if (fed.product_key) {
               setSnapStatus(snapId, 'done')
               showProduct(fed.product_key).catch(() => {})
@@ -416,7 +434,7 @@ export default function Live() {
               const jobId = fed.job_id
               if (!busyJobs.has(jobId)) {
                 busyJobs.add(jobId)
-                followBackgroundJob(jobId)
+                followBackgroundJob(jobId, snapId)
                   .then((found) => setSnapStatus(snapId, found ? 'done' : 'missed'))
                   .catch(() => setSnapStatus(snapId, 'missed'))
                   .finally(() => busyJobs.delete(jobId))
@@ -492,7 +510,7 @@ export default function Live() {
       <div className="rise mt-4">
         {callState === 'idle' || callState === 'ended' ? (
           <button type="button" onClick={startCall} className={buttonClass('primary', 'w-full py-3')}>
-            📞 Talk to Label Check
+            <Phone className="size-4" aria-hidden /> Talk to Label Check
           </button>
         ) : (
           <Card className="flex items-center justify-between gap-3">
@@ -509,7 +527,7 @@ export default function Live() {
                 )}
               </p>
               {endReason === null && callState === 'active' && (
-                <p className="mt-1 text-xs text-faint">Quiet for 30s hangs up — tap Talk to redial</p>
+                <p className="mt-1 text-xs text-faint">Quiet for 45s hangs up — tap Talk to redial</p>
               )}
             </div>
             <div className="flex gap-2">
@@ -585,7 +603,7 @@ export default function Live() {
           aria-label="Ask by voice"
           className={`${buttonClass(listening ? 'primary' : 'secondary', 'px-4')} ${listening ? 'animate-pulse' : ''}`}
         >
-          {listening ? 'Listening…' : '🎤'}
+          {listening ? 'Listening…' : <Mic className="size-4" aria-hidden />}
         </button>
         <label htmlFor="live-q" className="sr-only">Ask about the pack</label>
         <input
@@ -604,7 +622,7 @@ export default function Live() {
           {muted ? 'Unmute answers' : 'Mute answers'}
         </button>
         <button type="button" onClick={snapBarcode} disabled={busy || !ready} className={buttonClass('ghost', 'text-xs')}>
-          📷 Snap barcode
+          <Camera className="size-3.5" aria-hidden /> Snap barcode
         </button>
         <Link to="/scan" className={buttonClass('ghost', 'text-xs')}>Back to scan</Link>
       </div>
@@ -615,7 +633,7 @@ export default function Live() {
 const SNAP_LABEL: Record<SnapStatus, string> = {
   looking: 'Looking at this pack…',
   researching: 'New to me. Researching it…',
-  done: '✓ Got it',
+  done: 'Got it',
   missed: "Couldn't place this one",
 }
 
@@ -630,6 +648,7 @@ function SnapBubble({ url, status }: { url: string; status: SnapStatus }) {
         </div>
         <p className={`flex items-center gap-2 text-sm ${status === 'done' ? 'text-good' : status === 'missed' ? 'text-muted' : 'text-accent-deep'}`}>
           {working && <Spinner className="text-accent" />}
+          {status === 'done' && <Check className="size-4" aria-hidden />}
           {SNAP_LABEL[status]}
         </p>
       </div>
@@ -677,7 +696,7 @@ function CompareCard({ a, b }: { a: Verdict; b: Verdict }) {
           </Link>
         ))}
       </div>
-      <Button variant="secondary" className="mt-3" onClick={() => speak(line)}>🔊 Hear it</Button>
+      <Button variant="secondary" className="mt-3" onClick={() => speak(line)}><Volume2 className="size-4" aria-hidden /> Hear it</Button>
     </Card>
   )
 }
