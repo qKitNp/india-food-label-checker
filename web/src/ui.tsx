@@ -1,48 +1,49 @@
 import { useState, type ButtonHTMLAttributes, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import { imageUrl } from './api'
 
-export function Page({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
+export function Page({ children, wide = false, bare = false }: { children: ReactNode; wide?: boolean; bare?: boolean }) {
   return (
-    <div className="min-h-dvh pb-16">
+    <div className="min-h-dvh">
       <Nav />
-      <main className={`mx-auto w-full px-4 pt-6 ${wide ? 'max-w-5xl' : 'max-w-xl'}`}>{children}</main>
+      {/* Hairline rails down both sides of the content, like a ruled page. */}
+      <div className="mx-auto min-h-[calc(100dvh-3.5rem)] max-w-6xl border-line sm:border-x">
+        {bare ? children : (
+          <main className={`mx-auto w-full px-4 pt-8 pb-16 ${wide ? 'max-w-5xl' : 'max-w-xl'}`}>{children}</main>
+        )}
+      </div>
     </div>
   )
 }
 
 function Nav() {
+  const cell = ({ isActive }: { isActive: boolean }) =>
+    `flex items-center border-r border-line px-3 text-[15px] font-medium transition-colors sm:px-5 ${isActive ? 'bg-white text-ink' : 'text-ink-2 hover:bg-wash'}`
   return (
-    <div className="sticky top-0 z-20 px-3 pt-3">
-      <nav className="mx-auto flex max-w-xl items-center justify-between rounded-2xl border border-line/70 bg-wash/80 px-3 py-2 backdrop-blur">
-        <Link to="/" className="flex items-center gap-2 text-[15px] font-semibold text-accent-deep">
+    <header className="sticky top-0 z-20 border-b border-line bg-page/85 backdrop-blur">
+      <nav className="mx-auto flex h-14 max-w-6xl items-stretch border-line sm:border-x">
+        <Link to="/" className="flex items-center gap-2 border-r border-line px-3 text-[17px] font-semibold tracking-tight text-ink sm:px-5">
           <Logo />
-          Label Check
+          Fineprint
         </Link>
-        <div className="flex items-center gap-1.5">
-          <Link to="/products" className="rounded-full px-3 py-1.5 text-sm font-medium text-ink-2 hover:bg-white">
-            Products
-          </Link>
-          <Link to="/live" className="rounded-full px-3 py-1.5 text-sm font-medium text-ink-2 hover:bg-white">
-            Live
-          </Link>
-          <Link
-            to="/scan"
-            className="rounded-full border border-line bg-white px-3 py-1.5 text-sm font-medium text-ink-2 shadow-card hover:bg-wash"
-          >
-            Scan
-          </Link>
-        </div>
+        <NavLink to="/products" className={cell}>Products</NavLink>
+        <NavLink to="/live" className={cell}>Live</NavLink>
+        <div className="flex-1" />
+        <NavLink to="/scan" className="flex items-center bg-ink px-4 text-[15px] font-medium text-white transition-colors hover:bg-ink-2 sm:px-6">
+          Scan
+        </NavLink>
       </nav>
-    </div>
+    </header>
   )
 }
 
+/** A page of text whose last line is the small print. */
 export function Logo({ size = 22 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
-      <rect width="32" height="32" rx="9" fill="#0ea5e9" />
-      <path d="M9 16.5l4.5 4.5L23 11.5" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      <rect width="32" height="32" rx="8" fill="#0ea5e9" />
+      <path d="M9 10.5h14M9 16h14" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" />
+      <path d="M9 21.5h7" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   )
 }

@@ -342,7 +342,7 @@ export default function Live() {
         const r = e.reason ?? ''
         setEndReason(
           r === 'local-hangup' ? 'You hung up.'
-            : r === 'remote-hangup' ? 'Label Check hung up after 45 s of quiet. Tap Call again to reconnect.'
+            : r === 'remote-hangup' ? 'Fineprint hung up after 45 s of quiet. Tap Call again to reconnect.'
               : r ? `Call ended (${r}). Tap Call again to reconnect.`
                 : null,
         )
