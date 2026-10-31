@@ -62,3 +62,10 @@ def test_salty_snack_gets_a_salt_line():
     p = Product(source="label", verified=True, brand="Kurkure", name="Masala Munch", ingredients_text="rice meal",
                 nutrition=Nutrition(sodium_mg=800))
     assert "about 40% of the salt the WHO says to have in a whole day" in say(p).answer
+
+
+def test_follow_up_facts_explain_each_additive():
+    more = say(diet_coke()).more
+    what = next(m for m in more if m.startswith("Aspartame is a sweetener."))
+    assert "In India" in what  # the checked rule, not a made-up description
+    assert sum(m.startswith("Aspartame and phosphoric acid have legal usage limits") for m in more) == 1

@@ -182,6 +182,15 @@ def describe(v: Verdict, rng: random.Random | None = None) -> Spoken:
     return Spoken(" ".join(lines), more=_more(v, compare))
 
 
+def _what_is(a) -> str:
+    """"What is aspartame?": its kind, plus the checked rule for India and one other region."""
+    kind = a.category.replace("_", " ").strip() or "additive"
+    article = "an" if kind[:1].lower() in "aeiou" else "a"
+    line = f"{_cap(_plain(a.name))} is {article} {kind}."
+    facts = [a.status[r].fact for r in ("IN", "EU", "US") if r in a.status and a.status[r].fact]
+    return " ".join([line, *facts[:2]])
+
+
 def _more(v: Verdict, compare: str | None) -> list[str]:
     """Checked facts for follow-up questions, each a sentence the agent can say as is."""
     more = []
@@ -189,11 +198,13 @@ def _more(v: Verdict, compare: str | None) -> list[str]:
         more.append(compare)
     if v.product.additives:
         more.append(f"Its additives are {_list([_additive(c, v) for c in v.product.additives])}.")
-        limited = [_plain(a.name) for a in v.additives
-                   if any(s.status == "restricted" for s in a.status.values())]
-        if limited:
-            more.append(f"{_cap(_list(limited))} {'has' if len(limited) == 1 else 'have'} legal usage "
-                        "limits, but labels don't say how much is used, so we can't check them.")
+    # Banned ones and sweeteners first: those are what people ask about.
+    for a in sorted(v.additives, key=lambda a: (not a.flagged, a.code not in SWEETENERS))[:6]:
+        more.append(_what_is(a))
+    limited = [_plain(a.name) for a in v.additives if any(s.status == "restricted" for s in a.status.values())]
+    if limited:
+        more.append(f"{_cap(_list(limited))} {'has' if len(limited) == 1 else 'have'} legal usage "
+                    "limits, but labels don't say how much is used, so we can't check them.")
     n = v.product.nutrition
     facts = [f"{n.energy_kcal:g} calories" if n.energy_kcal is not None else "",
              f"{n.sugars_g:g} grams of sugar" if n.sugars_g is not None else "",
