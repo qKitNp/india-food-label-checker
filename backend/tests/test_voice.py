@@ -56,3 +56,9 @@ def test_sugary_drink_in_teaspoons_per_glass():
     s = say(p)
     assert "about 8 teaspoons of sugar in a glass" in s.answer
     assert any("13 grams of sugar" in m for m in s.more)
+
+
+def test_salty_snack_gets_a_salt_line():
+    p = Product(source="label", verified=True, brand="Kurkure", name="Masala Munch", ingredients_text="rice meal",
+                nutrition=Nutrition(sodium_mg=800))
+    assert "about 40% of the salt the WHO says to have in a whole day" in say(p).answer

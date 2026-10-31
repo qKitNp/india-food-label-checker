@@ -20,6 +20,8 @@ SWEETENERS = {"E950": "acesulfame K", "E951": "aspartame", "E952": "cyclamate", 
 REGION_NAMES = {"IN": "India", "EU": "the EU", "US": "the US"}
 SHORT_COUNTRY = {"United Kingdom": "UK", "United States": "US", "United States of America": "US"}
 SMALL_WORDS = {"and", "or", "of", "with", "in", "the", "a", "an", "to", "for"}
+WHO_SODIUM_MG = 2000  # WHO daily sodium limit (5 g salt)
+SALTY_MG = 400  # per 100 g: worth a mention
 GLASS_ML = 250  # a drink's sugar is easier to picture per glass than per 100 ml
 TSP_SUGAR_G = 4
 
@@ -84,6 +86,10 @@ def _country(v: Verdict) -> str:
     return SHORT_COUNTRY.get(c, c)
 
 
+def _cap(s: str) -> str:
+    return s[:1].upper() + s[1:]  # str.capitalize() would lower-case "FCF"
+
+
 def _per(v: Verdict) -> str:
     return "100 ml" if v.product.is_liquid else "100 grams"
 
@@ -106,6 +112,14 @@ def _sugar_line(v: Verdict) -> str | None:
         return f"It has about {tsp} teaspoons of sugar in a glass"
     tsp = round(sugar / TSP_SUGAR_G)
     return f"It has about {tsp} teaspoons of sugar in every 100 grams"
+
+
+def _salt_line(v: Verdict) -> str | None:
+    sodium = v.product.nutrition.sodium_mg
+    if v.product.is_liquid or not sodium or sodium < SALTY_MG:
+        return None
+    pct = round(sodium / WHO_SODIUM_MG * 100 / 5) * 5
+    return f"A 100-gram serving has about {pct}% of the salt the WHO says to have in a whole day"
 
 
 def _banned_line(a) -> str:
@@ -156,8 +170,8 @@ def describe(v: Verdict, rng: random.Random | None = None) -> Spoken:
             lines.append("Nothing stands out in what we check.")
     if sweeteners:
         lines.append(f"It's sweetened with {_list(sweeteners)}.")
-    elif sugar := _sugar_line(v):
-        lines.append(sugar + ".")
+    elif extra := _sugar_line(v) or _salt_line(v):
+        lines.append(extra + ".")
 
     if compare:
         lines.append(f"Want to hear how it differs from the {_country(v)} version?")
@@ -178,7 +192,7 @@ def _more(v: Verdict, compare: str | None) -> list[str]:
         limited = [_plain(a.name) for a in v.additives
                    if any(s.status == "restricted" for s in a.status.values())]
         if limited:
-            more.append(f"{_list(limited).capitalize()} {'has' if len(limited) == 1 else 'have'} legal usage "
+            more.append(f"{_cap(_list(limited))} {'has' if len(limited) == 1 else 'have'} legal usage "
                         "limits, but labels don't say how much is used, so we can't check them.")
     n = v.product.nutrition
     facts = [f"{n.energy_kcal:g} calories" if n.energy_kcal is not None else "",
@@ -186,8 +200,9 @@ def _more(v: Verdict, compare: str | None) -> list[str]:
              f"{n.sodium_mg:g} milligrams of sodium" if n.sodium_mg is not None else ""]
     if facts := [f for f in facts if f]:
         more.append(f"Per {_per(v)} it has {_list(facts)}.")
-    if sugar := _sugar_line(v):
-        more.append(sugar + ".")
+    for extra in (_sugar_line(v), _salt_line(v)):
+        if extra:
+            more.append(extra + ".")
     for limit in v.limits:
         more.append(limit.message)
     if v.product.source == "web" and v.product.evidence:
