@@ -286,6 +286,12 @@ export const api = {
     data.append('image', photo, 'frame.jpg')
     return request<{ ok: boolean; session_id: string }>('/live/frame', { method: 'POST', body: data })
   },
+  liveHear: (sessionId: string, clip: Blob) => {
+    const data = new FormData()
+    data.append('session_id', sessionId)
+    data.append('audio', clip, clip.type.includes('mp4') ? 'clip.m4a' : 'clip.webm')
+    return request<{ text: string }>('/live/hear', { method: 'POST', body: data })
+  },
   liveLookup: (sessionId: string) =>
     request<LiveLookup>('/voice/live-lookup', {
       method: 'POST',

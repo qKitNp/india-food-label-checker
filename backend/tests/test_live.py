@@ -342,3 +342,39 @@ def test_live_wait_loop_announces_the_result_unprompted(client, monkeypatch):
     assert done["reason"] == "researched" and done["answer"].startswith("Found it. Gatorade Orange.")
     assert done["next_step"] is None
     assert client.post("/voice/live-wait", json={"session_id": sid}).json()["reason"] == "idle"
+
+
+def _gemini_says(text: str):
+    return respx.post(url__regex=r"https://generativelanguage\.googleapis\.com/.*generateContent").mock(
+        return_value=httpx.Response(200, json={"candidates": [{"content": {"parts": [{"text": text}]}}]}))
+
+
+@respx.mock
+def test_live_hear_captions_an_utterance(client):
+    get_settings().gemini_api_key = "test-key"
+    sid = "testsession-hear01"
+    client.post("/live/frame", data={"session_id": sid}, files={"image": ("f.jpg", jpeg(), "image/jpeg")})
+    route = _gemini_says("Tell me about this.")
+    r = client.post("/live/hear", data={"session_id": sid}, files={"audio": ("a.webm", b"opus", "audio/webm;codecs=opus")})
+    assert r.status_code == 200 and r.json() == {"text": "Tell me about this."}
+    sent = route.calls[0].request.content
+    assert b'"mime_type":"audio/webm"' in sent.replace(b" ", b"")
+
+
+@respx.mock
+def test_live_hear_drops_described_silence(client):
+    get_settings().gemini_api_key = "test-key"
+    sid = "testsession-hear02"
+    client.post("/live/frame", data={"session_id": sid}, files={"image": ("f.jpg", jpeg(), "image/jpeg")})
+    _gemini_says("[no speech]")
+    r = client.post("/live/hear", data={"session_id": sid}, files={"audio": ("a.webm", b"opus", "audio/webm")})
+    assert r.json() == {"text": ""}
+
+
+def test_live_hear_needs_a_live_session_and_audio(client):
+    r = client.post("/live/hear", data={"session_id": "nosuchsession123"}, files={"audio": ("a.webm", b"x", "audio/webm")})
+    assert r.status_code == 400
+    sid = "testsession-hear03"
+    client.post("/live/frame", data={"session_id": sid}, files={"image": ("f.jpg", jpeg(), "image/jpeg")})
+    r = client.post("/live/hear", data={"session_id": sid}, files={"audio": ("a.txt", b"x", "text/plain")})
+    assert r.status_code == 415

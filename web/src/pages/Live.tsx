@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Check, Mic, MicOff, Phone, PhoneOff, SwitchCamera, Volume2, VolumeX } from 'lucide-react'
 import { API_URL, api, ApiError, liveSnapUrl, type Verdict } from '../api'
 import { toJpeg } from '../images'
+import { watchSpeech } from '../speech'
 import { Button, Card, Chip, ErrorNote, Page, ProductImage, Spinner, buttonClass, productTitle, shortBrand } from '../ui'
 
 type SnapStatus = 'looking' | 'researching' | 'done' | 'missed'
@@ -14,7 +15,13 @@ type Msg = {
   productKey?: string
   // The exact frame a lookup is working on, frozen in the chat.
   snap?: { url: string; status: SnapStatus }
+  at: number // last change; bubbles fade out a while after this
+  pending?: boolean // a caption still being transcribed
 }
+
+// How long a bubble stays before fading: long answers get time to be read.
+const bubbleTtl = (m: Msg) => (m.snap ? 8000 : 6000 + 60 * m.text.length)
+const FADE_MS = 1000
 
 const FRAME_MS = 1000
 const POLL_MS = 1500
@@ -87,21 +94,47 @@ export default function Live() {
     return true
   }
 
+  const lastAnswerAtRef = useRef(0) // when a tool answer last landed in the chat
   const say = useCallback((role: Msg['role'], text: string, productKey?: string) => {
-    setMsgs((m) => [...m, { id: idRef.current++, role, text, productKey }])
+    if (role === 'assistant') lastAnswerAtRef.current = Date.now()
+    setMsgs((m) => [...m, { id: idRef.current++, role, text, productKey, at: Date.now() }])
   }, [])
+
+  // Captions: add a placeholder the moment speech starts, fill or drop it when transcribed.
+  const addCaption = useCallback((role: Msg['role']) => {
+    const id = idRef.current++
+    setMsgs((m) => [...m, { id, role, text: '', at: Date.now(), pending: true }])
+    return id
+  }, [])
+  const settleCaption = useCallback((id: number, text: string | null) => {
+    setMsgs((m) => text
+      ? m.map((x) => (x.id === id ? { ...x, text, pending: false, at: Date.now() } : x))
+      : m.filter((x) => x.id !== id))
+  }, [])
+
+  // Clock for fading bubbles; only ticks while something is on screen.
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (!msgs.length) return
+    const t = window.setInterval(() => {
+      const t = Date.now()
+      setNow(t)
+      setMsgs((m) => (m.some((x) => faded(x, t, FADE_MS)) ? m.filter((x) => !faded(x, t, FADE_MS)) : m))
+    }, 500)
+    return () => window.clearInterval(t)
+  }, [msgs.length])
 
   // Freeze the frame over the camera and pin it in the chat: "this is the pack I'm on".
   const showSnap = useCallback((url: string) => {
     const id = idRef.current++
-    setMsgs((m) => [...m, { id, role: 'assistant', text: '', snap: { url, status: 'looking' } }])
+    setMsgs((m) => [...m, { id, role: 'assistant', text: '', snap: { url, status: 'looking' }, at: Date.now() }])
     setFreeze({ url, key: id })
     return id
   }, [])
 
   const setSnapStatus = useCallback((msgId: number | undefined, status: SnapStatus) => {
     if (msgId === undefined) return
-    setMsgs((m) => m.map((x) => (x.id === msgId && x.snap ? { ...x, snap: { ...x.snap, status } } : x)))
+    setMsgs((m) => m.map((x) => (x.id === msgId && x.snap ? { ...x, snap: { ...x.snap, status }, at: Date.now() } : x)))
   }, [])
 
   useEffect(() => {
@@ -448,6 +481,75 @@ export default function Live() {
     callRef.current?.stop().catch(() => {})
   }, [])
 
+  // Live captions while on a call. Bolna's web call is audio only and its transcript
+  // arrives after hang-up, so we cut our own copy of each side into utterances and
+  // caption them: the caller sees "it heard me" as soon as they start talking.
+  const speakingRef = useRef(false)
+  const callMutedRef = useRef(false)
+  useEffect(() => {
+    speakingRef.current = speaking
+    callMutedRef.current = callMuted
+  }, [speaking, callMuted])
+
+  useEffect(() => {
+    if (callState !== 'active') return
+    let stopped = false
+    const stops: (() => void)[] = []
+    const caption = (id: number, clip: Blob | null, skip = false) => {
+      if (!clip || skip) return settleCaption(id, null)
+      api.liveHear(sessionId, clip)
+        .then((r) => !stopped && settleCaption(id, r.text.trim() || null))
+        .catch(() => !stopped && settleCaption(id, null))
+    }
+
+    // The caller: our own copy of the mic, with echo cancellation.
+    navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })
+      .then((mic) => {
+        if (stopped) return mic.getTracks().forEach((t) => t.stop())
+        let id = -1
+        const stopWatch = watchSpeech(mic, {
+          threshold: 0.02,
+          enabled: () => !callMutedRef.current,
+          // Echo cancellation removes most of the agent's voice from the mic; while it
+          // talks, only clearly louder speech (the caller barging in) counts.
+          boost: () => (speakingRef.current ? 2.5 : 1),
+          onStart: () => { id = addCaption('user') },
+          onEnd: (clip) => caption(id, clip),
+        })
+        stops.push(() => {
+          stopWatch()
+          mic.getTracks().forEach((t) => t.stop())
+        })
+      })
+      .catch(() => {})
+
+    // The agent. Tool answers are already in the chat word for word; caption only
+    // what it says around them (greeting, "looking at it", progress updates).
+    // The SDK attaches the agent's stream a moment after the call turns active.
+    const attach = window.setInterval(() => {
+      const remote = agentAudio.current?.srcObject
+      if (stopped || !(remote instanceof MediaStream)) return
+      window.clearInterval(attach)
+      let id = -1
+      let began = 0
+      stops.push(watchSpeech(remote, {
+        threshold: 0.01,
+        silenceMs: 600,
+        maxMs: 15000,
+        onStart: () => {
+          began = Date.now()
+          id = addCaption('assistant')
+        },
+        onEnd: (clip) => caption(id, clip, lastAnswerAtRef.current > began - 6000),
+      }))
+    }, 200)
+    stops.push(() => window.clearInterval(attach))
+    return () => {
+      stopped = true
+      stops.forEach((f) => f())
+    }
+  }, [callState, sessionId, addCaption, settleCaption])
+
   // Call timer while active.
   useEffect(() => {
     if (callState !== 'active') return
@@ -513,18 +615,21 @@ export default function Live() {
           className="absolute inset-x-3 top-14 bottom-20 flex flex-col overflow-y-auto overscroll-contain [mask-image:linear-gradient(to_bottom,transparent,black_3rem)] [scrollbar-width:none]"
         >
           <div className="mt-auto space-y-1.5">
-            {msgs.length === 0 && callState !== 'connecting' && (
+            {msgs.length === 0 && callState !== 'connecting' && callState !== 'active' && (
               <p className="w-fit max-w-[85%] rounded-2xl bg-black/35 px-3 py-2 text-[13px] text-white/85 backdrop-blur-md">
                 Try “Tell me about this”, then show another pack and ask “Which has less sugar?”
               </p>
             )}
-            {msgs.map((m) => m.snap ? <SnapBubble key={m.id} {...m.snap} /> : (
-              <div key={m.id} className={`rise flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <p className={`max-w-[85%] rounded-2xl px-3 py-2 text-[14px] leading-snug text-white backdrop-blur-md ${m.role === 'user' ? 'bg-accent/75' : 'bg-black/45'}`}>
-                  {m.text}
-                </p>
-              </div>
-            ))}
+            {msgs.filter((m) => !faded(m, now, FADE_MS)).map((m) => {
+              const fading = faded(m, now, 0)
+              return m.snap ? <SnapBubble key={m.id} {...m.snap} fading={fading} /> : (
+                <div key={m.id} className={`rise flex transition-opacity duration-1000 ${fading ? 'opacity-0' : ''} ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <p className={`max-w-[85%] rounded-2xl px-3 py-2 text-[14px] leading-snug text-white backdrop-blur-md ${m.role === 'user' ? 'bg-accent/75' : 'bg-black/45'}`}>
+                    {m.pending ? <Hearing /> : m.text}
+                  </p>
+                </div>
+              )
+            })}
             {jobNote && (
               <p className="flex w-fit items-center gap-2 rounded-full bg-black/45 px-3 py-1.5 text-xs text-white backdrop-blur-md">
                 <Spinner className="size-3 text-white" />{jobNote}
@@ -627,10 +732,27 @@ const SNAP_LABEL: Record<SnapStatus, string> = {
   missed: "Couldn't place this one",
 }
 
-function SnapBubble({ url, status }: { url: string; status: SnapStatus }) {
+// Past its time on screen? Pending captions and lookups still working never fade.
+function faded(m: Msg, now: number, grace: number) {
+  if (m.pending || m.snap?.status === 'looking' || m.snap?.status === 'researching') return false
+  return now - m.at > bubbleTtl(m) + grace
+}
+
+// Shown in a caption bubble from the first syllable until the words come back.
+function Hearing() {
+  return (
+    <span className="flex h-5 items-center gap-1" aria-label="Hearing you">
+      {[0, 150, 300].map((d) => (
+        <span key={d} className="size-1.5 animate-bounce rounded-full bg-white/90" style={{ animationDelay: `${d}ms` }} />
+      ))}
+    </span>
+  )
+}
+
+function SnapBubble({ url, status, fading = false }: { url: string; status: SnapStatus; fading?: boolean }) {
   const working = status === 'looking' || status === 'researching'
   return (
-    <div className="rise flex justify-start">
+    <div className={`rise flex justify-start transition-opacity duration-1000 ${fading ? 'opacity-0' : ''}`}>
       <div className="flex items-center gap-2.5 rounded-2xl bg-black/45 p-1.5 pr-3.5 backdrop-blur-md">
         <div className={`relative h-12 w-16 shrink-0 overflow-hidden rounded-xl bg-black/30 ${working ? 'ring-2 ring-accent' : ''}`}>
           <img src={url} alt="The frame being looked up" className="size-full object-cover" />

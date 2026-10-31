@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     # so the Bolna API key never reaches the client.
     bolna_api_key: str = ""
     bolna_agent_id: str = "d09afdca-5794-4127-b2b5-7cf243ab361f"
+    # Live captions: a fast audio model, ~2 s per utterance.
+    caption_model: str = "gemini-flash-lite-latest"
+    caption_timeout: float = 8
     research_daily_cap: int = 100  # codes researched automatically per day
 
     off_user_agent: str = "better-fssai/0.1 (hackathon project)"

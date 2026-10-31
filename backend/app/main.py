@@ -17,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from pydantic import BaseModel, model_validator
 
-from app import additive_codes, agent, barcodes, llm, sanity, verdict
+from app import additive_codes, agent, barcodes, captions, llm, sanity, verdict
 from app.catalog import Embedder
 from app.config import get_settings
 from app.live import FRAME_TTL, MAX_SESSIONS, STALE_AFTER, LiveResult, LiveStore, SESSION_RE
@@ -456,6 +456,29 @@ async def voice_lookup(body: VoiceLookup, svc: ProductsDep) -> dict:
                 "answer": "I couldn't find that product by name. Point your camera at it and ask me about it instead."}
     v = verdict.build(product, await svc.store.get_counterpart(product.key, "EU"))
     return {"found": True, "answer": verdict.spoken(v)}
+
+
+@app.post("/live/hear")
+async def live_hear(
+    request: Request,
+    session_id: Annotated[str, Form()],
+    audio: Annotated[UploadFile, File(description="One utterance, recorded by the live page")],
+) -> dict:
+    """Caption one utterance from a live call (the caller's or the agent's)."""
+    if not SESSION_RE.match(session_id) or request.app.state.live.get(session_id) is None:
+        raise HTTPException(400, "captions need an active live camera session")
+    media_type = (audio.content_type or "").split(";")[0]
+    if not media_type.startswith("audio/"):
+        raise HTTPException(415, "send an audio clip")
+    data = await audio.read(captions.MAX_BYTES + 1)
+    if len(data) > captions.MAX_BYTES:
+        raise HTTPException(413, "clip too long")
+    try:
+        text = await captions.transcribe(get_settings(), data, media_type, request.app.state.http)
+    except captions.CaptionError as e:
+        _live_log.warning("caption failed: %s", e)
+        raise HTTPException(502, "couldn't caption that clip") from e
+    return {"text": text}
 
 
 @app.post("/live/frame")
