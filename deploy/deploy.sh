@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 # Pull the latest code on the server and restart the API. Run on the VM: ~/app/deploy/deploy.sh
-# Public traffic arrives through the Cloudflare Tunnel (deploy/cloudflared.yml); the tunnel
-# credentials live only in /etc/cloudflared/food-label-api.json on the VM.
+# Public traffic arrives through the Cloudflare Tunnel. Its config (/etc/cloudflared/config.yml,
+# see deploy/cloudflared.example.yml) and credentials live only on the VM.
 set -euo pipefail
 cd ~/app
 git pull --ff-only
 cd backend
 ~/.local/bin/uv sync --frozen --no-dev
 sudo cp ~/app/deploy/labelcheck.service /etc/systemd/system/labelcheck.service
-sudo install -m 644 ~/app/deploy/cloudflared.yml /etc/cloudflared/config.yml
 sudo systemctl daemon-reload
 sudo systemctl restart labelcheck
 sudo systemctl restart cloudflared

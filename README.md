@@ -35,7 +35,7 @@ Built for the Appwrite Databases Hackathon and the Bolna voice AI buildathon, Oc
 
 ## Architecture
 
-Browser (React + Vite, Appwrite Sites) sends scans and live frames to a FastAPI backend on a small VM behind a Cloudflare Tunnel (`food-label-api.tinkerers.space`). The backend reads and writes Appwrite TablesDB + Storage, and the Bolna agent calls back into backend tool endpoints and `/llm/v1` for answers.
+Browser (React + Vite, Appwrite Sites) sends scans and live frames to a FastAPI backend on a small VM behind a Cloudflare Tunnel, so the VM exposes no web ports. The backend reads and writes Appwrite TablesDB + Storage, and the Bolna agent calls back into backend tool endpoints and `/llm/v1` for answers.
 
 - Browser (React + Vite, Appwrite Sites) -> FastAPI backend behind Cloudflare Tunnel
 - FastAPI backend -> Appwrite TablesDB + Storage

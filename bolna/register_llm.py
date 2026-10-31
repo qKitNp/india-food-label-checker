@@ -13,7 +13,7 @@ import urllib.error
 import urllib.request
 
 NAME = "fineprint-voice"
-URL = "https://food-label-api.tinkerers.space/llm/v1"
+URL = os.environ["API_PUBLIC_URL"].rstrip("/") + "/llm/v1"  # from backend/.env, not the repo
 BOLNA = "https://api.bolna.ai/user/model/custom"
 HEADERS = {"Authorization": f"Bearer {os.environ['BOLNA_API_KEY']}", "Content-Type": "application/json"}
 

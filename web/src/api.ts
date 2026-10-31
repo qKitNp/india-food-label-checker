@@ -1,6 +1,8 @@
 // Client for the FastAPI backend. Types mirror backend/app/models.py, agent.py and jobs.py.
 
-export const API_URL = (import.meta.env.VITE_API_URL ?? 'https://food-label-api.tinkerers.space').replace(/\/$/, '')
+// Set in web/.env.production (not committed; see web/.env.example) or the shell.
+export const API_URL = String(import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
+if (!API_URL) console.error('VITE_API_URL is not set: the app has no API to call.')
 
 export type Region = 'IN' | 'EU' | 'US'
 

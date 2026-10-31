@@ -22,7 +22,7 @@
             "llm_config": {
               "provider": "custom",
               "model": "fineprint-voice",
-              "base_url": "https://food-label-api.tinkerers.space/llm/v1",
+              "base_url": "{{API_URL}}/llm/v1",
               "family": "openai",
               "max_tokens": 200,
               "temperature": 0.2
@@ -80,7 +80,7 @@
                   "param": {
                     "session_id": "%(session_id)s"
                   },
-                  "url": "https://food-label-api.tinkerers.space/voice/live-lookup",
+                  "url": "{{API_URL}}/voice/live-lookup",
                   "api_token": "",
                   "headers": {
                     "Content-Type": "application/json"
@@ -108,7 +108,7 @@
                   "param": {
                     "session_id": "%(session_id)s"
                   },
-                  "url": "https://food-label-api.tinkerers.space/voice/live-wait",
+                  "url": "{{API_URL}}/voice/live-wait",
                   "api_token": "",
                   "headers": {
                     "Content-Type": "application/json"
@@ -137,7 +137,7 @@
                   "param": {
                     "product_name": "%(product_name)s"
                   },
-                  "url": "https://food-label-api.tinkerers.space/voice/lookup",
+                  "url": "{{API_URL}}/voice/lookup",
                   "api_token": "",
                   "headers": {
                     "Content-Type": "application/json"
@@ -171,7 +171,7 @@
                     "question": "%(question)s",
                     "product": "%(product)s"
                   },
-                  "url": "https://food-label-api.tinkerers.space/voice/ask",
+                  "url": "{{API_URL}}/voice/ask",
                   "api_token": "",
                   "headers": {
                     "Content-Type": "application/json"
@@ -182,28 +182,28 @@
             "tools_params": {
               "lookup_food_label": {
                 "method": "POST",
-                "url": "https://food-label-api.tinkerers.space/voice/lookup",
+                "url": "{{API_URL}}/voice/lookup",
                 "headers": {
                   "Content-Type": "application/json"
                 }
               },
               "lookup_visible_product": {
                 "method": "POST",
-                "url": "https://food-label-api.tinkerers.space/voice/live-lookup",
+                "url": "{{API_URL}}/voice/live-lookup",
                 "headers": {
                   "Content-Type": "application/json"
                 }
               },
               "wait_for_lookup": {
                 "method": "POST",
-                "url": "https://food-label-api.tinkerers.space/voice/live-wait",
+                "url": "{{API_URL}}/voice/live-wait",
                 "headers": {
                   "Content-Type": "application/json"
                 }
               },
               "ask_label_question": {
                 "method": "POST",
-                "url": "https://food-label-api.tinkerers.space/voice/ask",
+                "url": "{{API_URL}}/voice/ask",
                 "headers": {
                   "Content-Type": "application/json"
                 }

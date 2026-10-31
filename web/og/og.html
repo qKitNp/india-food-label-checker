@@ -73,11 +73,11 @@
   <div class="pills">
     <span class="pill">Banned abroad?</span><span class="pill">Claims vs numbers</span><span class="pill">India vs EU</span>
   </div>
-  <div class="url">fineprint.appwrite.network</div>
+  <div class="url" id="siteUrl"></div>
 
   <div class="frame">
-    <img class="shot" id="shotA" src="https://food-label-api.tinkerers.space/products/n-78ab746faef35ac1dfa3/image">
-    <img class="shot" id="shotB" src="https://food-label-api.tinkerers.space/products/3948764061257/image" style="opacity:0">
+    <img class="shot" id="shotA" data-product="n-78ab746faef35ac1dfa3">
+    <img class="shot" id="shotB" data-product="3948764061257" style="opacity:0">
     <div class="shade-top"></div><div class="shade-bot"></div>
     <div class="flash" id="flash"></div>
     <div class="scan" id="scan"></div>
@@ -91,6 +91,12 @@
   </div>
 
 <script>
+// Addresses come from the page URL (render.py passes them from web/.env.production):
+// og.html?api=https://api.example.com&site=https://site.example.com
+const params = new URLSearchParams(location.search)
+for (const img of document.querySelectorAll('img[data-product]'))
+  img.src = `${params.get('api')}/products/${img.dataset.product}/image`
+document.getElementById('siteUrl').textContent = (params.get('site') || '').replace(/^https?:\/\//, '')
 // One 8-second loop, two packs. render(t) draws the exact state at time t (seconds).
 const SCENES = [
   { shot: 'shotA', ask: 'Tell me about this',

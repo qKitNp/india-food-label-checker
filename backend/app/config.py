@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     bolna_agent_id: str = "d09afdca-5794-4127-b2b5-7cf243ab361f"
     # The voice agent's LLM, proxied through /llm/v1 so the live page gets exact captions.
     llm_proxy_key: str = ""  # Bolna sends it as a bearer token; empty disables the proxy
+    tool_token: str = ""  # Bolna sends it on tool calls (/voice/*); empty: no check (local runs)
     voice_llm_name: str = "fineprint-voice"  # the model name registered with Bolna
     voice_llm_model: str = "deepseek-flash"  # DeepSeek, thinking off: ~0.5 s to first token
     voice_llm_fallback: str = "gemini-3.5-flash-lite"

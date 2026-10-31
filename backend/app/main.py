@@ -25,6 +25,7 @@ from app.live import FRAME_TTL, MAX_SESSIONS, STALE_AFTER, LiveResult, LiveStore
 from app.research import ResearchQueue
 from app.rules import substances, tips
 from app.jobs import IdentifyResponse, Job, JobStore
+from app.limits import Limiter, client_ip, limit
 from app.models import Product, ProductSummary, Region, Submission, Verdict
 from app.services import ProductService
 from app.sources import counterpart, label, off
@@ -107,6 +108,7 @@ async def lifespan(app: FastAPI):
     app.state.jobs = JobStore(on_finish=store.save_scan_log)
     app.state.live = LiveStore()
     app.state.transcripts = voice_llm.Transcripts()
+    app.state.limiter = Limiter()
     app.state.asker = ask.Asker(settings, app.state.exa, http)
     await load_substances(store)
 
@@ -300,7 +302,7 @@ class JobStarted(BaseModel):
     poll_url: str
 
 
-@app.post("/identify", status_code=202)
+@app.post("/identify", status_code=202, dependencies=[Depends(limit("scan"))])
 async def identify(
     request: Request, svc: ProductsDep,
     images: Annotated[list[UploadFile], File(description="Photos of the front of the pack")],
@@ -330,7 +332,7 @@ async def get_job(job_id: str, request: Request) -> Job:
     return job
 
 
-@app.post("/labels/extract")
+@app.post("/labels/extract", dependencies=[Depends(limit("scan"))])
 async def extract_label(
     request: Request,
     images: Annotated[list[UploadFile], File(description="Photos of the back of the pack")],
@@ -342,7 +344,7 @@ async def extract_label(
     return read
 
 
-@app.post("/products/confirm")
+@app.post("/products/confirm", dependencies=[Depends(limit("scan"))])
 async def confirm_product(product: Product, request: Request, svc: ProductsDep) -> Verdict:
     """Save a user-confirmed product (from a label scan) as verified."""
     if not product.barcode:
@@ -359,7 +361,7 @@ class SubmissionResult(BaseModel):
     verdict: Verdict | None = None  # the updated report, when a contribution was applied
 
 
-@app.post("/products/{key}/submissions", status_code=201)
+@app.post("/products/{key}/submissions", status_code=201, dependencies=[Depends(limit("scan"))])
 async def submit(
     key: str, request: Request, svc: ProductsDep,
     images: Annotated[list[UploadFile], File(description="Photos of the pack: ingredients, and the barcode in one")],
@@ -416,7 +418,7 @@ async def submit(
     return SubmissionResult(submission=submission, verdict=v)
 
 
-@app.get("/products/{key}/counterpart")
+@app.get("/products/{key}/counterpart", dependencies=[Depends(limit("compare"))])
 async def get_counterpart(key: str, request: Request, svc: ProductsDep, region: Region = "EU") -> Verdict:
     if region == "IN":
         raise HTTPException(400, "Pick EU or US")
@@ -447,7 +449,20 @@ class VoiceLookup(BaseModel):
         return self
 
 
-@app.post("/voice/lookup")
+def is_tool_call(request: Request) -> bool:
+    """Bolna sends the tool's api_token as the Authorization header. Without TOOL_TOKEN
+    set (local runs, tests) every caller counts as the agent."""
+    token = request.app.state.settings.tool_token
+    return not token or request.headers.get("authorization", "") == f"Bearer {token}"
+
+
+def require_tool(request: Request) -> None:
+    """Endpoints only the voice agent calls: everyone else would bypass the rate limits."""
+    if not is_tool_call(request):
+        raise HTTPException(401, "voice agent tools only")
+
+
+@app.post("/voice/lookup", dependencies=[Depends(require_tool)])
 async def voice_lookup(body: VoiceLookup, svc: ProductsDep) -> dict:
     """Tool endpoint for the Bolna agent. Catalog and Open Food Facts only, so it answers fast."""
     product = None
@@ -476,7 +491,7 @@ class VoiceAsk(BaseModel):
     product: str | None = None  # the pack being discussed, if any
 
 
-@app.post("/voice/ask")
+@app.post("/voice/ask", dependencies=[Depends(require_tool)])
 async def voice_ask(body: VoiceAsk, request: Request) -> dict:
     """Tool endpoint: a general question about food labels, ingredients or additives,
     answered in a few spoken sentences from regulators and public-health bodies."""
@@ -488,7 +503,7 @@ async def voice_ask(body: VoiceAsk, request: Request) -> dict:
     return {"answer": answer}
 
 
-@app.post("/live/frame")
+@app.post("/live/frame", dependencies=[Depends(limit("frame"))])
 async def post_live_frame(
     request: Request,
     session_id: Annotated[str, Form()],
@@ -530,7 +545,7 @@ class LiveLookupResponse(BaseModel):
 _SECONDS_LEFT = {"queued": 25, "reading": 25, "matching": 20, "searching": 15, "checking": 5}
 
 
-@app.post("/voice/live-wait")
+@app.post("/voice/live-wait", dependencies=[Depends(require_tool)])
 async def voice_live_wait(body: LiveLookup, request: Request, svc: ProductsDep) -> LiveLookupResponse:
     """Tool endpoint the agent calls in a loop while a lookup runs: waits on the
     session's background lookup, never reads the camera. Lets the agent announce
@@ -551,6 +566,10 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
     we wait on for whatever is left of LIVE_BUDGET. Every answer is also stored
     for GET /live/result, so the page can show cards for what the call says.
     """
+    if not is_tool_call(request):
+        # The live page asking (typed or mic), not the agent: rate limited per visitor.
+        request.app.state.limiter.check("live_lookup", client_ip(request))
+        body.source = "page"
     import time as _time
 
     if not SESSION_RE.match(body.session_id):
@@ -764,7 +783,7 @@ class LiveSessionRequest(BaseModel):
     user_data: dict = {}
 
 
-@app.post("/live/session")
+@app.post("/live/session", dependencies=[Depends(limit("call"))])
 async def live_session(body: LiveSessionRequest, request: Request) -> dict:
     """Mint a Bolna web-call session (thin proxy: the API key stays server-side).
 

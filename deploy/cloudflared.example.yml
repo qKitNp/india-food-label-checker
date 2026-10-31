@@ -1,0 +1,11 @@
+# Cloudflare Tunnel: the VM connects out to Cloudflare, which serves the API's hostname over
+# HTTPS. The URL survives VM IP changes, and no inbound web ports need to be open.
+# Copy to /etc/cloudflared/config.yml on the server and fill in your tunnel and hostname
+# (kept out of the repo). The tunnel credentials file is never committed.
+tunnel: <TUNNEL_ID>
+credentials-file: /etc/cloudflared/<TUNNEL_NAME>.json
+
+ingress:
+  - hostname: <API_HOSTNAME>
+    service: http://127.0.0.1:8000
+  - service: http_status:404
