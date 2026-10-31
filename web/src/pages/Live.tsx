@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { Check, Mic, Phone, Volume2 } from 'lucide-react'
+import { Check, Mic, MicOff, Phone, PhoneOff, SwitchCamera, Volume2 } from 'lucide-react'
 import { API_URL, api, ApiError, liveSnapUrl, type Verdict } from '../api'
 import { toJpeg } from '../images'
 import { Button, Card, Chip, ErrorNote, Page, ProductImage, Spinner, buttonClass, productTitle, shortBrand } from '../ui'
@@ -52,7 +52,6 @@ export default function Live() {
   const [busy, setBusy] = useState(false)
   const [jobNote, setJobNote] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [listening, setListening] = useState(false)
   const [muted, setMuted] = useState(false)
   const [callState, setCallState] = useState<'idle' | 'connecting' | 'ringing' | 'active' | 'ended'>('idle')
   const [callError, setCallError] = useState<string | null>(null)
@@ -73,6 +72,11 @@ export default function Live() {
   // Front cameras (laptops, selfie mode) are shown mirrored, like every video-call app.
   // Only the preview is flipped: frames sent for lookup stay as the camera sees them.
   const [mirror, setMirror] = useState(false)
+  // Camera choice: null = the default (rear on phones); otherwise a specific device.
+  const [deviceId, setDeviceId] = useState<string | null>(null)
+  const [cameras, setCameras] = useState<string[]>([])
+  const currentCamRef = useRef<string | null>(null)
+  const autoCallRef = useRef(false)
   // Snaps whose final answer is already in the chat. During a call both Bolna's wait loop
   // and the page's own job poll learn the result; only the first one gets to say it.
   const announcedRef = useRef(new Set<number>())
@@ -159,7 +163,11 @@ export default function Live() {
     async function start() {
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+          video: {
+            ...(deviceId ? { deviceId: { exact: deviceId } } : { facingMode: 'environment' }),
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
           audio: false,
         })
       } catch {
@@ -170,7 +178,12 @@ export default function Live() {
         return
       }
       if (stopped || !video.current) return
-      setMirror(stream.getVideoTracks()[0]?.getSettings().facingMode !== 'environment')
+      const settings = stream.getVideoTracks()[0]?.getSettings()
+      setMirror(settings?.facingMode !== 'environment')
+      currentCamRef.current = settings?.deviceId ?? null
+      navigator.mediaDevices.enumerateDevices()
+        .then((ds) => !stopped && setCameras(ds.filter((d) => d.kind === 'videoinput' && d.deviceId).map((d) => d.deviceId)))
+        .catch(() => {})
       video.current.srcObject = stream
       await video.current.play().catch(() => {})
       if (stopped) return
@@ -208,7 +221,13 @@ export default function Live() {
       window.clearTimeout(timer)
       stream?.getTracks().forEach((t) => t.stop())
     }
-  }, [sessionId])
+  }, [sessionId, deviceId])
+
+  function switchCamera() {
+    if (cameras.length < 2) return
+    const i = cameras.indexOf(currentCamRef.current ?? '')
+    setDeviceId(cameras[(i + 1) % cameras.length])
+  }
 
   async function pollJob(jobId: string) {
     for (let i = 0; i < 40; i++) {
@@ -267,42 +286,6 @@ export default function Live() {
     }
   }, [input, say, sessionId, showProduct, followBackgroundJob, speakIfFree, showSnap, setSnapStatus])
 
-  function toggleListen() {
-    const Rec = (window as unknown as { SpeechRecognition?: new () => SpeechRec; webkitSpeechRecognition?: new () => SpeechRec }).SpeechRecognition
-      ?? (window as unknown as { webkitSpeechRecognition?: new () => SpeechRec }).webkitSpeechRecognition
-    if (!Rec) {
-      setError('Voice input isn\'t supported in this browser. Type your question instead.')
-      return
-    }
-    if (listening) return
-    const rec = new Rec()
-    rec.lang = 'en-US'
-    rec.interimResults = false
-    rec.maxAlternatives = 3
-    setListening(true)
-    rec.onresult = (e: { results: { transcript: string }[][] }) => {
-      const text = e.results[0][0].transcript
-      setListening(false)
-      ask(text)
-    }
-    rec.onerror = rec.onend = () => setListening(false)
-    try {
-      rec.start()
-    } catch {
-      setListening(false)
-    }
-  }
-
-  interface SpeechRec {
-    lang: string
-    interimResults: boolean
-    maxAlternatives: number
-    onresult: ((e: { results: { transcript: string }[][] }) => void) | null
-    onerror: (() => void) | null
-    onend: (() => void) | null
-    start(): void
-  }
-
   // Bolna voice call: same agent + tools as the phone path, over WebRTC.
   // The call's tool answers land in /live/result (the page can't hear the call),
   // so we poll it and render cards while talking.
@@ -319,6 +302,7 @@ export default function Live() {
       return
     }
     setCallState('connecting')
+    setCallMuted(false)
     try {
       const { BolnaWebCall } = await import('@bolna/web-call')
       const call = new BolnaWebCall({ sessionUrl: `${API_URL}/live/session` })
@@ -352,8 +336,8 @@ export default function Live() {
         const r = e.reason ?? ''
         setEndReason(
           r === 'local-hangup' ? 'You hung up.'
-            : r === 'remote-hangup' ? 'Label Check hung up — usually the 45s silence timeout. Tap Talk to redial.'
-              : r ? `Call ended (${r}). Tap Talk to redial.`
+            : r === 'remote-hangup' ? 'Label Check hung up after 45 s of quiet. Tap Call again to reconnect.'
+              : r ? `Call ended (${r}). Tap Call again to reconnect.`
                 : null,
         )
       })
@@ -378,6 +362,20 @@ export default function Live() {
       setCallState('ended')
     }
   }
+
+  // Connect as soon as the page opens, like joining a video call. Browsers only let a
+  // page play audio after the visitor has interacted with the site; a cold load
+  // (pasted URL) gets a Start call button instead of a call nobody can hear.
+  const startCallRef = useRef(startCall)
+  useEffect(() => {
+    startCallRef.current = startCall
+  })
+  useEffect(() => {
+    if (autoCallRef.current || (!ready && !cameraError)) return
+    autoCallRef.current = true
+    const activation = (navigator as Navigator & { userActivation?: { hasBeenActive: boolean } }).userActivation
+    if (activation?.hasBeenActive ?? true) startCallRef.current()
+  }, [ready, cameraError])
 
   // While on a Bolna call, mirror spoken answers into the chat + cards. The
   // moment Bolna's tool starts on a frame, freeze that frame so the caller
@@ -482,6 +480,52 @@ export default function Live() {
         <div className="absolute top-3 left-3">
           <FeedChip feed={feed} />
         </div>
+        {(callState === 'connecting' || callState === 'ringing' || callState === 'active') && (
+          <div className="absolute top-3 right-3 flex items-center gap-2 rounded-full bg-black/45 px-3 py-1 text-xs font-medium text-white backdrop-blur">
+            {callState === 'active' ? (
+              <>
+                <span className={`inline-block size-2 rounded-full ${speaking ? 'animate-ping bg-accent' : 'animate-pulse bg-good'}`} />
+                {speaking ? 'Speaking' : 'Listening'} · {mmss}
+              </>
+            ) : (
+              <><Spinner className="size-3 text-white" /> Connecting…</>
+            )}
+          </div>
+        )}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/50 to-transparent" />
+        <div className="absolute inset-x-0 bottom-4 flex items-center justify-center gap-3">
+          {callState === 'active' && (
+            <CallButton
+              label={callMuted ? 'Unmute' : 'Mute'}
+              tone={callMuted ? 'on' : 'glass'}
+              onClick={() => {
+                const next = !callMuted
+                setCallMuted(next)
+                callRef.current?.setMuted(next)
+              }}
+            >
+              {callMuted ? <MicOff className="size-5" aria-hidden /> : <Mic className="size-5" aria-hidden />}
+            </CallButton>
+          )}
+          {callState === 'idle' || callState === 'ended' ? (
+            <button
+              type="button"
+              onClick={startCall}
+              className="flex h-12 items-center gap-2 rounded-full bg-good px-5 text-[15px] font-medium text-white shadow-lg transition-transform active:scale-95"
+            >
+              <Phone className="size-4" aria-hidden /> {callState === 'ended' ? 'Call again' : 'Start call'}
+            </button>
+          ) : (
+            <CallButton label="End call" tone="bad" onClick={stopCall}>
+              <PhoneOff className="size-5" aria-hidden />
+            </CallButton>
+          )}
+          {cameras.length > 1 && (
+            <CallButton label="Switch camera" tone="glass" onClick={switchCamera}>
+              <SwitchCamera className="size-5" aria-hidden />
+            </CallButton>
+          )}
+        </div>
       </div>
 
       {error && <div className="mt-4"><ErrorNote>{error}</ErrorNote></div>}
@@ -489,51 +533,6 @@ export default function Live() {
       {endReason && callState === 'ended' && (
         <p className="rise mt-3 text-center text-sm text-muted">{endReason}</p>
       )}
-
-      <div className="rise mt-4">
-        {callState === 'idle' || callState === 'ended' ? (
-          <button type="button" onClick={startCall} className={buttonClass('primary', 'w-full py-3')}>
-            <Phone className="size-4" aria-hidden /> Talk to Label Check
-          </button>
-        ) : (
-          <Card className="flex items-center justify-between gap-3">
-            <div>
-              <p className={`flex items-center gap-2 text-[15px] font-medium ${speaking ? 'text-accent-deep' : ''}`}>
-                {callState === 'active' ? (
-                  speaking ? (
-                    <><span className="inline-block size-2.5 animate-ping rounded-full bg-accent" /> Speaking… {mmss}</>
-                  ) : (
-                    <><span className="inline-block size-2.5 animate-pulse rounded-full bg-good" /> Listening… speak now {mmss}</>
-                  )
-                ) : (
-                  <><Spinner className="text-accent" /> {callState === 'connecting' ? 'Connecting…' : 'Ringing…'}</>
-                )}
-              </p>
-              {endReason === null && callState === 'active' && (
-                <p className="mt-1 text-xs text-faint">Quiet for 45s hangs up — tap Talk to redial</p>
-              )}
-            </div>
-            <div className="flex gap-2">
-              {callState === 'active' && (
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    const next = !callMuted
-                    setCallMuted(next)
-                    callRef.current?.setMuted(next)
-                  }}
-                >
-                  {callMuted ? 'Unmute' : 'Mute'}
-                </Button>
-              )}
-              <Button variant="secondary" onClick={stopCall}>Hang up</Button>
-            </div>
-          </Card>
-        )}
-        <p className="mt-2 text-center text-xs text-faint">
-          Voice call answers out loud; answers and product cards appear below.
-        </p>
-      </div>
 
       <div
         ref={chatRef}
@@ -560,14 +559,6 @@ export default function Live() {
           ask()
         }}
       >
-        <button
-          type="button"
-          onClick={toggleListen}
-          aria-label="Ask by voice"
-          className={`${buttonClass(listening ? 'primary' : 'secondary', 'px-4')} ${listening ? 'animate-pulse' : ''}`}
-        >
-          {listening ? 'Listening…' : <Mic className="size-4" aria-hidden />}
-        </button>
         <label htmlFor="live-q" className="sr-only">Ask about the pack</label>
         <input
           id="live-q"
@@ -638,6 +629,16 @@ function SnapBubble({ url, status }: { url: string; status: SnapStatus }) {
         </p>
       </div>
     </div>
+  )
+}
+
+function CallButton({ label, tone, onClick, children }: { label: string; tone: 'glass' | 'bad' | 'on'; onClick: () => void; children: ReactNode }) {
+  const look = tone === 'bad' ? 'bg-bad text-white' : tone === 'on' ? 'bg-white text-ink' : 'bg-white/20 text-white backdrop-blur hover:bg-white/30'
+  return (
+    <button type="button" onClick={onClick} aria-label={label} title={label}
+      className={`flex size-12 items-center justify-center rounded-full shadow-lg transition-transform active:scale-95 ${look}`}>
+      {children}
+    </button>
   )
 }
 
