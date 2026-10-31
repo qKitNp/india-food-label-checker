@@ -1,0 +1,143 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --page: #fafaf9; --ink: #1c1917; --ink2: #44403c; --muted: #57534e; --faint: #79716b;
+    --line: #e7e5e4; --line2: #d7d3d0; --accent: #0ea5e9; --accent-deep: #0284c7; --accent-wash: #e0f2fe;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; background: var(--page); }
+  body { font-family: Inter, system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; position: relative; }
+
+  /* Ruled frame */
+  .rule-v { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--line); }
+  .rule-h { position: absolute; left: 0; right: 0; height: 1px; background: var(--line); }
+  .node { position: absolute; width: 7px; height: 7px; background: var(--ink); transform: translate(-50%, -50%); }
+  .arc { position: absolute; left: -330px; top: -330px; width: 640px; height: 640px; border: 1px solid var(--line2); border-radius: 50%; }
+
+  .brand { position: absolute; left: 72px; top: 50px; display: flex; align-items: center; gap: 12px; font-size: 26px; font-weight: 650; letter-spacing: -0.02em; }
+  h1 { position: absolute; left: 72px; top: 128px; width: 640px; font-size: 70px; line-height: 0.95; font-weight: 650; letter-spacing: -0.045em; }
+  h1 em { font-style: normal; color: var(--accent); }
+  .sub { position: absolute; left: 72px; top: 300px; width: 540px; font-size: 23px; line-height: 1.4; color: var(--muted); }
+  .pills { position: absolute; left: 72px; top: 438px; display: flex; gap: 10px; }
+  .pill { border: 1px solid var(--line2); background: #fff; padding: 9px 14px; font-size: 17px; font-weight: 500; color: var(--ink2); }
+  .url { position: absolute; left: 72px; bottom: 34px; font-size: 18px; color: var(--faint); letter-spacing: 0.01em; }
+
+  /* Blocks, bottom right of the left panel */
+  .blk { position: absolute; }
+
+  /* Live frame */
+  .frame { position: absolute; left: 712px; top: 46px; width: 432px; height: 538px; border-radius: 30px; overflow: hidden; background: #111; box-shadow: 0 20px 50px rgb(28 25 23 / 0.18), 0 2px 6px rgb(28 25 23 / 0.08); }
+  .shot { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: none; }
+  .shade-top { position: absolute; inset: 0 0 auto 0; height: 110px; background: linear-gradient(rgb(0 0 0 / .4), transparent); }
+  .shade-bot { position: absolute; inset: auto 0 0 0; height: 62%; background: linear-gradient(transparent, rgb(0 0 0 / .62)); }
+  .chip { position: absolute; top: 18px; left: 18px; display: flex; gap: 8px; }
+  .chip span { display: flex; align-items: center; gap: 7px; border-radius: 999px; padding: 6px 12px; font-size: 14px; font-weight: 600; }
+  .live { background: #dcfce7; color: #15803d; }
+  .talk { background: rgb(0 0 0 / .45); color: #fff; backdrop-filter: blur(6px); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
+  .scan { position: absolute; left: 0; right: 0; height: 3px; background: var(--accent); box-shadow: 0 0 14px 4px rgb(14 165 233 / .6); opacity: 0; }
+  .chat { position: absolute; left: 16px; right: 16px; bottom: 92px; display: flex; flex-direction: column; gap: 8px; }
+  .b { max-width: 88%; border-radius: 18px; padding: 10px 14px; font-size: 17px; line-height: 1.32; color: #fff; backdrop-filter: blur(10px); }
+  .b.u { align-self: flex-end; background: rgb(14 165 233 / .82); }
+  .b.a { align-self: flex-start; background: rgb(0 0 0 / .5); }
+  .dots { display: flex; gap: 5px; height: 22px; align-items: center; }
+  .dots i { width: 7px; height: 7px; border-radius: 50%; background: #fff; display: block; }
+  .ctrls { position: absolute; left: 0; right: 0; bottom: 24px; display: flex; justify-content: center; gap: 14px; }
+  .ctrls span { width: 50px; height: 50px; border-radius: 50%; display: grid; place-items: center; }
+  .ctrls .g { background: rgb(255 255 255 / .22); }
+  .ctrls .r { background: #b91c1c; }
+</style>
+</head>
+<body>
+  <div class="arc"></div>
+  <div class="rule-v" style="left:40px"></div>
+  <div class="rule-v" style="left:1160px"></div>
+  <div class="rule-h" style="top:24px"></div>
+  <div class="rule-h" style="top:606px"></div>
+  <div class="node" style="left:40px;top:24px"></div>
+  <div class="node" style="left:1160px;top:24px"></div>
+  <div class="node" style="left:40px;top:606px"></div>
+  <div class="node" style="left:1160px;top:606px"></div>
+
+  <div class="brand">
+    <svg width="34" height="34" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#0ea5e9"/><path d="M9 10.5h14M9 16h14" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M9 21.5h7" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>
+    Fineprint
+  </div>
+  <h1>Read the <em>fine&nbsp;print</em><br>on every snack.</h1>
+  <p class="sub">Hold up any Indian packet and ask. Hear what's banned abroad, which claims hold up, and what's really inside.</p>
+  <div class="pills">
+    <span class="pill">Banned abroad?</span><span class="pill">Claims vs numbers</span><span class="pill">India vs EU</span>
+  </div>
+  <div class="url">fineprint.appwrite.network</div>
+
+  <div class="frame">
+    <img class="shot" id="shotA" src="https://food-label-api.tinkerers.space/products/n-78ab746faef35ac1dfa3/image">
+    <img class="shot" id="shotB" src="https://food-label-api.tinkerers.space/products/3948764061257/image" style="opacity:0">
+    <div class="shade-top"></div><div class="shade-bot"></div>
+    <div class="flash" id="flash"></div>
+    <div class="scan" id="scan"></div>
+    <div class="chip"><span class="live"><i class="dot"></i>Live</span><span class="talk" id="talk"><i class="dot" style="color:#4ade80"></i><b id="talkTxt" style="font-weight:600">Listening</b></span></div>
+    <div class="chat" id="chat"></div>
+    <div class="ctrls">
+      <span class="g"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10a7 7 0 0 1-14 0M12 17v5"/></svg></span>
+      <span class="r"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.7 13.3a16 16 0 0 0 3.4 2.6l1.3-1.3a2 2 0 0 1 2.1-.4c.8.3 1.6.5 2.4.6a2 2 0 0 1 1.7 2v3a2 2 0 0 1-2.2 2A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.8.3 1.6.6 2.4a2 2 0 0 1-.4 2.1L8 9.5"/><path d="M22 2 2 22"/></svg></span>
+      <span class="g"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/><path d="M13 5h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5"/><circle cx="12" cy="12" r="3"/><path d="m18 22-3-3 3-3M6 2l3 3-3 3"/></svg></span>
+    </div>
+  </div>
+
+<script>
+// One 8-second loop, two packs. render(t) draws the exact state at time t (seconds).
+const SCENES = [
+  { shot: 'shotA', ask: 'Tell me about this',
+    reply: "That's Kurkure Masala Munch. Good news: nothing in it is banned in India, the EU or the US." },
+  { shot: 'shotB', ask: 'And this one?',
+    reply: "That's Diet Coke. The zero-calorie claim checks out. It's sweetened with aspartame." },
+]
+const LEN = 4.0
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x))
+const ease = (x) => 1 - Math.pow(1 - clamp(x), 3)
+
+function bubble(cls, html, opacity = 1, rise = 0) {
+  return `<div class="b ${cls}" style="opacity:${opacity};transform:translateY(${rise}px)">${html}</div>`
+}
+
+window.render = function (t) {
+  const i = Math.floor(t / LEN) % SCENES.length
+  const s = t % LEN
+  const sc = SCENES[i]
+  // Pack: crossfade in the first 0.35 s of each scene.
+  for (const [n, S] of SCENES.entries()) {
+    const el = document.getElementById(S.shot)
+    const on = n === i ? ease(s / 0.35) : (n === (i + SCENES.length - 1) % SCENES.length ? 1 - ease(s / 0.35) : 0)
+    el.style.opacity = on
+    el.style.transform = `scale(${1.04 + 0.03 * (s / LEN)})`
+  }
+  let chat = ''
+  // 0.3-0.9 s: hearing dots; 0.9 s: the words land.
+  if (s >= 0.3 && s < 0.9) chat += bubble('u', '<span class="dots"><i></i><i style="opacity:.7"></i><i style="opacity:.45"></i></span>', ease((s - 0.3) / 0.15))
+  if (s >= 0.9) chat += bubble('u', sc.ask, 1, 6 * (1 - ease((s - 0.9) / 0.2)))
+  // 1.2 s: freeze-frame flash and a scan line.
+  const f = s - 1.2
+  document.getElementById('flash').style.opacity = f > 0 && f < 0.35 ? 0.8 * (1 - f / 0.35) : 0
+  const scan = document.getElementById('scan')
+  scan.style.opacity = s > 1.25 && s < 2.0 ? 1 : 0
+  scan.style.top = `${40 + 440 * clamp((s - 1.25) / 0.75)}px`
+  // 1.9 s on: the reply streams in, word by word.
+  if (s >= 1.9) {
+    const words = sc.reply.split(' ')
+    const n = Math.ceil(words.length * clamp((s - 1.9) / 1.3))
+    chat += bubble('a', words.slice(0, n).join(' '), ease((s - 1.9) / 0.15))
+  }
+  document.getElementById('chat').innerHTML = chat
+  const speaking = s >= 1.9 && s < 3.6
+  document.getElementById('talkTxt').textContent = speaking ? 'Speaking' : 'Listening'
+}
+render(0)
+</script>
+</body>
+</html>
