@@ -68,6 +68,9 @@ export default function Live() {
   const lastBlobRef = useRef<Blob | null>(null) // last frame uploaded, for typed asks
   const ownSnapsRef = useRef(new Set<number>()) // snaps from typed asks, already in the chat
   const [freeze, setFreeze] = useState<{ url: string; key: number } | null>(null)
+  // Front cameras (laptops, selfie mode) are shown mirrored, like every video-call app.
+  // Only the preview is flipped: frames sent for lookup stay as the camera sees them.
+  const [mirror, setMirror] = useState(false)
 
   const say = useCallback((role: Msg['role'], text: string, productKey?: string) => {
     setMsgs((m) => [...m, { id: idRef.current++, role, text, productKey }])
@@ -144,6 +147,7 @@ export default function Live() {
         return
       }
       if (stopped || !video.current) return
+      setMirror(stream.getVideoTracks()[0]?.getSettings().facingMode !== 'environment')
       video.current.srcObject = stream
       await video.current.play().catch(() => {})
       if (stopped) return
@@ -461,7 +465,7 @@ export default function Live() {
       </div>
 
       <div className="rise relative mt-6 aspect-[4/3] overflow-hidden rounded-3xl border border-line bg-ink shadow-card">
-        <video ref={video} playsInline muted className="size-full object-cover" />
+        <video ref={video} playsInline muted className={`size-full object-cover ${mirror ? '-scale-x-100' : ''}`} />
         {!ready && !cameraError && (
           <div className="absolute inset-0 flex items-center justify-center text-white/80"><Spinner /></div>
         )}
@@ -469,7 +473,7 @@ export default function Live() {
           <div className="absolute inset-0 flex items-center justify-center p-8 text-center text-sm text-white/90">{cameraError}</div>
         )}
         {freeze && (
-          <div key={freeze.key} className="pointer-events-none absolute inset-0">
+          <div key={freeze.key} className={`pointer-events-none absolute inset-0 ${mirror ? '-scale-x-100' : ''}`}>
             <img src={freeze.url} alt="" className="freeze absolute inset-0 size-full object-cover" />
             <div className="shutter absolute inset-0 bg-white" />
           </div>
