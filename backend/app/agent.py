@@ -147,6 +147,18 @@ def mentions_product(page: str, ident: Identification) -> bool:
     return all(w in words or difflib.get_close_matches(w, words, n=1, cutoff=0.8) for w in wanted)
 
 
+def shares_a_name_word(product: Product, ident: Identification) -> bool:
+    """A catalog pick must share a distinctive word with what the pack says. Stops a tagline
+    read ("No Sugar No Calories") from being matched to Coke Zero just because both are cola.
+    With no product name read, there's nothing to contradict."""
+    brand = {w for w in re.findall(r"[a-z]{3,}", (product.brand or "").lower())}
+    theirs = {w for w in re.findall(r"[a-z]{3,}", (product.name or "").lower())} - brand - GENERIC_WORDS
+    ours = [w for w in re.findall(r"[a-z]{3,}", (ident.product_name or "").lower()) if w not in GENERIC_WORDS]
+    if not ours or not theirs:
+        return True
+    return any(w in theirs or difflib.get_close_matches(w, theirs, n=1, cutoff=0.8) for w in ours)
+
+
 def number_on_page(value: float, text: str) -> bool:
     """True if the number appears on the page (e.g. 535, 535.0, 0.3, 0,3)."""
     forms = {f"{value:g}", f"{value:.1f}", f"{value:.2f}"}
@@ -180,6 +192,9 @@ class _Run:
                 p = await self.products.store.get_product(args["key"])
                 if not p:
                     return "No product with that key. Pick a key from the candidates."
+                if not shares_a_name_word(p, ident):
+                    return (f"Rejected: '{p.name}' shares no word with what the pack says ('{ident.product_name}'), "
+                            "so it may be a different variant. Search the web for the pack instead.")
                 self.final = AgentResult(status="catalog", identification=ident, product=p, reason=args.get("reason", ""))
                 return "Done."
             case "web_search":
@@ -326,8 +341,9 @@ async def find_from_front(settings: Settings, products: ProductService, exa: Exa
     except Exception as e:  # LiteLLM raises provider-specific exception types
         raise llm.LLMError(f"Agent failed: {e}") from e
 
-    # Keep the scan as the product's pack photo if it has none, so the next scan matches by image too.
-    if result.product and (result.status == "web" or not result.product.image_file_id):
+    # Keep the scan as a new product's pack photo, so the next scan matches by image too. Not for
+    # catalog matches: a wrong match would teach the image search the mistake and repeat it.
+    if result.product and result.status == "web":
         result.product = await products.save(result.product, image=photo, image_vector=image_vector)
     return result
 

@@ -175,3 +175,14 @@ def test_variant_check_ignores_generic_words():
         brand="Wai Wai", product_name="Veg Masala Flavour Instant Noodles"))
     # A different variant is still rejected.
     assert not mentions_product(page, Identification(brand="Wai Wai", product_name="Chicken Noodles"))
+
+
+def test_catalog_pick_must_share_a_name_word():
+    from app.agent import Identification, shares_a_name_word
+    from app.models import Product
+    coke_zero = Product(source="off", brand="Coca-Cola", name="Coke Zero Can")
+    assert not shares_a_name_word(coke_zero, Identification(brand="Coca-Cola", product_name="No Sugar No Calories Crisp Taste"))
+    assert shares_a_name_word(coke_zero, Identification(brand="Coca-Cola", product_name="Coke Zero"))
+    munch = Product(source="web", brand="Kurkure", name="Kurkure Namkeen Masala Munch")
+    assert shares_a_name_word(munch, Identification(brand="Kurkure", product_name="Masala Munch"))
+    assert shares_a_name_word(munch, Identification(brand="Kurkure", product_name=None))

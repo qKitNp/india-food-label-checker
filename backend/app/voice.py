@@ -45,6 +45,8 @@ def name(v: Verdict) -> str:
         said = product or brand
     else:
         said = f"{brand} {product}"
+    if said.isupper():  # "GATORADE THIRST QUENCHER" reads as shouting on screen
+        said = " ".join(w if len(w) <= 3 else w.capitalize() for w in said.split())
     words = [w if not w.islower() or (i and w in SMALL_WORDS) else w[:1].upper() + w[1:]
              for i, w in enumerate(said.split())]
     return " ".join(words) or "this product"
@@ -90,8 +92,18 @@ def _cap(s: str) -> str:
     return s[:1].upper() + s[1:]  # str.capitalize() would lower-case "FCF"
 
 
+DRINK_WORDS = re.compile(r"\b(drink|juice|cola|coke|soda|beverage|water|quencher|nectar|lassi|milk|"
+                         r"shake|tea|coffee|lemonade|squash|energy|thums up|sprite|pepsi|frooti|slice|maaza)\b", re.IGNORECASE)
+
+
+def _liquid(v: Verdict) -> bool:
+    if v.product.is_liquid is not None:
+        return v.product.is_liquid
+    return bool(DRINK_WORDS.search(f"{v.product.brand or ''} {v.product.name or ''}"))
+
+
 def _per(v: Verdict) -> str:
-    return "100 ml" if v.product.is_liquid else "100 grams"
+    return "100 ml" if _liquid(v) else "100 grams"
 
 
 def _claim_line(c, v: Verdict) -> str:
@@ -107,16 +119,20 @@ def _sugar_line(v: Verdict) -> str | None:
     sugar = v.product.nutrition.sugars_g
     if not sugar or sugar < 5:
         return None
-    if v.product.is_liquid:
+    if _liquid(v):
         tsp = round(sugar * GLASS_ML / 100 / TSP_SUGAR_G)
-        return f"It has about {tsp} teaspoons of sugar in a glass"
-    tsp = round(sugar / TSP_SUGAR_G)
-    return f"It has about {tsp} teaspoons of sugar in every 100 grams"
+        where = "in a glass"
+    else:
+        tsp = round(sugar / TSP_SUGAR_G)
+        where = "in every 100 grams"
+    if tsp < 1:
+        return None
+    return f"It has about {tsp} teaspoon{'s' if tsp != 1 else ''} of sugar {where}"
 
 
 def _salt_line(v: Verdict) -> str | None:
     sodium = v.product.nutrition.sodium_mg
-    if v.product.is_liquid or not sodium or sodium < SALTY_MG:
+    if _liquid(v) or not sodium or sodium < SALTY_MG:
         return None
     pct = round(sodium / WHO_SODIUM_MG * 100 / 5) * 5
     return f"A 100-gram serving has about {pct}% of the salt the WHO says to have in a whole day"
@@ -144,7 +160,7 @@ def describe(v: Verdict, rng: random.Random | None = None) -> Spoken:
     rng = rng or random.Random()
     said = name(v)
     if suspect(v):
-        return Spoken(f"I found {said}, but the data online for it looks off, so I won't judge it. "
+        return Spoken(f"That's {said}, but the data online for it looks off, so I won't judge it. "
                       "A photo of its back label in the app would sort that out.")
 
     banned = [a for a in v.additives if a.flagged]
@@ -186,9 +202,13 @@ def _what_is(a) -> str:
     """"What is aspartame?": its kind, plus the checked rule for India and one other region."""
     kind = a.category.replace("_", " ").strip() or "additive"
     article = "an" if kind[:1].lower() in "aeiou" else "a"
-    line = f"{_cap(_plain(a.name))} is {article} {kind}."
+    return f"{_cap(_plain(a.name))} is {article} {kind} added to this product."
+
+
+def _rules(a) -> str | None:
+    """For "is it allowed in India?": the checked rule, kept apart from the plain line."""
     facts = [a.status[r].fact for r in ("IN", "EU", "US") if r in a.status and a.status[r].fact]
-    return " ".join([line, *facts[:2]])
+    return f"The rules on {_plain(a.name)}: {' '.join(facts[:2])}" if facts else None
 
 
 def _more(v: Verdict, compare: str | None) -> list[str]:
@@ -201,6 +221,8 @@ def _more(v: Verdict, compare: str | None) -> list[str]:
     # Banned ones and sweeteners first: those are what people ask about.
     for a in sorted(v.additives, key=lambda a: (not a.flagged, a.code not in SWEETENERS))[:6]:
         more.append(_what_is(a))
+        if rules := _rules(a):
+            more.append(rules)
     limited = [_plain(a.name) for a in v.additives if any(s.status == "restricted" for s in a.status.values())]
     if limited:
         more.append(f"{_cap(_list(limited))} {'has' if len(limited) == 1 else 'have'} legal usage "

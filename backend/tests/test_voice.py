@@ -66,6 +66,17 @@ def test_salty_snack_gets_a_salt_line():
 
 def test_follow_up_facts_explain_each_additive():
     more = say(diet_coke()).more
-    what = next(m for m in more if m.startswith("Aspartame is a sweetener."))
-    assert "In India" in what  # the checked rule, not a made-up description
+    assert "Aspartame is a sweetener added to this product." in more
+    rules = next(m for m in more if m.startswith("The rules on aspartame:"))
+    assert "India" in rules  # the checked rule, kept apart from the plain line
     assert sum(m.startswith("Aspartame and phosphoric acid have legal usage limits") for m in more) == 1
+
+
+def test_drinks_by_name_shouting_names_and_one_teaspoon():
+    p = Product(source="web", brand="Gatorade", name="GATORADE THIRST QUENCHER", ingredients_text="water, sugar",
+                nutrition=Nutrition(sugars_g=6))
+    s = say(p)
+    assert "Gatorade Thirst Quencher." in s.answer
+    assert "teaspoons of sugar in a glass" in s.answer and "100 grams" not in s.answer
+    one = Product(source="web", brand="X", name="Plain Crackers", ingredients_text="flour", nutrition=Nutrition(sugars_g=5))
+    assert "about 1 teaspoon of sugar in every 100 grams" in say(one).answer
