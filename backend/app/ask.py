@@ -106,10 +106,17 @@ class Asker:
         """(url, text) from trusted sources only."""
         if not self.exa:
             return []
+        # Long regulator documents bury the answer: send the passages that match the
+        # question (highlights) as well as the start of each page.
         res = await asyncio.to_thread(
-            self.exa.search, f"{question} food additive regulation", num_results=4,
-            include_domains=list(SOURCES), contents={"text": {"max_characters": 3500}})
-        return [(r.url, r.text) for r in res.results if r.text and source_name(r.url)]
+            self.exa.search, question, num_results=4, include_domains=list(SOURCES),
+            contents={"text": {"max_characters": 600}, "highlights": {"query": question, "num_sentences": 6}})
+        out = []
+        for r in res.results:
+            text = "\n".join([*(getattr(r, "highlights", None) or []), r.text or ""]).strip()
+            if text and source_name(r.url):
+                out.append((r.url, text))
+        return out
 
     async def _answer(self, question: str, product: str | None) -> str:
         pages = await self.search(question)
