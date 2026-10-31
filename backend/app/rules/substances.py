@@ -10,6 +10,7 @@ import json
 import re
 from pathlib import Path
 
+from app import additive_codes
 from app.models import AdditiveFinding, Product, RegionStatus
 
 _FILE = Path(__file__).with_name("substances.json")
@@ -55,6 +56,16 @@ def _message(name: str, status: dict[str, RegionStatus]) -> str:
         since = f" (from {status[r].since})" if status[r].since else ""
         parts.append(f"{REGION_NAMES[r]}{since}")
     return f"{name}: banned in {', '.join(parts)}."
+
+
+def codes_in(text: str | None, codes: list[str] | None = None) -> list[str]:
+    """Every additive code in an ingredients list: written codes ("E150d", "INS 338") plus
+    substances we know by name ("aspartame" -> E951). Used to compare two packs fairly."""
+    found = list(dict.fromkeys([*(codes or []), *additive_codes.find_in_text(text or "")]))
+    for f in evaluate(Product(source="label", ingredients_text=text, additives=found)):
+        if f.code and f.code not in found:
+            found.append(f.code)
+    return found
 
 
 def evaluate(product: Product) -> list[AdditiveFinding]:

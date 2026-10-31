@@ -7,6 +7,7 @@ _CODE = re.compile(r"^(?:E|INS)?\s*-?\s*(\d{3,4})\s*([a-z]{0,2})\s*$", re.IGNORE
 # Either a prefixed code anywhere ("INS 338", "E951"), or a bracketed group of codes,
 # which Indian labels use for several at once: "Flavour Enhancers (627, 631)".
 _IN_TEXT = re.compile(r"(?:\bE|\bINS)\s*-?\s*(\d{3,4}[a-z]{0,2})\b|\(([^()]*)\)", re.IGNORECASE)
+_PREFIXED = re.compile(r"(?:\bE|\bINS)\s*-?\s*(\d{3,4}[a-z]{0,2})\b", re.IGNORECASE)
 _SEPARATORS = re.compile(r"\s*(?:,|&|/|\band\b)\s*", re.IGNORECASE)
 # INS sub-numbers: "501(i)", "500 (ii)", "451(i)". The sub-number refers to a variant of the same
 # additive, and its nested brackets would break group matching, so drop it before parsing.
@@ -36,10 +37,11 @@ def find_in_text(text: str) -> list[str]:
         if m.group(1):
             codes = [normalise(m.group(1))]
         else:
-            # A bracket counts only if everything in it is a code; "(Palmolein)" or "(8.7 mg)" isn't.
+            # A bare-number bracket counts only if everything in it is a code; "(Palmolein)" or
+            # "(8.7 mg)" isn't. Prefixed codes inside still count: "Colour (Caramel E150d)".
             codes = [normalise(part) for part in _SEPARATORS.split(m.group(2).strip())]
             if not all(codes):
-                codes = []
+                codes = [normalise(c) for c in _PREFIXED.findall(m.group(2))]
         for code in codes:
             if code:
                 seen[code] = None

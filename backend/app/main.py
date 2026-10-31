@@ -17,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse, Response, StreamingResponse
 from pydantic import BaseModel, model_validator
 
-from app import additive_codes, agent, barcodes, llm, sanity, verdict, voice_llm
+from app import additive_codes, agent, barcodes, llm, sanity, verdict, voice, voice_llm
 from app.catalog import Embedder
 from app.config import get_settings
 from app.live import FRAME_TTL, MAX_SESSIONS, STALE_AFTER, LiveResult, LiveStore, SESSION_RE
@@ -456,7 +456,8 @@ async def voice_lookup(body: VoiceLookup, svc: ProductsDep) -> dict:
         return {"found": False,
                 "answer": "I couldn't find that product by name. Point your camera at it and ask me about it instead."}
     v = verdict.build(product, await svc.store.get_counterpart(product.key, "EU"))
-    return {"found": True, "answer": verdict.spoken(v)}
+    said = voice.describe(v)
+    return {"found": True, "answer": said.answer, "more": said.more}
 
 
 @app.post("/live/frame")
@@ -494,6 +495,7 @@ class LiveLookupResponse(BaseModel):
     poll_url: str | None = None
     snap_at: float | None = None  # the frozen frame this answers, see GET /live/snap
     next_step: str | None = None  # instruction for the voice agent while a lookup runs
+    more: list[str] = []  # checked facts the agent may use for follow-up questions
 
 
 # Rough time left by job stage, for "give me about N more seconds".
@@ -541,7 +543,8 @@ async def voice_live_lookup(body: LiveLookup, request: Request, svc: ProductsDep
 
     async def answer_for(product: Product, reason: str, extra: str = "", prefix: str = "") -> LiveLookupResponse:
         v = verdict.build(product, await svc.store.get_counterpart(product.key, "EU"))
-        return note(LiveLookupResponse(found=True, reason=reason, answer=prefix + verdict.spoken(v, short=True),
+        said = voice.describe(v)
+        return note(LiveLookupResponse(found=True, reason=reason, answer=prefix + said.answer, more=said.more,
                                        product_key=product.key), extra)
 
     async def settle(job, label: str = "", waits: int = 0) -> LiveLookupResponse:

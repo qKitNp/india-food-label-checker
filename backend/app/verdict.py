@@ -1,4 +1,3 @@
-import re
 from urllib.parse import urlparse
 
 from app import additive_codes, ingredients, research, sanity
@@ -12,11 +11,28 @@ def suspect(v: Verdict) -> bool:
     return v.headline == [UNRELIABLE]
 
 
+def compare(product: Product, counterpart: Counterpart) -> Counterpart:
+    """Recount both packs' additives from their ingredient text, codes and names alike, so
+    stored comparisons made by an older parser stay right ("Aspartame" is E951 on both)."""
+    mine = substances.codes_in(product.ingredients_text, product.additives)
+    theirs = substances.codes_in(counterpart.ingredients_quote, counterpart.additives)
+    # Our own additives may be written by name on their label ("Citric Acid").
+    quote = counterpart.ingredients_quote.lower()
+    theirs += [c for c in mine if c not in theirs and (n := research.name_for(c)) and n.lower() in quote]
+    return counterpart.model_copy(update={
+        "additives": theirs,
+        "only_in_india": [c for c in mine if c not in theirs],
+        "only_in_counterpart": [c for c in theirs if c not in mine],
+    })
+
+
 def build(product: Product, counterpart: Counterpart | None = None) -> Verdict:
     # Re-derive codes from the ingredients so records saved by an older parser stay complete.
     found = additive_codes.find_in_text(product.ingredients_text or "")
     if missing := [c for c in found if c not in product.additives]:
         product = product.model_copy(update={"additives": [*product.additives, *missing]})
+    if counterpart:
+        counterpart = compare(product, counterpart)
     contradictions = sanity.check(product)
     claim_findings = claims.evaluate(product)
     additive_findings = substances.evaluate(product)
@@ -59,18 +75,3 @@ def build(product: Product, counterpart: Counterpart | None = None) -> Verdict:
         claims=claim_findings, additives=additive_findings, counterpart=counterpart, headline=headline,
         other_additives=others, ingredients=items, limits=limit_checks,
     )
-
-
-def spoken(v: Verdict, short: bool = False) -> str:
-    """Short plain-text summary for the voice agent. `short` is for the live camera
-    page, which shows the full report: just the name and the most important point."""
-    brand = re.sub(r"\s*\(.*?\)", "", v.product.brand or "").strip()
-    product = re.sub(r"\s*\([^)]*\)\s*$", "", v.product.name or "").strip()
-    name = product if brand and product.lower().startswith(brand.lower()) else f"{brand} {product}".strip()
-    name = name or "This product"
-    if suspect(v):
-        return (f"I found {name}, but I don't have reliable data for it yet. "
-                "You can scan its back label in the app to check it.")
-    if short:
-        return f"{name}. {v.headline[0]} The full report is on your screen."
-    return f"{name}. " + " ".join(v.headline[:3])

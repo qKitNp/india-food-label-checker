@@ -101,7 +101,7 @@ def test_voice_lookup_strips_non_digits(client):
     r = client.post("/voice/lookup", json={"barcode": "8901 7641 11105"})
     assert r.json()["found"] is True
     # The OFF entry contradicts itself, so the voice agent mustn't make claims about it.
-    assert r.json()["answer"].startswith("I found Coca-Cola Coke Zero Can, but I don't have reliable data")
+    assert r.json()["answer"].startswith("I found Coke Zero Can, but the data online for it looks off")
 
 
 def test_voice_lookup_by_name(client):
@@ -115,7 +115,7 @@ def test_voice_lookup_by_name(client):
     client.portal.call(seed)
 
     r = client.post("/voice/lookup", json={"product_name": "kurkure masala munch"}).json()
-    assert r["found"] is True and r["answer"].startswith("Kurkure Masala Munch.")
+    assert r["found"] is True and "Kurkure Masala Munch." in r["answer"] and r["more"]
     r = client.post("/voice/lookup", json={"product_name": "maggi noodles"}).json()
     assert r["found"] is False
 

@@ -274,7 +274,8 @@ def test_live_follow_up_answers_from_the_running_lookup(client, monkeypatch):
     client.portal.call(release.set)
     third = client.post("/voice/live-lookup", json={"session_id": sid}).json()
     assert third["found"] is True and third["reason"] == "researched"
-    assert third["answer"].startswith("Found it. Coca-Cola Diet Coke.") and third["answer"].endswith("on your screen.")
+    assert third["answer"].startswith("Found it. ") and "Diet Coke." in third["answer"]
+    assert third["answer"].endswith("?") and third["more"]  # ends on an offer, with facts for the follow-up
     assert started == [1] and reads == [1]  # one job, one vision read
 
 
@@ -339,7 +340,7 @@ def test_live_wait_loop_announces_the_result_unprompted(client, monkeypatch):
 
     client.portal.call(release.set)
     done = client.post("/voice/live-wait", json={"session_id": sid}).json()
-    assert done["reason"] == "researched" and done["answer"].startswith("Found it. Gatorade Orange.")
+    assert done["reason"] == "researched" and done["answer"].startswith("Found it. ") and "Gatorade Orange." in done["answer"]
     assert done["next_step"] is None
     assert client.post("/voice/live-wait", json={"session_id": sid}).json()["reason"] == "idle"
 

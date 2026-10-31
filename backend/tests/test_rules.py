@@ -210,11 +210,3 @@ def test_claim_messages_say_within_or_above():
     p = product(claims=["Low fat"], is_liquid=False, nutrition=Nutrition(fat_g=5))
     [c] = claims.evaluate(p)
     assert c.message == "Says 'low fat': has 5 g fat per 100 g, above the EU limit of 3."
-
-
-def test_spoken_name_drops_bracketed_type():
-    v = verdict.build(product(brand="Coca-Cola (The Coca-Cola Company)", name="Diet Coke (soft drink, zero sugar)",
-                              ingredients_text="carbonated water"))
-    said = verdict.spoken(v, short=True)
-    assert said.startswith("Coca-Cola Diet Coke. ")
-    assert "(" not in said.split(".")[0]
