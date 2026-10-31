@@ -17,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse, Response, StreamingResponse
 from pydantic import BaseModel, model_validator
 
-from app import additive_codes, agent, barcodes, llm, sanity, verdict, voice, voice_llm
+from app import additive_codes, agent, ask, barcodes, llm, sanity, verdict, voice, voice_llm
 from app.catalog import Embedder
 from app.config import get_settings
 from app.live import FRAME_TTL, MAX_SESSIONS, STALE_AFTER, LiveResult, LiveStore, SESSION_RE
@@ -106,6 +106,7 @@ async def lifespan(app: FastAPI):
     app.state.jobs = JobStore(on_finish=store.save_scan_log)
     app.state.live = LiveStore()
     app.state.transcripts = voice_llm.Transcripts()
+    app.state.asker = ask.Asker(settings, app.state.exa, http)
     await load_substances(store)
 
     async def save_substance(sub: dict) -> None:
@@ -458,6 +459,23 @@ async def voice_lookup(body: VoiceLookup, svc: ProductsDep) -> dict:
     v = verdict.build(product, await svc.store.get_counterpart(product.key, "EU"))
     said = voice.describe(v)
     return {"found": True, "answer": said.answer, "more": said.more}
+
+
+class VoiceAsk(BaseModel):
+    question: str
+    product: str | None = None  # the pack being discussed, if any
+
+
+@app.post("/voice/ask")
+async def voice_ask(body: VoiceAsk, request: Request) -> dict:
+    """Tool endpoint: a general question about food labels, ingredients or additives,
+    answered in a few spoken sentences from regulators and public-health bodies."""
+    question = body.question.strip()[:300]
+    if not question:
+        return {"answer": "What would you like to know about the label?"}
+    answer = await request.app.state.asker.answer(question, (body.product or "").strip()[:100] or None)
+    _live_log.info("voice ask %r -> %d chars", question[:80], len(answer))
+    return {"answer": answer}
 
 
 @app.post("/live/frame")
