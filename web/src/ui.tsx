@@ -142,18 +142,19 @@ export function Cover({ seed, label, className = '' }: { seed: string; label: st
 
 /** The brand is shown separately above the title, so the title is just the product name. */
 /** The product's pack photo, or its colour cover when there's no photo (or it fails to load). */
-export function ProductImage({ productKey, hasImage = true, seed, label, className = '' }: {
+export function ProductImage({ productKey, hasImage = true, seed, label, className = '', version }: {
   productKey: string
   hasImage?: boolean
   seed: string
   label: string
   className?: string
+  version?: string | null
 }) {
   const [failed, setFailed] = useState(false)
   if (!hasImage || failed) return <Cover seed={seed} label={label} className={className} />
   return (
     <div className={`overflow-hidden bg-wash ${className}`}>
-      <img src={imageUrl(productKey)} alt="" loading="lazy" onError={() => setFailed(true)} className="size-full object-cover" />
+      <img src={imageUrl(productKey, version)} alt="" loading="lazy" onError={() => setFailed(true)} className="size-full object-cover" />
     </div>
   )
 }

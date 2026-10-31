@@ -85,6 +85,7 @@ export default function ProductsPage() {
                 <ProductImage
                   productKey={p.key}
                   hasImage={p.has_image}
+                  version={p.image_version}
                   seed={shortBrand(p.brand) || productTitle(p)}
                   label={shortBrand(p.brand) || 'Product'}
                   className="aspect-[4/3] rounded-none"

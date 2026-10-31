@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { Check, CircleHelp, TriangleAlert, X, type LucideIcon } from 'lucide-react'
-import { api, ApiError, type AdditiveFinding, type ClaimFinding, type Ingredient, type LimitCheck, type Nutrition, type OtherAdditive, type Region, type RegionStatus, type Verdict } from '../api'
+import { api, ApiError, type AdditiveFinding, type ClaimFinding, type Ingredient, type LimitCheck, type Nutrition, type OtherAdditive, type Region, type RegionStatus, type Verdict, imageVersion } from '../api'
 import { remember } from '../history'
 import { Button, Card, Chip, ErrorNote, Page, ProductImage, SectionTitle, Spinner, buttonClass, productKind, productTitle, shortBrand } from '../ui'
 
@@ -70,6 +70,7 @@ function VerdictView({ verdict, onUpdate }: { verdict: Verdict; onUpdate: (v: Ve
         <ProductImage
           productKey={p.key}
           hasImage={!!(p.image_file_id || p.image_url || (p.source === 'off' && p.barcode))}
+          version={imageVersion(p)}
           seed={shortBrand(p.brand) || productTitle(p)}
           label={shortBrand(p.brand) || 'Product'}
           className="h-28 w-22 shrink-0 rounded-2xl shadow-card"

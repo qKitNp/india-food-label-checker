@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import datetime as dt
 import json
 import logging
@@ -226,7 +227,14 @@ def summarise(product: Product) -> ProductSummary:
         key=product.key, barcode=product.barcode, brand=product.brand, name=product.name, source=product.source,
         verified=product.verified, status=status, needs_help=status in ("needs_ingredients", "data_looks_wrong"),
         has_image=bool(product.image_file_id or product.image_url or (product.source == "off" and product.barcode)),
+        image_version=image_version(product),
     )
+
+
+def image_version(product: Product) -> str | None:
+    """Short tag for the current photo; the page adds it to the image URL."""
+    ref = product.image_file_id or product.image_url
+    return hashlib.sha1(ref.encode()).hexdigest()[:10] if ref else None
 
 
 @app.get("/products")
@@ -250,7 +258,9 @@ async def product_image(key: str, svc: ProductsDep) -> Response:
     product = await svc.store.get_product(key)
     if product is None:
         raise HTTPException(404, "Product not found")
-    cache = {"Cache-Control": "public, max-age=86400"}
+    # Photos can be replaced (a wrong match corrected), so browsers check back hourly; the
+    # page also versions the URL, so a new photo shows at once.
+    cache = {"Cache-Control": "public, max-age=3600"}
     if product.image_file_id:
         thumb = _thumbs.get(product.image_file_id)
         if thumb is None:

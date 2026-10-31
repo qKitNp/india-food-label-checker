@@ -179,4 +179,5 @@ class ProductSummary(BaseModel):
     verified: bool
     status: Literal["needs_ingredients", "data_looks_wrong", "checked", "ok"]
     has_image: bool = False
+    image_version: str | None = None  # changes when the photo does, so clients can bust caches
     needs_help: bool  # someone with the pack can add or correct its ingredient list

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { Check, Mic, MicOff, Phone, PhoneOff, SwitchCamera, Volume2, VolumeX } from 'lucide-react'
-import { API_URL, api, ApiError, liveSnapUrl, type Verdict } from '../api'
+import { API_URL, api, ApiError, liveSnapUrl, type Verdict, imageVersion } from '../api'
 import { toJpeg } from '../images'
 import { watchSpeech } from '../speech'
 import { Button, Card, Chip, ErrorNote, Page, ProductImage, Spinner, buttonClass, productTitle, shortBrand } from '../ui'
@@ -720,6 +720,7 @@ export default function Live() {
                 <ProductImage
                   productKey={v.product.key}
                   hasImage={!!(v.product.image_file_id || v.product.image_url || (v.product.source === 'off' && v.product.barcode))}
+                  version={imageVersion(v.product)}
                   seed={shortBrand(v.product.brand) || productTitle(v.product)}
                   label={shortBrand(v.product.brand) || 'Product'}
                   className="h-16 w-13 shrink-0 rounded-2xl"

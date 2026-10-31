@@ -223,6 +223,7 @@ export interface ProductSummary {
   status: 'needs_ingredients' | 'data_looks_wrong' | 'checked' | 'ok'
   needs_help: boolean
   has_image: boolean
+  image_version: string | null
 }
 
 export class ApiError extends Error {
@@ -260,7 +261,12 @@ function form(images: Blob[], extra: Record<string, string> = {}): FormData {
   return data
 }
 
-export const imageUrl = (key: string) => `${API_URL}/products/${encodeURIComponent(key)}/image`
+export const imageUrl = (key: string, version?: string | null) =>
+  `${API_URL}/products/${encodeURIComponent(key)}/image${version ? `?v=${encodeURIComponent(version)}` : ''}`
+
+/** A tag that changes with the product's photo, so a replaced photo isn't served from cache. */
+export const imageVersion = (p: { image_file_id?: string | null; image_url?: string | null }) =>
+  p.image_file_id || p.image_url || null
 
 export const api = {
   products: () => request<ProductSummary[]>('/products'),

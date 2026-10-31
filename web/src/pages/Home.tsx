@@ -23,8 +23,8 @@ export default function Home() {
   }, [recent.length])
 
   const shelf = recent.length
-    ? recent.slice(0, 6).map((r) => ({ key: r.key, title: r.title, brand: r.brand }))
-    : catalog.map((p) => ({ key: p.key, title: productTitle(p), brand: shortBrand(p.brand) }))
+    ? recent.slice(0, 6).map((r) => ({ key: r.key, title: r.title, brand: r.brand, version: null as string | null }))
+    : catalog.map((p) => ({ key: p.key, title: productTitle(p), brand: shortBrand(p.brand), version: p.image_version }))
 
   return (
     <Page bare>
@@ -118,7 +118,7 @@ export default function Home() {
                 to={`/p/${encodeURIComponent(p.key)}`}
                 className="group border-r border-b border-line p-4 transition-colors hover:bg-white [&:nth-child(2n)]:border-r-0 sm:[&:nth-child(2n)]:border-r sm:[&:nth-child(3n)]:border-r-0 lg:[&:nth-child(3n)]:border-r lg:[&:nth-child(6n)]:border-r-0 lg:border-b-0"
               >
-                <ProductImage productKey={p.key} seed={p.brand || p.title} label={p.brand || 'Product'} className="aspect-square rounded-xl" />
+                <ProductImage productKey={p.key} version={p.version} seed={p.brand || p.title} label={p.brand || 'Product'} className="aspect-square rounded-xl" />
                 <p className="mt-3 line-clamp-2 text-sm leading-snug font-medium text-ink">{p.title}</p>
               </Link>
             ))}
