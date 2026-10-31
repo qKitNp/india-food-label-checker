@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { Check, Mic, MicOff, Phone, PhoneOff, SwitchCamera, Volume2 } from 'lucide-react'
+import { Check, Mic, MicOff, Phone, PhoneOff, SwitchCamera, Volume2, VolumeX } from 'lucide-react'
 import { API_URL, api, ApiError, liveSnapUrl, type Verdict } from '../api'
 import { toJpeg } from '../images'
 import { Button, Card, Chip, ErrorNote, Page, ProductImage, Spinner, buttonClass, productTitle, shortBrand } from '../ui'
@@ -41,7 +41,7 @@ function speak(text: string) {
 export default function Live() {
   const video = useRef<HTMLVideoElement>(null)
   const chatRef = useRef<HTMLDivElement>(null)
-  const [chatScrolled, setChatScrolled] = useState(false)
+  const agentAudio = useRef<HTMLAudioElement>(null)
   const [sessionId] = useState(newSession)
   const [ready, setReady] = useState(false)
   const [cameraError, setCameraError] = useState<string | null>(null)
@@ -115,6 +115,12 @@ export default function Live() {
     const el = chatRef.current
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
   }, [msgs, jobNote])
+
+  // "Mute answers" silences both voices: the call agent and the browser's read-out of typed answers.
+  useEffect(() => {
+    if (agentAudio.current) agentAudio.current.muted = muted
+    if (muted) window.speechSynthesis?.cancel()
+  }, [muted])
 
   const speakIfFree = useCallback((text: string) => {
     if (!muted && !onCallRef.current) speak(text)
@@ -305,7 +311,7 @@ export default function Live() {
     setCallMuted(false)
     try {
       const { BolnaWebCall } = await import('@bolna/web-call')
-      const call = new BolnaWebCall({ sessionUrl: `${API_URL}/live/session` })
+      const call = new BolnaWebCall({ sessionUrl: `${API_URL}/live/session`, audioElement: agentAudio.current ?? undefined })
       callRef.current = call
       call.on('state-change', (s: string) => {
         setCallState(s as typeof callState)
@@ -463,7 +469,8 @@ export default function Live() {
         </p>
       </div>
 
-      <div className="rise relative mt-6 aspect-[4/3] overflow-hidden rounded-3xl border border-line bg-ink shadow-card">
+      <audio ref={agentAudio} autoPlay className="hidden" />
+      <div className="rise relative mt-6 aspect-[3/4] overflow-hidden rounded-3xl border border-line bg-ink shadow-card sm:aspect-[4/3]">
         <video ref={video} playsInline muted className={`size-full object-cover ${mirror ? '-scale-x-100' : ''}`} />
         {!ready && !cameraError && (
           <div className="absolute inset-0 flex items-center justify-center text-white/80"><Spinner /></div>
@@ -477,22 +484,54 @@ export default function Live() {
             <div className="shutter absolute inset-0 bg-white" />
           </div>
         )}
-        <div className="absolute top-3 left-3">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-black/35 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/55 to-transparent" />
+        <div className="absolute top-3 left-3 flex items-center gap-2">
           <FeedChip feed={feed} />
+          {(callState === 'connecting' || callState === 'ringing' || callState === 'active') && (
+            <span className="flex items-center gap-2 rounded-full bg-black/45 px-3 py-1 text-xs font-medium text-white backdrop-blur">
+              {callState === 'active' ? (
+                <>
+                  <span className={`inline-block size-2 rounded-full ${speaking ? 'animate-ping bg-accent' : 'animate-pulse bg-good'}`} />
+                  {speaking ? 'Speaking' : 'Listening'} · {mmss}
+                </>
+              ) : (
+                <><Spinner className="size-3 text-white" /> Connecting…</>
+              )}
+            </span>
+          )}
         </div>
-        {(callState === 'connecting' || callState === 'ringing' || callState === 'active') && (
-          <div className="absolute top-3 right-3 flex items-center gap-2 rounded-full bg-black/45 px-3 py-1 text-xs font-medium text-white backdrop-blur">
-            {callState === 'active' ? (
-              <>
-                <span className={`inline-block size-2 rounded-full ${speaking ? 'animate-ping bg-accent' : 'animate-pulse bg-good'}`} />
-                {speaking ? 'Speaking' : 'Listening'} · {mmss}
-              </>
-            ) : (
-              <><Spinner className="size-3 text-white" /> Connecting…</>
+        <div className="absolute top-3 right-3">
+          <CallButton small label={muted ? 'Unmute answers' : 'Mute answers'} tone={muted ? 'on' : 'glass'} onClick={() => setMuted((m) => !m)}>
+            {muted ? <VolumeX className="size-[18px]" aria-hidden /> : <Volume2 className="size-[18px]" aria-hidden />}
+          </CallButton>
+        </div>
+
+        {/* Live-stream style chat: newest at the bottom, older lines fade out at the top. */}
+        <div
+          ref={chatRef}
+          className="absolute inset-x-3 top-14 bottom-20 flex flex-col overflow-y-auto overscroll-contain [mask-image:linear-gradient(to_bottom,transparent,black_3rem)] [scrollbar-width:none]"
+        >
+          <div className="mt-auto space-y-1.5">
+            {msgs.length === 0 && callState !== 'connecting' && (
+              <p className="w-fit max-w-[85%] rounded-2xl bg-black/35 px-3 py-2 text-[13px] text-white/85 backdrop-blur-md">
+                Try “Tell me about this”, then show another pack and ask “Which has less sugar?”
+              </p>
+            )}
+            {msgs.map((m) => m.snap ? <SnapBubble key={m.id} {...m.snap} /> : (
+              <div key={m.id} className={`rise flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <p className={`max-w-[85%] rounded-2xl px-3 py-2 text-[14px] leading-snug text-white backdrop-blur-md ${m.role === 'user' ? 'bg-accent/75' : 'bg-black/45'}`}>
+                  {m.text}
+                </p>
+              </div>
+            ))}
+            {jobNote && (
+              <p className="flex w-fit items-center gap-2 rounded-full bg-black/45 px-3 py-1.5 text-xs text-white backdrop-blur-md">
+                <Spinner className="size-3 text-white" />{jobNote}
+              </p>
             )}
           </div>
-        )}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/50 to-transparent" />
+        </div>
         <div className="absolute inset-x-0 bottom-4 flex items-center justify-center gap-3">
           {callState === 'active' && (
             <CallButton
@@ -534,24 +573,6 @@ export default function Live() {
         <p className="rise mt-3 text-center text-sm text-muted">{endReason}</p>
       )}
 
-      <div
-        ref={chatRef}
-        onScroll={(e) => setChatScrolled(e.currentTarget.scrollTop > 4)}
-        className={`rise -mx-1 mt-4 max-h-[22rem] space-y-2 overflow-y-auto overscroll-contain px-1 pb-1 ${chatScrolled ? '[mask-image:linear-gradient(to_bottom,transparent,black_2.5rem)]' : ''}`}
-      >
-        {msgs.length === 0 && (
-          <p className="text-center text-sm text-faint">Try: “Tell me about this” → point at another pack → “Which has less sugar?”</p>
-        )}
-        {msgs.map((m) => m.snap ? <SnapBubble key={m.id} {...m.snap} /> : (
-          <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <p className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-[15px] leading-relaxed ${m.role === 'user' ? 'bg-accent text-white' : 'bg-white border border-line text-ink-2 shadow-card'}`}>
-              {m.text}
-            </p>
-          </div>
-        ))}
-        {jobNote && <p className="flex items-center justify-center gap-2 py-2 text-sm text-muted"><Spinner className="text-accent" />{jobNote}</p>}
-      </div>
-
       <form
         className="rise mt-4 flex gap-2"
         onSubmit={(e) => {
@@ -571,13 +592,6 @@ export default function Live() {
           {busy ? <Spinner /> : 'Ask'}
         </button>
       </form>
-      <div className="mt-2 flex justify-center gap-2">
-        <button type="button" onClick={() => setMuted((m) => !m)} className={buttonClass('ghost', 'text-xs')}>
-          {muted ? 'Unmute answers' : 'Mute answers'}
-        </button>
-        <Link to="/scan" className={buttonClass('ghost', 'text-xs')}>Back to scan</Link>
-      </div>
-
       {pair.length === 2 && <CompareCard a={pair[0]} b={pair[1]} />}
 
       {verdicts.length > 0 && (
@@ -617,13 +631,13 @@ function SnapBubble({ url, status }: { url: string; status: SnapStatus }) {
   const working = status === 'looking' || status === 'researching'
   return (
     <div className="rise flex justify-start">
-      <div className="flex items-center gap-3 rounded-2xl border border-line bg-white p-2 pr-4 shadow-card">
-        <div className={`relative h-16 w-20 shrink-0 overflow-hidden rounded-xl bg-wash ${working ? 'ring-2 ring-accent' : ''}`}>
+      <div className="flex items-center gap-2.5 rounded-2xl bg-black/45 p-1.5 pr-3.5 backdrop-blur-md">
+        <div className={`relative h-12 w-16 shrink-0 overflow-hidden rounded-xl bg-black/30 ${working ? 'ring-2 ring-accent' : ''}`}>
           <img src={url} alt="The frame being looked up" className="size-full object-cover" />
           {working && <div className="scanline absolute inset-x-0 h-0.5 bg-accent shadow-[0_0_8px_2px] shadow-accent/60" />}
         </div>
-        <p className={`flex items-center gap-2 text-sm ${status === 'done' ? 'text-good' : status === 'missed' ? 'text-muted' : 'text-accent-deep'}`}>
-          {working && <Spinner className="text-accent" />}
+        <p className={`flex items-center gap-2 text-[13px] ${status === 'done' ? 'text-green-300' : status === 'missed' ? 'text-white/70' : 'text-sky-200'}`}>
+          {working && <Spinner className="size-3 text-sky-200" />}
           {status === 'done' && <Check className="size-4" aria-hidden />}
           {SNAP_LABEL[status]}
         </p>
@@ -632,11 +646,11 @@ function SnapBubble({ url, status }: { url: string; status: SnapStatus }) {
   )
 }
 
-function CallButton({ label, tone, onClick, children }: { label: string; tone: 'glass' | 'bad' | 'on'; onClick: () => void; children: ReactNode }) {
+function CallButton({ label, tone, onClick, small, children }: { label: string; tone: 'glass' | 'bad' | 'on'; onClick: () => void; small?: boolean; children: ReactNode }) {
   const look = tone === 'bad' ? 'bg-bad text-white' : tone === 'on' ? 'bg-white text-ink' : 'bg-white/20 text-white backdrop-blur hover:bg-white/30'
   return (
     <button type="button" onClick={onClick} aria-label={label} title={label}
-      className={`flex size-12 items-center justify-center rounded-full shadow-lg transition-transform active:scale-95 ${look}`}>
+      className={`flex ${small ? 'size-10' : 'size-12'} items-center justify-center rounded-full shadow-lg transition-transform active:scale-95 ${look}`}>
       {children}
     </button>
   )
