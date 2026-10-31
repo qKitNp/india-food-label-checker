@@ -445,6 +445,12 @@ async def voice_lookup(body: VoiceLookup, svc: ProductsDep) -> dict:
         matches = await svc.similar(body.product_name, k=1)
         if matches and matches[0].score >= VOICE_MATCH_THRESHOLD:
             product = await svc.store.get_product(matches[0].key)
+            # Embeddings rank something first for any input, even a misheard "classic".
+            # Every distinctive word the caller said must be in the product's own name.
+            heard = agent.Identification(product_name=body.product_name)
+            if product and not agent.mentions_product(f"{product.brand or ''} {product.name or ''}", heard):
+                _live_log.info("voice lookup %r rejected match %s", body.product_name, product.key)
+                product = None
     if product is None:
         return {"found": False,
                 "answer": "I couldn't find that product by name. Point your camera at it and ask me about it instead."}

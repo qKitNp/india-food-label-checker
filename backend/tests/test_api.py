@@ -273,3 +273,22 @@ def test_product_image_thumbnail_and_fallbacks(client):
     assert r.status_code == 302 and r.headers["location"] == "https://images.openfoodfacts.org/x.jpg"
     assert client.get("/products/12/image").status_code == 404
     assert {p["barcode"]: p["has_image"] for p in client.get("/products").json()} == {"10": True, "11": True, "12": False}
+
+
+def test_voice_lookup_rejects_names_that_share_no_words(client):
+    """A misheard single word ("classic") must not be answered with whatever ranks first."""
+    from app.catalog import Match
+    svc = client.app.state.products
+
+    async def seed():
+        await svc.save(Product(barcode="222", brand="Parle", name="Parle-G Original Gluco Biscuits", source="label",
+                               verified=True, ingredients_text="Wheat flour, sugar, edible oil",
+                               nutrition=Nutrition(energy_kcal=450)))
+    client.portal.call(seed)
+
+    async def always_parle(text=None, image_vector=None, k=5):
+        return [Match(key="222", score=0.9, text="Parle-G")]
+    svc.similar = always_parle
+
+    assert client.post("/voice/lookup", json={"product_name": "classic"}).json()["found"] is False
+    assert client.post("/voice/lookup", json={"product_name": "parle g"}).json()["found"] is True
